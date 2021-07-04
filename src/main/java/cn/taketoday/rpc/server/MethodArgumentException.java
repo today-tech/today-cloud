@@ -18,17 +18,30 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.server;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.rpc.RpcNestedRuntimeException;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/4 22:41
  */
-public interface ServiceRegistry {
+public class MethodArgumentException extends RpcNestedRuntimeException {
+  private static final long serialVersionUID = 1L;
 
-  void register(ServiceDefinition definition);
+  public MethodArgumentException() {
+    super();
+  }
 
-  <T> T lookup(Class<T> serviceInterface);
+  public MethodArgumentException(String message) {
+    super(message);
+  }
+
+  public MethodArgumentException(Throwable cause) {
+    super(cause);
+  }
+
+  public MethodArgumentException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
 }

@@ -75,7 +75,13 @@
     <dependency>
       <groupId>cn.taketoday</groupId>
       <artifactId>today-framework</artifactId>
-      <version>1.0.1.RELEASE</version>
+      <version>1.0.2.RELEASE</version>
+    </dependency>
+
+    <dependency>
+      <groupId>cn.taketoday</groupId>
+      <artifactId>today-web</artifactId>
+      <version>latest</version>
     </dependency>
 
     <!-- logging -->

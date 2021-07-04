@@ -20,15 +20,28 @@
 
 package cn.taketoday.rpc;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.context.NestedRuntimeException;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/4 22:42
  */
-public interface ServiceRegistry {
+public class RpcNestedRuntimeException extends NestedRuntimeException {
+  private static final long serialVersionUID = 1L;
 
-  void register(ServiceDefinition definition);
+  public RpcNestedRuntimeException() {
+    super();
+  }
 
-  <T> T lookup(Class<T> serviceInterface);
+  public RpcNestedRuntimeException(String message) {
+    super(message);
+  }
+
+  public RpcNestedRuntimeException(Throwable cause) {
+    super(cause);
+  }
+
+  public RpcNestedRuntimeException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
 }

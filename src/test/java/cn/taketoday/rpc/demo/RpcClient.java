@@ -20,18 +20,17 @@
 
 package cn.taketoday.rpc.demo;
 
-import java.io.IOException;
-
-import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.demo.service.UserService;
+import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
 
 /**
  * @author TODAY 2021/7/3 22:47
  */
 public class RpcClient {
 
-  public static void main(String[] args) throws IOException {
-    UserService userService = ServiceRegistry.lookup(UserService.class);
+  public static void main(String[] args) {
+    final HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
+    UserService userService = serviceRegistry.lookup(UserService.class);
 
     final String ret = userService.hello("today rpc");
     System.out.println(ret);

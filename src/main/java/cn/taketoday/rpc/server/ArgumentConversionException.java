@@ -18,17 +18,28 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
-
-import cn.taketoday.rpc.registry.ServiceDefinition;
+package cn.taketoday.rpc.server;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/4 22:44
  */
-public interface ServiceRegistry {
+public class ArgumentConversionException extends MethodArgumentException {
+  private static final long serialVersionUID = 1L;
 
-  void register(ServiceDefinition definition);
+  public ArgumentConversionException() {
+    super();
+  }
 
-  <T> T lookup(Class<T> serviceInterface);
+  public ArgumentConversionException(String message) {
+    super(message);
+  }
+
+  public ArgumentConversionException(Throwable cause) {
+    super(cause);
+  }
+
+  public ArgumentConversionException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
 }

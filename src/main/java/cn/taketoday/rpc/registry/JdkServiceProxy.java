@@ -18,17 +18,30 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+import cn.taketoday.rpc.RpcMethodInvoker;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/4 22:58
  */
-public interface ServiceRegistry {
+public class JdkServiceProxy implements ServiceProxy {
 
-  void register(ServiceDefinition definition);
+  @Override
+  public Object getProxy(ServiceDefinition definition, RpcMethodInvoker rpcInvoker) {
+    final class ServiceInvocationHandler implements InvocationHandler {
+      @Override
+      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        return rpcInvoker.invoke(definition, method, args);
+      }
+    }
 
-  <T> T lookup(Class<T> serviceInterface);
-
+    final Class<?> serviceInterface = definition.getServiceInterface();
+    return Proxy.newProxyInstance(
+            serviceInterface.getClassLoader(), new Class[] { serviceInterface }, new ServiceInvocationHandler());
+  }
 }

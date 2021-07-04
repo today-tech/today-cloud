@@ -20,12 +20,12 @@
 
 package cn.taketoday.rpc.server;
 
-import java.io.IOException;
 import java.util.Map;
 
 import cn.taketoday.context.reflect.MethodInvoker;
 import cn.taketoday.context.utils.ClassUtils;
 import cn.taketoday.rpc.RpcRequest;
+import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.web.annotation.POST;
 import cn.taketoday.web.annotation.RequestBody;
 import cn.taketoday.web.annotation.RequestMapping;
@@ -34,15 +34,15 @@ import cn.taketoday.web.annotation.RequestMapping;
  * @author TODAY 2021/7/4 01:14
  */
 @RequestMapping("/provider")
-public class ServiceEndpoint {
+public class ServiceHttpEndpoint {
   final Map<String, Object> local;
 
-  public ServiceEndpoint(Map<String, Object> local) {
+  public ServiceHttpEndpoint(Map<String, Object> local) {
     this.local = local;
   }
 
   @POST
-  public Object provider(@RequestBody RpcRequest request) throws IOException, NoSuchMethodException, ClassNotFoundException {
+  public RpcResponse provider(@RequestBody RpcRequest request) throws Exception {
     final Object service = local.get(request.getServiceName());
     final String method = request.getMethod();
     final String[] paramTypes = request.getParamTypes();
@@ -53,10 +53,9 @@ public class ServiceEndpoint {
       parameterTypes[i++] = Class.forName(paramType);
     }
 
-    final Object[] args = request.getArguments(parameterTypes);
-
+    final Object[] args = request.resolveArguments(parameterTypes);
     final MethodInvoker invoker = getMethod(service, method, parameterTypes);
-    return invoker.invoke(service, args);
+    return RpcResponse.of(invoker.invoke(service, args));
   }
 
   private MethodInvoker getMethod(Object service, String method, Class<?>[] parameterTypes) throws NoSuchMethodException {

@@ -18,17 +18,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.rpc.RpcMethodInvoker;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/4 22:58
  */
-public interface ServiceRegistry {
+public interface ServiceProxy {
 
-  void register(ServiceDefinition definition);
-
-  <T> T lookup(Class<T> serviceInterface);
-
+  Object getProxy(ServiceDefinition serviceDefinition, RpcMethodInvoker rpcInvoker);
 }

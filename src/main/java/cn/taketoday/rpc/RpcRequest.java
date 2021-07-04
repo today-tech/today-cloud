@@ -20,52 +20,19 @@
 
 package cn.taketoday.rpc;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-
-import java.io.IOException;
 import java.io.Serializable;
-
-import cn.taketoday.context.conversion.support.DefaultConversionService;
-import cn.taketoday.context.utils.ClassUtils;
-import cn.taketoday.rpc.utils.ObjectMapperUtils;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author TODAY 2021/7/4 01:19
  */
 public class RpcRequest implements Serializable {
-
-  private String serviceName;
-
   private String method;
+  private String serviceName;
   private String[] paramTypes;
 
-  private String arguments;
-
-  public void setArguments(String arguments) {
-    this.arguments = arguments;
-  }
-
-  public void setArguments(Object[] arguments) {
-    try {
-      this.arguments = ObjectMapperUtils.toJSON(arguments);
-    }
-    catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  public void setParamTypes(Class<?>[] parameterTypes) {
-    String[] paramTypes = new String[parameterTypes.length];
-    int i = 0;
-    for (final Class<?> parameterType : parameterTypes) {
-      paramTypes[i++] = parameterType.getName();
-    }
+  public void setParamTypes(String[] paramTypes) {
     this.paramTypes = paramTypes;
   }
 
@@ -89,25 +56,51 @@ public class RpcRequest implements Serializable {
     return serviceName;
   }
 
-  public String getArguments() {
-    return arguments;
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof RpcRequest)) return false;
+    final RpcRequest that = (RpcRequest) o;
+    return Objects.equals(serviceName, that.serviceName)
+            && Objects.equals(method, that.method)
+            && Arrays.equals(paramTypes, that.paramTypes);
   }
 
-  public Object[] getArguments(Class<?>[] parameterTypes) throws IOException {
-    Object[] args = new Object[parameterTypes.length];
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(serviceName, method);
+    result = 31 * result + Arrays.hashCode(paramTypes);
+    return result;
+  }
+
+  @Override
+  public String toString() {
+    return "RpcRequest{" +
+            "serviceName='" + serviceName + '\'' +
+            ", method='" + method + '\'' +
+            ", paramTypes=" + Arrays.toString(paramTypes) +
+            '}';
+  }
+
+  //
+
+  public void setParamTypes(Class<?>[] parameterTypes) {
+    String[] paramTypes = new String[parameterTypes.length];
     int i = 0;
-    final ObjectMapper sharedMapper = ObjectMapperUtils.getSharedMapper();
-    final JsonNode jsonNode = sharedMapper.readTree(arguments);
     for (final Class<?> parameterType : parameterTypes) {
-      final JsonNode current = jsonNode.get(i);
-      if (ClassUtils.isSimpleType(parameterType)) {
-        args[i++] = DefaultConversionService.getSharedInstance().convert(current.asText(), parameterType);
-      }
-      else {
-        final Object fromJSON = sharedMapper.readValue(current.asText(), parameterType);
-        args[i++] = fromJSON;
-      }
+      paramTypes[i++] = parameterType.getName();
     }
+    this.paramTypes = paramTypes;
+  }
+
+  public Object[] resolveArguments(Class<?>[] parameterTypes) {
+    Object[] args = new Object[parameterTypes.length];
+    resolveArgumentsInternal(args, parameterTypes);
     return args;
   }
+
+  protected void resolveArgumentsInternal(Object[] args, Class<?>[] parameterTypes) {
+
+  }
+
 }

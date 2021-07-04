@@ -20,15 +20,17 @@
 
 package cn.taketoday.rpc.registry;
 
+import java.io.Serializable;
+
 /**
  * @author TODAY 2021/7/4 00:36
  */
-public class ServiceDefinition {
-  private String name;
-
-  private String host;
-
+public class ServiceDefinition implements Serializable {
   private int port;
+  private String host;
+  private String name; // service name
+
+  private transient Class<?> serviceInterface;
 
   public void setName(String name) {
     this.name = name;
@@ -52,5 +54,13 @@ public class ServiceDefinition {
 
   public String getHost() {
     return host;
+  }
+
+  public Class<?> getServiceInterface() {
+    return serviceInterface;
+  }
+
+  public void setServiceInterface(Class<?> serviceInterface) {
+    this.serviceInterface = serviceInterface;
   }
 }

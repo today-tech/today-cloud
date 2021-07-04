@@ -1,6 +1,6 @@
 /*
  * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2017 - 2021 All Rights Reserved.
+ * Copyright © TODAY & 2021 All Rights Reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
  *
@@ -20,15 +20,31 @@
 
 package cn.taketoday.rpc;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import java.io.Serializable;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/4 22:31
  */
-public interface ServiceRegistry {
+public class RpcResponse implements Serializable {
+  /** service result */
+  private Object result;
 
-  void register(ServiceDefinition definition);
+  public RpcResponse() { }
 
-  <T> T lookup(Class<T> serviceInterface);
+  public RpcResponse(Object result) {
+    this.result = result;
+  }
+
+  public void setResult(Object result) {
+    this.result = result;
+  }
+
+  public Object getResult() {
+    return result;
+  }
+
+  public static RpcResponse of(Object result) {
+    return new RpcResponse(result);
+  }
 
 }

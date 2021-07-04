@@ -23,29 +23,31 @@ package cn.taketoday.rpc;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import cn.taketoday.rpc.registry.ServiceDefinition;
+
 /**
  * @author TODAY 2021/7/4 01:58
  */
 public abstract class RpcMethodInvoker {
 
-  public <T> Object invoke(Class<T> serviceInterface, Method method, Object[] args) throws IOException {
+  public <T> Object invoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
     // pre
-    preProcess(serviceInterface, method, args);
+    preProcess(definition, method, args);
     // process
-    Object ret = doProcess(serviceInterface, method, args);
+    Object ret = doProcess(definition, method, args);
     // post
-    postProcess(ret);
+    postProcess(definition, ret);
     return ret;
   }
 
   protected abstract <T> Object doProcess(
-          Class<T> serviceInterface, Method method, Object[] args) throws IOException;
+          ServiceDefinition definition, Method method, Object[] args) throws IOException;
 
-  protected void preProcess(Class<?> serviceInterface, Method method, Object[] args) {
+  protected void preProcess(ServiceDefinition definition, Method method, Object[] args) {
     // no-op
   }
 
-  protected void postProcess(Object returnValue) {
+  protected void postProcess(ServiceDefinition definition, Object ret) {
     // no-op
   }
 }

@@ -24,18 +24,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.context.annotation.Singleton;
 import cn.taketoday.framework.ServletWebServerApplicationContext;
-import cn.taketoday.framework.StandardWebServerApplicationContext;
 import cn.taketoday.framework.WebApplication;
 import cn.taketoday.framework.server.TomcatServer;
-import cn.taketoday.rpc.ServiceRegistry;
-import cn.taketoday.rpc.config.ServiceConfig;
 import cn.taketoday.rpc.demo.service.UserService;
 import cn.taketoday.rpc.demo.service.impl.DefaultUserService;
+import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
 import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.server.ServiceEndpoint;
+import cn.taketoday.rpc.server.ServiceHttpEndpoint;
 import cn.taketoday.web.annotation.RestController;
 
 /**
@@ -61,17 +58,19 @@ public class RpcServer {
     }
 
     @RestController
-    ServiceEndpoint endpoint() throws IOException {
+    ServiceHttpEndpoint endpoint() throws IOException {
       final ServiceDefinition definition = new ServiceDefinition();
 
       definition.setHost("localhost");
       definition.setPort(9000);
       definition.setName(UserService.class.getName());
-      ServiceRegistry.register(definition);
+      final HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
+
+      serviceRegistry.register(definition);
       Map<String, Object> local = new HashMap<>();
 
       local.put(UserService.class.getName(), new DefaultUserService());
-      return new ServiceEndpoint(local);
+      return new ServiceHttpEndpoint(local);
     }
 
   }

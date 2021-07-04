@@ -61,7 +61,7 @@ public class ServiceRegistry {
     doPost(registryURL + "/" + serviceInterface.getName(), json);
   }
 
-  public static <T> void register(ServiceDefinition definition) throws IOException {
+  public static void register(ServiceDefinition definition) throws IOException {
     final String json = ObjectMapperUtils.toJSON(definition);
     doPost(registryURL, json);
   }

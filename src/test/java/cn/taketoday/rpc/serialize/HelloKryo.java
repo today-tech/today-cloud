@@ -18,19 +18,37 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.serialize;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import com.esotericsoftware.kryo.kryo5.Kryo;
+import com.esotericsoftware.kryo.kryo5.io.Input;
+import com.esotericsoftware.kryo.kryo5.io.Output;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/5 22:31
  */
-public interface ServiceRegistry {
+public class HelloKryo {
+  static public void main(String[] args) throws Exception {
+    Kryo kryo = new Kryo();
+    kryo.register(SomeClass.class);
 
-  void register(ServiceDefinition definition);
+    SomeClass object = new SomeClass();
+    object.value = "Hello Kryo!";
 
-  void unregister(ServiceDefinition definition);
+    Output output = new Output(new FileOutputStream("file.bin"));
+    kryo.writeObject(output, object);
+    output.close();
 
-  <T> T lookup(Class<T> serviceInterface);
+    Input input = new Input(new FileInputStream("file.bin"));
+    SomeClass object2 = kryo.readObject(input, SomeClass.class);
+    input.close();
+  }
+
+  static public class SomeClass {
+    String value;
+  }
 
 }

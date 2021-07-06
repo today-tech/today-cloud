@@ -67,6 +67,16 @@ public class HttpServiceRegistry implements ServiceRegistry {
     HttpUtils.doPost(registryURL, json);
   }
 
+  @Override
+  public void unregister(ServiceDefinition definition) {
+//    definition.getName()
+
+
+
+
+
+  }
+
   /**
    * lookup for a target service
    *
@@ -87,7 +97,7 @@ public class HttpServiceRegistry implements ServiceRegistry {
 
     final ServiceDefinition serviceDefinition = fromJSON(json);
     serviceDefinition.setServiceInterface(serviceInterface);
-    final HTTPRpcMethodInvoker methodInvoker = new HTTPRpcMethodInvoker();
+    final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
     return (T) serviceProxy.getProxy(serviceDefinition, methodInvoker);
   }
 

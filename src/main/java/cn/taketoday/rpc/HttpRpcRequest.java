@@ -39,6 +39,14 @@ public class HttpRpcRequest extends RpcRequest {
 
   private String arguments;
 
+  public void setArguments(String arguments) {
+    this.arguments = arguments;
+  }
+
+  public String getArguments() {
+    return arguments;
+  }
+
   public void setArguments(Object[] arguments) {
     try {
       this.arguments = ObjectMapperUtils.toJSON(arguments);

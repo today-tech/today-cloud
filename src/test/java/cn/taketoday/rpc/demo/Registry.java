@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.framework.WebApplication;
 import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.web.annotation.DELETE;
 import cn.taketoday.web.annotation.GET;
 import cn.taketoday.web.annotation.POST;
 import cn.taketoday.web.annotation.RequestBody;
@@ -55,6 +56,11 @@ public class Registry {
 
     @POST
     public void register(@RequestBody ServiceDefinition definition) {
+      map.put(definition.getName(), definition);
+    }
+
+    @DELETE
+    public void unregister(@RequestBody ServiceDefinition definition) {
       map.put(definition.getName(), definition);
     }
 

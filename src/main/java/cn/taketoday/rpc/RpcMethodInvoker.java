@@ -34,13 +34,13 @@ public abstract class RpcMethodInvoker {
     // pre
     preProcess(definition, method, args);
     // process
-    Object ret = doProcess(definition, method, args);
+    Object ret = doInvoke(definition, method, args);
     // post
     postProcess(definition, ret);
     return ret;
   }
 
-  protected abstract <T> Object doProcess(
+  protected abstract <T> Object doInvoke(
           ServiceDefinition definition, Method method, Object[] args) throws IOException;
 
   protected void preProcess(ServiceDefinition definition, Method method, Object[] args) {

@@ -28,6 +28,8 @@ import java.util.Objects;
  * @author TODAY 2021/7/4 01:19
  */
 public class RpcRequest implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   private String method;
   private String serviceName;
   private String[] paramTypes;
@@ -58,8 +60,10 @@ public class RpcRequest implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof RpcRequest)) return false;
+    if (this == o)
+      return true;
+    if (!(o instanceof RpcRequest))
+      return false;
     final RpcRequest that = (RpcRequest) o;
     return Objects.equals(serviceName, that.serviceName)
             && Objects.equals(method, that.method)

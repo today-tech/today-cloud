@@ -26,11 +26,23 @@ import java.io.Serializable;
  * @author TODAY 2021/7/4 00:36
  */
 public class ServiceDefinition implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   private int port;
   private String host;
   private String name; // service name
 
+  private String version;
+
   private transient Class<?> serviceInterface;
+
+  public void setVersion(String version) {
+    this.version = version;
+  }
+
+  public String getVersion() {
+    return version;
+  }
 
   public void setName(String name) {
     this.name = name;

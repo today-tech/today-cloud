@@ -24,6 +24,7 @@ import java.util.Map;
 
 import cn.taketoday.context.reflect.MethodInvoker;
 import cn.taketoday.context.utils.ClassUtils;
+import cn.taketoday.rpc.HttpRpcRequest;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.web.annotation.POST;
@@ -42,7 +43,7 @@ public class ServiceHttpEndpoint {
   }
 
   @POST
-  public RpcResponse provider(@RequestBody RpcRequest request) throws Exception {
+  public RpcResponse provider(@RequestBody HttpRpcRequest request) throws Exception {
     final Object service = local.get(request.getServiceName());
     final String method = request.getMethod();
     final String[] paramTypes = request.getParamTypes();

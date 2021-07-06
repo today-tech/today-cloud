@@ -34,10 +34,10 @@ import cn.taketoday.rpc.utils.ObjectMapperUtils;
 /**
  * @author TODAY 2021/7/4 23:10
  */
-public class HTTPRpcMethodInvoker extends RpcMethodInvoker {
+public class HttpRpcMethodInvoker extends RpcMethodInvoker {
 
   @Override
-  protected <T> Object doProcess(ServiceDefinition definition, Method method, Object[] args) throws IOException {
+  protected <T> Object doInvoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
     final HttpRpcRequest rpcRequest = new HttpRpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(definition.getName());

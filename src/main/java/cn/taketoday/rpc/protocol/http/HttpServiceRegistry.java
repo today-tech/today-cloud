@@ -20,13 +20,12 @@
 
 package cn.taketoday.rpc.protocol.http;
 
-import java.io.IOException;
-
 import cn.taketoday.context.utils.Assert;
 import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.registry.JdkServiceProxy;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceProxy;
+import cn.taketoday.rpc.utils.HttpRuntimeException;
 import cn.taketoday.rpc.utils.HttpUtils;
 import cn.taketoday.rpc.utils.ObjectMapperUtils;
 
@@ -64,13 +63,12 @@ public class HttpServiceRegistry implements ServiceRegistry {
   @Override
   public void register(ServiceDefinition definition) {
     final String json = toJSON(definition);
-    HttpUtils.doPost(registryURL, json);
+    HttpUtils.post(registryURL, json);
   }
 
   @Override
   public void unregister(ServiceDefinition definition) {
-//    definition.getName()
-
+    // TODO
   }
 
   /**
@@ -86,15 +84,16 @@ public class HttpServiceRegistry implements ServiceRegistry {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T lookup(Class<T> serviceInterface) {
-    final String json = HttpUtils.doGet(registryURL + "/" + serviceInterface.getName());
-    if (json == null) {
+    try {
+      final String json = HttpUtils.get(registryURL + "/" + serviceInterface.getName());
+      final ServiceDefinition serviceDefinition = fromJSON(json);
+      serviceDefinition.setServiceInterface(serviceInterface);
+      final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
+      return (T) serviceProxy.getProxy(serviceDefinition, methodInvoker);
+    }
+    catch (HttpRuntimeException e) {
       throw new IllegalStateException("Cannot found a service: " + serviceInterface);
     }
-
-    final ServiceDefinition serviceDefinition = fromJSON(json);
-    serviceDefinition.setServiceInterface(serviceInterface);
-    final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
-    return (T) serviceProxy.getProxy(serviceDefinition, methodInvoker);
   }
 
   private ServiceDefinition fromJSON(String json) {
@@ -102,8 +101,7 @@ public class HttpServiceRegistry implements ServiceRegistry {
   }
 
   private String toJSON(ServiceDefinition definition) {
-      return ObjectMapperUtils.toJSON(definition);
-
+    return ObjectMapperUtils.toJSON(definition);
   }
 
   // static

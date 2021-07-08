@@ -46,7 +46,7 @@ public class HttpRpcMethodInvoker extends RpcMethodInvoker {
     final String host = definition.getHost();
     final int port = definition.getPort();
 
-    final String json = HttpUtils.doPost("http://" + host + ":" + port + "/provider", ObjectMapperUtils.toJSON(rpcRequest));
+    final String json = HttpUtils.post("http://" + host + ":" + port + "/provider", ObjectMapperUtils.toJSON(rpcRequest));
 
     final Class<?> returnType = method.getReturnType();
     if (ClassUtils.isSimpleType(returnType)) {

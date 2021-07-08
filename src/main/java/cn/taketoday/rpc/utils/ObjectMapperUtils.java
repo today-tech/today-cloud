@@ -54,7 +54,7 @@ public class ObjectMapperUtils {
   /**
    * javaBean、列表数组转换为json字符串
    */
-  public static String toJSON(Object obj) throws IOException {
+  public static String toJSON(Object obj) {
     try {
       return objectMapper.writeValueAsString(obj);
     }

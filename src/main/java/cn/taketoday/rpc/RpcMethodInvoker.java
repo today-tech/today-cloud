@@ -30,7 +30,7 @@ import cn.taketoday.rpc.registry.ServiceDefinition;
  */
 public abstract class RpcMethodInvoker {
 
-  public <T> Object invoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
+  public Object invoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
     // pre
     preProcess(definition, method, args);
     // process

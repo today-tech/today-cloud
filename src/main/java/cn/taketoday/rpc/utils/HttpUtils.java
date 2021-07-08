@@ -22,6 +22,7 @@ package cn.taketoday.rpc.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -62,20 +63,11 @@ public abstract class HttpUtils {
    */
   public static HttpURLConnection getConnection(
           String method, String urlStr, String contentType, byte[] body) {
-    HttpURLConnection connection = getConnection(method, urlStr);
-    if (contentType != null) {
-      connection.setRequestProperty(Constant.CONTENT_TYPE, contentType);
-    }
-    if (body != null) {
-      try {
-        OutputStream outputStream = connection.getOutputStream();
+    return getConnection(method, urlStr, contentType, (outputStream) -> {
+      if (body != null) {
         outputStream.write(body);
       }
-      catch (IOException e) {
-        throw new HttpRuntimeException("cannot get output-stream", e);
-      }
-    }
-    return connection;
+    });
   }
 
   /**
@@ -118,6 +110,33 @@ public abstract class HttpUtils {
     }
     catch (IOException e) {
       throw new HttpRuntimeException("cannot open connection", e);
+    }
+  }
+
+  public static HttpURLConnection getConnection(
+          String method, String urlStr, String contentType, OutputStreamCallback callback) {
+    HttpURLConnection connection = getConnection(method, urlStr);
+    if (contentType != null) {
+      connection.setRequestProperty(Constant.CONTENT_TYPE, contentType);
+    }
+    if (callback != null) {
+      try {
+        OutputStream outputStream = connection.getOutputStream();
+        callback.doInOutputStream(outputStream);
+      }
+      catch (IOException e) {
+        throw new HttpRuntimeException("cannot get output-stream", e);
+      }
+    }
+    return connection;
+  }
+
+  public static InputStream getInputStream(HttpURLConnection conn) {
+    try {
+      return conn.getInputStream();
+    }
+    catch (IOException e) {
+      throw new HttpRuntimeException("cannot read response", e);
     }
   }
 
@@ -181,8 +200,16 @@ public abstract class HttpUtils {
   // POST
   // ---------------------------------
 
+  public static InputStream postInputStream(String urlStr, OutputStreamCallback callback) {
+    return getInputStream(getConnection("POST", urlStr, null, callback));
+  }
+
   public static String post(String urlStr) {
-    return getResponse(getConnection("POST", urlStr, null, null));
+    return getResponse(getConnection("POST", urlStr, null, (byte[]) null));
+  }
+
+  public static String post(String urlStr, OutputStreamCallback callback) {
+    return getResponse(getConnection("POST", urlStr, null, callback));
   }
 
   public static String post(String urlStr, String params) {

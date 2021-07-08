@@ -1,6 +1,6 @@
 /*
  * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
+ * Copyright © TODAY & 2017 - 2021 All Rights Reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
  *
@@ -18,26 +18,22 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc.demo;
+package cn.taketoday.rpc.serialize;
 
-import cn.taketoday.rpc.demo.model.User;
-import cn.taketoday.rpc.demo.service.UserService;
-import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 
 /**
- * @author TODAY 2021/7/3 22:47
+ * @author TODAY 2021/7/8 22:52
  */
-public class RpcClient {
+public class JdkSerializer implements Serializer {
 
-  public static void main(String[] args) {
-    final HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
-    UserService userService = serviceRegistry.lookup(UserService.class);
-
-    final String ret = userService.hello("today rpc");
-    System.out.println(ret);
-
-    final User byId = userService.getById(1);
-    System.out.println(byId);
+  @Override
+  public void serialize(final Object object, final OutputStream output) throws IOException {
+    try (ObjectOutputStream oos = new ObjectOutputStream(output)) {
+      oos.writeObject(object);
+    }
   }
 
 }

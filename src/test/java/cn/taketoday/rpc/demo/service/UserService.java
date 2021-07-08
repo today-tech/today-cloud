@@ -20,11 +20,15 @@
 
 package cn.taketoday.rpc.demo.service;
 
+import cn.taketoday.rpc.demo.model.User;
+
 /**
  * @author TODAY 2021/7/3 22:45
  */
 public interface UserService {
 
   String hello(String text);
+
+  User getById(Integer id);
 
 }

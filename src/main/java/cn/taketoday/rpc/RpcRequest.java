@@ -32,7 +32,16 @@ public class RpcRequest implements Serializable {
 
   private String method;
   private String serviceName;
+  private Object[] arguments;
   private String[] paramTypes;
+
+  public void setArguments(Object[] arguments) {
+    this.arguments = arguments;
+  }
+
+  public Object[] getArguments() {
+    return arguments;
+  }
 
   public void setParamTypes(String[] paramTypes) {
     this.paramTypes = paramTypes;
@@ -64,47 +73,38 @@ public class RpcRequest implements Serializable {
       return true;
     if (!(o instanceof RpcRequest))
       return false;
-    final RpcRequest that = (RpcRequest) o;
-    return Objects.equals(serviceName, that.serviceName)
-            && Objects.equals(method, that.method)
-            && Arrays.equals(paramTypes, that.paramTypes);
+    final RpcRequest request = (RpcRequest) o;
+    return Objects.equals(method, request.method) && Objects.equals(serviceName, request.serviceName) && Arrays
+            .equals(paramTypes, request.paramTypes) && Arrays.equals(arguments, request.arguments);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(serviceName, method);
+    int result = Objects.hash(method, serviceName);
     result = 31 * result + Arrays.hashCode(paramTypes);
+    result = 31 * result + Arrays.hashCode(arguments);
     return result;
   }
 
   @Override
   public String toString() {
     return "RpcRequest{" +
-            "serviceName='" + serviceName + '\'' +
-            ", method='" + method + '\'' +
+            "method='" + method + '\'' +
+            ", serviceName='" + serviceName + '\'' +
             ", paramTypes=" + Arrays.toString(paramTypes) +
+            ", arguments=" + Arrays.toString(arguments) +
             '}';
   }
 
   //
 
-  public void setParamTypes(Class<?>[] parameterTypes) {
+  public void setParameterTypes(Class<?>[] parameterTypes) {
     String[] paramTypes = new String[parameterTypes.length];
     int i = 0;
     for (final Class<?> parameterType : parameterTypes) {
       paramTypes[i++] = parameterType.getName();
     }
     this.paramTypes = paramTypes;
-  }
-
-  public Object[] resolveArguments(Class<?>[] parameterTypes) {
-    Object[] args = new Object[parameterTypes.length];
-    resolveArgumentsInternal(args, parameterTypes);
-    return args;
-  }
-
-  protected void resolveArgumentsInternal(Object[] args, Class<?>[] parameterTypes) {
-
   }
 
 }

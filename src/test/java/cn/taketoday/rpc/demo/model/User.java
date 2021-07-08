@@ -20,15 +20,18 @@
 
 package cn.taketoday.rpc.demo.model;
 
+import java.io.Serializable;
+
 import lombok.Data;
 
 /**
  * @author TODAY 2021/7/3 22:51
  */
 @Data
-public class User {
+public class User implements Serializable {
 
-  private int age;
+  private Integer id;
+  private Integer age;
   private String name;
 
 }

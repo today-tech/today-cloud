@@ -20,6 +20,7 @@
 
 package cn.taketoday.rpc.demo.service.impl;
 
+import cn.taketoday.rpc.demo.model.User;
 import cn.taketoday.rpc.demo.service.UserService;
 
 /**
@@ -30,6 +31,15 @@ public class DefaultUserService implements UserService {
   @Override
   public String hello(String text) {
     return "Hello " + text;
+  }
+
+  @Override
+  public User getById(Integer id) {
+    final User user = new User();
+    user.setAge(23);
+    user.setId(id);
+    user.setName("TODAY");
+    return user;
   }
 
 }

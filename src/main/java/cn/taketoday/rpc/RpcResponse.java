@@ -26,8 +26,11 @@ import java.io.Serializable;
  * @author TODAY 2021/7/4 22:31
  */
 public class RpcResponse implements Serializable {
+  private static final long serialVersionUID = 1L;
   /** service result */
   private Object result;
+
+  private Throwable exception;
 
   public RpcResponse() { }
 
@@ -42,6 +45,16 @@ public class RpcResponse implements Serializable {
   public Object getResult() {
     return result;
   }
+
+  public Throwable getException() {
+    return exception;
+  }
+
+  public void setException(Throwable exception) {
+    this.exception = exception;
+  }
+
+  // static
 
   public static RpcResponse of(Object result) {
     return new RpcResponse(result);

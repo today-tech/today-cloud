@@ -20,15 +20,20 @@
 
 package cn.taketoday.rpc.server;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 
 import cn.taketoday.context.reflect.MethodInvoker;
 import cn.taketoday.context.utils.ClassUtils;
-import cn.taketoday.rpc.HttpRpcRequest;
+import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
+import cn.taketoday.rpc.serialize.Deserializer;
+import cn.taketoday.rpc.serialize.JdkDeserializer;
+import cn.taketoday.rpc.serialize.JdkSerializer;
+import cn.taketoday.rpc.serialize.Serializer;
 import cn.taketoday.web.annotation.ExceptionHandler;
 import cn.taketoday.web.annotation.POST;
-import cn.taketoday.web.annotation.RequestBody;
 import cn.taketoday.web.annotation.RequestMapping;
 
 /**
@@ -42,8 +47,14 @@ public class ServiceHttpEndpoint {
     this.local = local;
   }
 
+  Deserializer deserializer = new JdkDeserializer();
+  Serializer serializer = new JdkSerializer();
+
   @POST
-  public RpcResponse provider(@RequestBody HttpRpcRequest request) throws Exception {
+  public void provider(InputStream inputStream, OutputStream outputStream) throws Exception {
+    final Object deserialize = deserializer.deserialize(inputStream);
+    RpcRequest request = (RpcRequest) deserialize;
+
     final Object service = local.get(request.getServiceName());
     final String method = request.getMethod();
     final String[] paramTypes = request.getParamTypes();
@@ -54,9 +65,9 @@ public class ServiceHttpEndpoint {
       parameterTypes[i++] = Class.forName(paramType);
     }
 
-    final Object[] args = request.resolveArguments(parameterTypes);
+    final Object[] args = request.getArguments();
     final MethodInvoker invoker = getMethod(service, method, parameterTypes);
-    return RpcResponse.of(invoker.invoke(service, args));
+    serializer.serialize(RpcResponse.of(invoker.invoke(service, args)), outputStream);
   }
 
   private MethodInvoker getMethod(Object service, String method, Class<?>[] parameterTypes) throws NoSuchMethodException {

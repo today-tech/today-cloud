@@ -33,6 +33,7 @@ import cn.taketoday.rpc.demo.service.impl.DefaultUserService;
 import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.server.ServiceHttpEndpoint;
+import cn.taketoday.web.annotation.ControllerAdvice;
 import cn.taketoday.web.annotation.RestController;
 
 /**
@@ -57,6 +58,7 @@ public class RpcServer {
       return tomcatServer;
     }
 
+    @ControllerAdvice
     @RestController
     ServiceHttpEndpoint endpoint() throws IOException {
       final ServiceDefinition definition = new ServiceDefinition();

@@ -25,8 +25,8 @@ import java.util.Map;
 import cn.taketoday.context.reflect.MethodInvoker;
 import cn.taketoday.context.utils.ClassUtils;
 import cn.taketoday.rpc.HttpRpcRequest;
-import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
+import cn.taketoday.web.annotation.ExceptionHandler;
 import cn.taketoday.web.annotation.POST;
 import cn.taketoday.web.annotation.RequestBody;
 import cn.taketoday.web.annotation.RequestMapping;
@@ -62,6 +62,11 @@ public class ServiceHttpEndpoint {
   private MethodInvoker getMethod(Object service, String method, Class<?>[] parameterTypes) throws NoSuchMethodException {
     final Class<Object> serviceImpl = ClassUtils.getUserClass(service);
     return MethodInvoker.create(serviceImpl, method, parameterTypes);
+  }
+
+  @ExceptionHandler
+  public void ex(Throwable throwable) {
+    throwable.printStackTrace();
   }
 
 }

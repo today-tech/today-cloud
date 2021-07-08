@@ -71,10 +71,6 @@ public class HttpServiceRegistry implements ServiceRegistry {
   public void unregister(ServiceDefinition definition) {
 //    definition.getName()
 
-
-
-
-
   }
 
   /**
@@ -102,21 +98,12 @@ public class HttpServiceRegistry implements ServiceRegistry {
   }
 
   private ServiceDefinition fromJSON(String json) {
-    try {
-      return ObjectMapperUtils.fromJSON(json, ServiceDefinition.class);
-    }
-    catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
+    return ObjectMapperUtils.fromJSON(json, ServiceDefinition.class);
   }
 
   private String toJSON(ServiceDefinition definition) {
-    try {
       return ObjectMapperUtils.toJSON(definition);
-    }
-    catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
+
   }
 
   // static

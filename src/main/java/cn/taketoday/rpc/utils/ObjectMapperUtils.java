@@ -55,14 +55,24 @@ public class ObjectMapperUtils {
    * javaBean、列表数组转换为json字符串
    */
   public static String toJSON(Object obj) throws IOException {
-    return objectMapper.writeValueAsString(obj);
+    try {
+      return objectMapper.writeValueAsString(obj);
+    }
+    catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /**
    * json 转JavaBean
    */
-  public static <T> T fromJSON(String jsonString, Class<T> clazz) throws IOException {
-    return objectMapper.readValue(jsonString, clazz);
+  public static <T> T fromJSON(String jsonString, Class<T> clazz) {
+    try {
+      return objectMapper.readValue(jsonString, clazz);
+    }
+    catch (IOException io) {
+      throw new IllegalStateException(io);
+    }
   }
 
   /**

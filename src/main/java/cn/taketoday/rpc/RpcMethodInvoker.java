@@ -23,6 +23,7 @@ package cn.taketoday.rpc;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import cn.taketoday.context.utils.Assert;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
@@ -33,29 +34,44 @@ import cn.taketoday.rpc.serialize.Serialization;
 public abstract class RpcMethodInvoker {
 
   private Serialization<RpcResponse> serialization = new JdkSerialization<>();
+  private RpcExceptionHandler exceptionHandler = new SimpleRpcExceptionHandler();
 
-  public Object invoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
+  public Object invoke(ServiceDefinition definition, Method method, Object[] args) throws Throwable {
     // pre
     preProcess(definition, method, args);
     // process
-    Object ret = doInvoke(definition, method, args);
+    RpcResponse ret = doInvoke(definition, method, args);
     // post
-    postProcess(definition, ret);
-    return ret;
+    return postProcess(definition, ret)
+            .getResult();
   }
 
-  protected abstract <T> Object doInvoke(
+  protected abstract RpcResponse doInvoke(
           ServiceDefinition definition, Method method, Object[] args) throws IOException;
 
   protected void preProcess(ServiceDefinition definition, Method method, Object[] args) {
     // no-op
   }
 
-  protected void postProcess(ServiceDefinition definition, Object ret) {
-    // no-op
+  protected RpcResponse postProcess(ServiceDefinition definition, RpcResponse response) throws Throwable {
+    final Throwable exception = response.getException();
+    if (exception != null) {
+      return exceptionHandler.handle(definition, response);
+    }
+    return response;
+  }
+
+  public void setExceptionHandler(RpcExceptionHandler exceptionHandler) {
+    Assert.notNull(exceptionHandler, "exceptionHandler most not be null");
+    this.exceptionHandler = exceptionHandler;
+  }
+
+  public RpcExceptionHandler getExceptionHandler() {
+    return exceptionHandler;
   }
 
   public void setSerialization(Serialization<RpcResponse> serialization) {
+    Assert.notNull(exceptionHandler, "serialization most not be null");
     this.serialization = serialization;
   }
 

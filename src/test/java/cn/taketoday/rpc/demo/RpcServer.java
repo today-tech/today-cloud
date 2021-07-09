@@ -24,16 +24,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.taketoday.context.annotation.Singleton;
 import cn.taketoday.framework.ServletWebServerApplicationContext;
 import cn.taketoday.framework.WebApplication;
-import cn.taketoday.framework.server.TomcatServer;
+import cn.taketoday.framework.server.AbstractServletWebServer;
 import cn.taketoday.rpc.demo.service.UserService;
 import cn.taketoday.rpc.demo.service.impl.DefaultUserService;
 import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
 import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.server.ServiceHttpEndpoint;
-import cn.taketoday.web.annotation.ControllerAdvice;
+import cn.taketoday.rpc.server.HttpServiceEndpoint;
 import cn.taketoday.web.annotation.RestController;
 
 /**
@@ -51,20 +49,19 @@ public class RpcServer {
 
   static class RpcServerConfig {
 
-    @Singleton
-    TomcatServer tomcatServer() {
-      final TomcatServer tomcatServer = new TomcatServer();
-      tomcatServer.setPort(9000);
-      return tomcatServer;
-    }
+//    @Singleton
+//    TomcatServer tomcatServer() {
+//      final TomcatServer tomcatServer = new TomcatServer();
+//      tomcatServer.setPort(9000);
+//      return tomcatServer;
+//    }
 
-    @ControllerAdvice
     @RestController
-    ServiceHttpEndpoint endpoint() throws IOException {
+    HttpServiceEndpoint endpoint(/*Environment environment,*/ AbstractServletWebServer server) {
       final ServiceDefinition definition = new ServiceDefinition();
 
       definition.setHost("localhost");
-      definition.setPort(9000);
+      definition.setPort(server.getPort());
       definition.setName(UserService.class.getName());
       final HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
 
@@ -72,7 +69,7 @@ public class RpcServer {
       Map<String, Object> local = new HashMap<>();
 
       local.put(UserService.class.getName(), new DefaultUserService());
-      return new ServiceHttpEndpoint(local);
+      return new HttpServiceEndpoint(local);
     }
 
   }

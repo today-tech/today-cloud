@@ -23,8 +23,12 @@ package cn.taketoday.rpc.registry;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
-import cn.taketoday.rpc.RpcMethodInvoker;
+import cn.taketoday.rpc.protocol.http.HttpRpcMethodInvoker;
+import cn.taketoday.rpc.server.ServiceNotFoundException;
 
 /**
  * @author TODAY 2021/7/4 22:58
@@ -32,15 +36,24 @@ import cn.taketoday.rpc.RpcMethodInvoker;
 public class JdkServiceProxy implements ServiceProxy {
 
   @Override
-  public Object getProxy(ServiceDefinition definition, RpcMethodInvoker rpcInvoker) {
+  public <T> Object getProxy(
+          Class<T> serviceInterface, Supplier<List<ServiceDefinition>> serviceSupplier, HttpRpcMethodInvoker rpcInvoker) {
     final class ServiceInvocationHandler implements InvocationHandler {
+      final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>(serviceSupplier.get());
+
       @Override
       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return rpcInvoker.invoke(definition, method, args);
+        final CopyOnWriteArrayList<ServiceDefinition> definitions = this.definitions;
+        if (definitions.isEmpty()) {
+          definitions.addAll(serviceSupplier.get());
+          if (definitions.isEmpty()) {
+            throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
+          }
+        }
+        return rpcInvoker.invoke(definitions, method, args);
       }
     }
 
-    final Class<?> serviceInterface = definition.getServiceInterface();
     return Proxy.newProxyInstance(
             serviceInterface.getClassLoader(), new Class[] { serviceInterface }, new ServiceInvocationHandler());
   }

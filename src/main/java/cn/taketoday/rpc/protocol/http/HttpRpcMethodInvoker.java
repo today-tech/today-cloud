@@ -37,16 +37,16 @@ import cn.taketoday.rpc.utils.HttpUtils;
 public class HttpRpcMethodInvoker extends RpcMethodInvoker {
 
   @Override
-  protected RpcResponse doInvoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
+  protected RpcResponse doInvoke(ServiceDefinition selected, Method method, Object[] args) throws IOException {
     final RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
-    rpcRequest.setServiceName(definition.getName());
+    rpcRequest.setServiceName(selected.getName());
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);
 
     final Serialization<RpcResponse> serialization = getSerialization();
     final InputStream inputStream = HttpUtils.postInputStream(
-            buildServiceProviderURL(definition),
+            buildServiceProviderURL(selected),
             output -> serialization.serialize(rpcRequest, output)
     );
     return serialization.deserialize(inputStream);

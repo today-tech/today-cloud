@@ -18,20 +18,33 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
 import java.util.List;
+import java.util.Random;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.context.utils.Assert;
 
 /**
- * @author TODAY 2021/7/9 21:55
+ * @author TODAY 2021/7/9 23:20
  */
-public class SimpleRemoteExceptionHandler implements RemoteExceptionHandler {
+public class RandomServiceSelector implements ServiceSelector {
+  private final Random random;
+
+  public RandomServiceSelector() {
+    this(new Random());
+  }
+
+  public RandomServiceSelector(Random random) {
+    Assert.notNull(random, "Random must not be null");
+    this.random = random;
+  }
 
   @Override
-  public RpcResponse handle(List<ServiceDefinition> definition, RpcResponse response) throws Throwable {
-    throw response.getException();
+  public ServiceDefinition select(List<ServiceDefinition> definitions) {
+    final int size = definitions.size();
+    final int idx = random.nextInt(size);
+    return definitions.get(idx);
   }
 
 }

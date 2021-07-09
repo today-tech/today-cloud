@@ -22,9 +22,12 @@ package cn.taketoday.rpc;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import cn.taketoday.context.utils.Assert;
+import cn.taketoday.rpc.registry.RandomServiceSelector;
 import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.rpc.registry.ServiceSelector;
 import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
 
@@ -33,30 +36,33 @@ import cn.taketoday.rpc.serialize.Serialization;
  */
 public abstract class RpcMethodInvoker {
 
+  private ServiceSelector serviceSelector = new RandomServiceSelector();
   private Serialization<RpcResponse> serialization = new JdkSerialization<>();
   private RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
 
-  public Object invoke(ServiceDefinition definition, Method method, Object[] args) throws Throwable {
+  public Object invoke(List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
     // pre
-    preProcess(definition, method, args);
+    preProcess(definitions, method, args);
     // process
-    RpcResponse ret = doInvoke(definition, method, args);
+    final ServiceSelector serviceSelector = getServiceSelector();
+    final ServiceDefinition selected = serviceSelector.select(definitions);
+    RpcResponse ret = doInvoke(selected, method, args);
     // post
-    return postProcess(definition, ret)
+    return postProcess(definitions, ret)
             .getResult();
   }
 
   protected abstract RpcResponse doInvoke(
-          ServiceDefinition definition, Method method, Object[] args) throws IOException;
+          ServiceDefinition selected, Method method, Object[] args) throws IOException;
 
-  protected void preProcess(ServiceDefinition definition, Method method, Object[] args) {
+  protected void preProcess(List<ServiceDefinition> definitions, Method method, Object[] args) {
     // no-op
   }
 
-  protected RpcResponse postProcess(ServiceDefinition definition, RpcResponse response) throws Throwable {
+  protected RpcResponse postProcess(List<ServiceDefinition> definitions, RpcResponse response) throws Throwable {
     final Throwable exception = response.getException();
     if (exception != null) {
-      return exceptionHandler.handle(definition, response);
+      return exceptionHandler.handle(definitions, response);
     }
     return response;
   }
@@ -77,5 +83,14 @@ public abstract class RpcMethodInvoker {
 
   public Serialization<RpcResponse> getSerialization() {
     return serialization;
+  }
+
+  public void setServiceSelector(ServiceSelector serviceSelector) {
+    Assert.notNull(serviceSelector, "serviceSelector most not be null");
+    this.serviceSelector = serviceSelector;
+  }
+
+  public ServiceSelector getServiceSelector() {
+    return serviceSelector;
   }
 }

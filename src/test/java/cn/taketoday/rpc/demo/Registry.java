@@ -20,16 +20,11 @@
 
 package cn.taketoday.rpc.demo;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.framework.WebApplication;
-import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.web.annotation.DELETE;
-import cn.taketoday.web.annotation.GET;
-import cn.taketoday.web.annotation.POST;
-import cn.taketoday.web.annotation.RequestBody;
+import cn.taketoday.rpc.server.HttpServiceRegistryEndpoint;
 import cn.taketoday.web.annotation.RequestMapping;
+import cn.taketoday.web.annotation.RestController;
 
 /**
  * @author TODAY 2021/7/3 23:22
@@ -41,27 +36,12 @@ public class Registry {
   }
 
   @Configuration
-  @RequestMapping("/services")
   static class AppConfig {
-    final ConcurrentHashMap<String, ServiceDefinition> map = new ConcurrentHashMap<>();
 
-    @GET("/{name}")
-    public ServiceDefinition lookup(String name) {
-      final ServiceDefinition def = map.get(name);
-      if (def == null) {
-        throw new IllegalStateException("cannot found a service: " + name);
-      }
-      return def;
-    }
-
-    @POST
-    public void register(@RequestBody ServiceDefinition definition) {
-      map.put(definition.getName(), definition);
-    }
-
-    @DELETE
-    public void unregister(@RequestBody ServiceDefinition definition) {
-      map.put(definition.getName(), definition);
+    @RestController
+    @RequestMapping("/services")
+    public HttpServiceRegistryEndpoint serviceRegistryEndpoint() {
+      return new HttpServiceRegistryEndpoint();
     }
 
   }

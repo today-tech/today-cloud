@@ -20,6 +20,7 @@
 
 package cn.taketoday.rpc.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -69,6 +70,15 @@ public class ObjectMapperUtils {
   public static <T> T fromJSON(String jsonString, Class<T> clazz) {
     try {
       return objectMapper.readValue(jsonString, clazz);
+    }
+    catch (IOException io) {
+      throw new IllegalStateException(io);
+    }
+  }
+
+  public static <T> T fromJSON(String jsonString, TypeReference<T> reference) {
+    try {
+      return objectMapper.readValue(jsonString, reference);
     }
     catch (IOException io) {
       throw new IllegalStateException(io);

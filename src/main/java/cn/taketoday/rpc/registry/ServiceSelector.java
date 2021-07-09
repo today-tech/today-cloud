@@ -18,20 +18,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
 import java.util.List;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
-
 /**
- * @author TODAY 2021/7/9 21:55
+ * @author TODAY 2021/7/9 23:18
  */
-public class SimpleRemoteExceptionHandler implements RemoteExceptionHandler {
-
-  @Override
-  public RpcResponse handle(List<ServiceDefinition> definition, RpcResponse response) throws Throwable {
-    throw response.getException();
-  }
-
+public interface ServiceSelector {
+  
+  ServiceDefinition select(List<ServiceDefinition> definitions);
 }

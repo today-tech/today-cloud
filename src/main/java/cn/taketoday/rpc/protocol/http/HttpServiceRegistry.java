@@ -20,10 +20,16 @@
 
 package cn.taketoday.rpc.protocol.http;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import java.util.List;
+import java.util.function.Supplier;
+
 import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.registry.JdkServiceProxy;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceProxy;
+import cn.taketoday.rpc.server.ServiceNotFoundException;
 import cn.taketoday.rpc.utils.HttpRuntimeException;
 import cn.taketoday.rpc.utils.HttpUtils;
 import cn.taketoday.rpc.utils.ObjectMapperUtils;
@@ -32,6 +38,9 @@ import cn.taketoday.rpc.utils.ObjectMapperUtils;
  * @author TODAY 2021/7/3 23:48
  */
 public class HttpServiceRegistry implements ServiceRegistry {
+
+  private static final TypeReference<List<ServiceDefinition>>
+          reference = new TypeReference<List<ServiceDefinition>>() { };
 
   private String registryURL;
   private ServiceProxy serviceProxy;
@@ -90,14 +99,19 @@ public class HttpServiceRegistry implements ServiceRegistry {
   @SuppressWarnings("unchecked")
   public <T> T lookup(Class<T> serviceInterface) {
     try {
-      final String json = HttpUtils.get(buildGetServiceDefinitionURL(serviceInterface));
-      final ServiceDefinition serviceDefinition = fromJSON(json);
-      serviceDefinition.setServiceInterface(serviceInterface);
+      final Supplier<List<ServiceDefinition>> serviceSupplier = new Supplier<List<ServiceDefinition>>() {
+        @Override
+        public List<ServiceDefinition> get() {
+          final String json = HttpUtils.get(buildGetServiceDefinitionURL(serviceInterface));
+          return fromJSON(json);
+        }
+      };
+
       final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
-      return (T) getServiceProxy().getProxy(serviceDefinition, methodInvoker);
+      return (T) getServiceProxy().getProxy(serviceInterface, serviceSupplier, methodInvoker);
     }
     catch (HttpRuntimeException e) {
-      throw new IllegalStateException("Cannot found a service: " + serviceInterface);
+      throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
     }
   }
 
@@ -105,8 +119,8 @@ public class HttpServiceRegistry implements ServiceRegistry {
     return registryURL + '/' + serviceInterface.getName();
   }
 
-  private ServiceDefinition fromJSON(String json) {
-    return ObjectMapperUtils.fromJSON(json, ServiceDefinition.class);
+  private List<ServiceDefinition> fromJSON(String json) {
+    return ObjectMapperUtils.fromJSON(json, reference);
   }
 
   private String toJSON(ServiceDefinition definition) {

@@ -20,12 +20,16 @@
 
 package cn.taketoday.rpc.registry;
 
-import cn.taketoday.rpc.RpcMethodInvoker;
+import java.util.List;
+import java.util.function.Supplier;
+
+import cn.taketoday.rpc.protocol.http.HttpRpcMethodInvoker;
 
 /**
  * @author TODAY 2021/7/4 22:58
  */
 public interface ServiceProxy {
 
-  Object getProxy(ServiceDefinition serviceDefinition, RpcMethodInvoker rpcInvoker);
+  <T> Object getProxy(Class<T> serviceInterface,
+                      Supplier<List<ServiceDefinition>> serviceSupplier, HttpRpcMethodInvoker methodInvoker);
 }

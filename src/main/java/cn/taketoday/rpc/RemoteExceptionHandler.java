@@ -20,6 +20,8 @@
 
 package cn.taketoday.rpc;
 
+import java.util.List;
+
 import cn.taketoday.rpc.registry.ServiceDefinition;
 
 /**
@@ -27,5 +29,5 @@ import cn.taketoday.rpc.registry.ServiceDefinition;
  */
 public interface RemoteExceptionHandler {
 
-  RpcResponse handle(ServiceDefinition definition, RpcResponse throwable) throws Throwable;
+  RpcResponse handle(List<ServiceDefinition> definition, RpcResponse throwable) throws Throwable;
 }

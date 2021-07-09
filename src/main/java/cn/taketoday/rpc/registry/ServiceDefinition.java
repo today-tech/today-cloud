@@ -21,6 +21,7 @@
 package cn.taketoday.rpc.registry;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author TODAY 2021/7/4 00:36
@@ -74,5 +75,24 @@ public class ServiceDefinition implements Serializable {
 
   public void setServiceInterface(Class<?> serviceInterface) {
     this.serviceInterface = serviceInterface;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (!(o instanceof ServiceDefinition))
+      return false;
+    final ServiceDefinition that = (ServiceDefinition) o;
+    return port == that.port
+            && Objects.equals(host, that.host)
+            && Objects.equals(name, that.name)
+            && Objects.equals(version, that.version)
+            && Objects.equals(serviceInterface, that.serviceInterface);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(port, host, name, version, serviceInterface);
   }
 }

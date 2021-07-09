@@ -42,7 +42,7 @@ import cn.taketoday.web.annotation.RequestMapping;
  * @author TODAY 2021/7/4 01:14
  */
 @RequestMapping("/provider")
-public class ServiceHttpEndpoint {
+public class HttpServiceEndpoint {
 
   /** service mapping */
   private final Map<String, Object> serviceMapping;
@@ -51,11 +51,11 @@ public class ServiceHttpEndpoint {
   /** fast method mapping cache */
   private final MethodMappings methodMappings = new MethodMappings();
 
-  public ServiceHttpEndpoint(Map<String, Object> local) {
+  public HttpServiceEndpoint(Map<String, Object> local) {
     this(local, new JdkSerialization<>());
   }
 
-  public ServiceHttpEndpoint(Map<String, Object> serviceMapping, Serialization<RpcRequest> serialization) {
+  public HttpServiceEndpoint(Map<String, Object> serviceMapping, Serialization<RpcRequest> serialization) {
     this.serialization = serialization;
     this.serviceMapping = serviceMapping;
   }

@@ -46,4 +46,9 @@ public class DefaultUserService implements UserService {
   public void throwEx() {
     throw new RuntimeException("throwEx");
   }
+
+  @Override
+  public void notFound() {
+
+  }
 }

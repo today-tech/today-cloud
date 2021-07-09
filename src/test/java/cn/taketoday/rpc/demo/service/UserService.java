@@ -33,4 +33,6 @@ public interface UserService {
 
   void throwEx();
 
+  void notFound();
+
 }

@@ -73,7 +73,7 @@ public class ServiceHttpEndpoint {
 
     final MethodInvoker invoker = methodMappings.get(new MethodCacheKey(method, paramTypes), service);
     final Object[] args = request.getArguments();
-    final RpcResponse response = getResponse(service, args, invoker);
+    final RpcResponse response = createResponse(service, args, invoker);
     serialization.serialize(response, outputStream);
   }
 
@@ -102,7 +102,7 @@ public class ServiceHttpEndpoint {
     }
   }
 
-  private RpcResponse getResponse(Object service, Object[] args, MethodInvoker invoker) {
+  private RpcResponse createResponse(Object service, Object[] args, MethodInvoker invoker) {
     if (invoker == null) {
       return RpcResponse.ofThrowable(new ServiceNotFoundException());
     }

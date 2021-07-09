@@ -39,7 +39,14 @@ public class RpcClient {
     final User byId = userService.getById(1);
     System.out.println(byId);
 
-    userService.throwEx();
+    try {
+      userService.throwEx();
+    }
+    catch (Throwable e) {
+      e.printStackTrace();
+    }
+
+    userService.notFound();
   }
 
 }

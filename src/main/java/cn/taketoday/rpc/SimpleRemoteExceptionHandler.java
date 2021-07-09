@@ -31,4 +31,5 @@ public class SimpleRemoteExceptionHandler implements RemoteExceptionHandler {
   public RpcResponse handle(ServiceDefinition definition, RpcResponse response) throws Throwable {
     throw response.getException();
   }
+
 }

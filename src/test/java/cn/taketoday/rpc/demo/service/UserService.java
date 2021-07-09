@@ -31,4 +31,6 @@ public interface UserService {
 
   User getById(Integer id);
 
+  void throwEx();
+
 }

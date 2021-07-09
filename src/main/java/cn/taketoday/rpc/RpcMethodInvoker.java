@@ -34,7 +34,7 @@ import cn.taketoday.rpc.serialize.Serialization;
 public abstract class RpcMethodInvoker {
 
   private Serialization<RpcResponse> serialization = new JdkSerialization<>();
-  private RpcExceptionHandler exceptionHandler = new SimpleRpcExceptionHandler();
+  private RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
 
   public Object invoke(ServiceDefinition definition, Method method, Object[] args) throws Throwable {
     // pre
@@ -61,12 +61,12 @@ public abstract class RpcMethodInvoker {
     return response;
   }
 
-  public void setExceptionHandler(RpcExceptionHandler exceptionHandler) {
+  public void setExceptionHandler(RemoteExceptionHandler exceptionHandler) {
     Assert.notNull(exceptionHandler, "exceptionHandler most not be null");
     this.exceptionHandler = exceptionHandler;
   }
 
-  public RpcExceptionHandler getExceptionHandler() {
+  public RemoteExceptionHandler getExceptionHandler() {
     return exceptionHandler;
   }
 

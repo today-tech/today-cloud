@@ -23,12 +23,9 @@ package cn.taketoday.rpc;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 
 /**
- * @author TODAY 2021/7/9 21:55
+ * @author TODAY 2021/7/9 21:54
  */
-public class SimpleRpcExceptionHandler implements RpcExceptionHandler {
+public interface RemoteExceptionHandler {
 
-  @Override
-  public RpcResponse handle(ServiceDefinition definition, RpcResponse response) throws Throwable {
-    throw response.getException();
-  }
+  RpcResponse handle(ServiceDefinition definition, RpcResponse throwable) throws Throwable;
 }

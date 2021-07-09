@@ -74,8 +74,10 @@ public class RpcRequest implements Serializable {
     if (!(o instanceof RpcRequest))
       return false;
     final RpcRequest request = (RpcRequest) o;
-    return Objects.equals(method, request.method) && Objects.equals(serviceName, request.serviceName) && Arrays
-            .equals(paramTypes, request.paramTypes) && Arrays.equals(arguments, request.arguments);
+    return Objects.equals(method, request.method)
+            && Objects.equals(serviceName, request.serviceName)
+            && Arrays.equals(paramTypes, request.paramTypes)
+            && Arrays.equals(arguments, request.arguments);
   }
 
   @Override

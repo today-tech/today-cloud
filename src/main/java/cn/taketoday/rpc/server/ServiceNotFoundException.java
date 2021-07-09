@@ -1,6 +1,6 @@
 /*
  * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
+ * Copyright © TODAY & 2017 - 2021 All Rights Reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
  *
@@ -18,48 +18,30 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.server;
 
-import java.io.Serializable;
+import cn.taketoday.rpc.RpcNestedRuntimeException;
 
 /**
- * @author TODAY 2021/7/4 22:31
+ * @author TODAY 2021/7/9 22:40
  */
-public class RpcResponse implements Serializable {
+public class ServiceNotFoundException extends RpcNestedRuntimeException {
   private static final long serialVersionUID = 1L;
-  /** service result */
-  private Object result;
 
-  private Throwable exception;
-
-  public RpcResponse() { }
-
-  public RpcResponse(Object result) {
-    this.result = result;
+  public ServiceNotFoundException() {
+    super();
   }
 
-  public void setResult(Object result) {
-    this.result = result;
+  public ServiceNotFoundException(String message) {
+    super(message);
   }
 
-  public Object getResult() {
-    return result;
+  public ServiceNotFoundException(Throwable cause) {
+    super(cause);
   }
 
-  public Throwable getException() {
-    return exception;
-  }
-
-  public void setException(Throwable exception) {
-    this.exception = exception;
-  }
-
-  // static
-
-  public static RpcResponse ofThrowable(Throwable throwable) {
-    final RpcResponse rpcResponse = new RpcResponse();
-    rpcResponse.setException(throwable);
-    return rpcResponse;
+  public ServiceNotFoundException(String message, Throwable cause) {
+    super(message, cause);
   }
 
 }

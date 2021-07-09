@@ -25,14 +25,12 @@ import java.io.OutputStream;
 import java.util.Map;
 
 import cn.taketoday.context.reflect.MethodInvoker;
+import cn.taketoday.context.utils.Assert;
 import cn.taketoday.context.utils.ClassUtils;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
-import cn.taketoday.rpc.serialize.Deserializer;
-import cn.taketoday.rpc.serialize.JdkDeserializer;
-import cn.taketoday.rpc.serialize.JdkSerializer;
-import cn.taketoday.rpc.serialize.Serializer;
-import cn.taketoday.web.annotation.ExceptionHandler;
+import cn.taketoday.rpc.serialize.JdkSerialization;
+import cn.taketoday.rpc.serialize.Serialization;
 import cn.taketoday.web.annotation.POST;
 import cn.taketoday.web.annotation.RequestMapping;
 
@@ -41,19 +39,28 @@ import cn.taketoday.web.annotation.RequestMapping;
  */
 @RequestMapping("/provider")
 public class ServiceHttpEndpoint {
-  final Map<String, Object> local;
+
+  /** for serialize and deserialize */
+  private Serialization serialization;
+  /** service mapping */
+  private final Map<String, Object> local;
 
   public ServiceHttpEndpoint(Map<String, Object> local) {
-    this.local = local;
+    this(local, new JdkSerialization());
   }
 
-  Deserializer deserializer = new JdkDeserializer();
-  Serializer serializer = new JdkSerializer();
+  public ServiceHttpEndpoint(Map<String, Object> local, Serialization serialization) {
+    this.local = local;
+    this.serialization = serialization;
+  }
 
   @POST
-  public void provider(InputStream inputStream, OutputStream outputStream) throws Exception {
-    final Object deserialize = deserializer.deserialize(inputStream);
-    RpcRequest request = (RpcRequest) deserialize;
+  public void provider(
+          final InputStream inputStream, final OutputStream outputStream) throws Exception {
+
+    final Serialization serialization = this.serialization;
+    final Object deserialize = serialization.deserialize(inputStream);
+    final RpcRequest request = (RpcRequest) deserialize;
 
     final Object service = local.get(request.getServiceName());
     final String method = request.getMethod();
@@ -67,7 +74,7 @@ public class ServiceHttpEndpoint {
 
     final Object[] args = request.getArguments();
     final MethodInvoker invoker = getMethod(service, method, parameterTypes);
-    serializer.serialize(RpcResponse.of(invoker.invoke(service, args)), outputStream);
+    serialization.serialize(RpcResponse.of(invoker.invoke(service, args)), outputStream);
   }
 
   private MethodInvoker getMethod(Object service, String method, Class<?>[] parameterTypes) throws NoSuchMethodException {
@@ -75,9 +82,16 @@ public class ServiceHttpEndpoint {
     return MethodInvoker.create(serviceImpl, method, parameterTypes);
   }
 
-  @ExceptionHandler
-  public void ex(Throwable throwable) {
-    throwable.printStackTrace();
+  /**
+   * set a serialization
+   */
+  public void setSerialization(Serialization serialization) {
+    Assert.notNull(serialization, "serialization must not be null");
+    this.serialization = serialization;
+  }
+
+  public Serialization getSerialization() {
+    return serialization;
   }
 
 }

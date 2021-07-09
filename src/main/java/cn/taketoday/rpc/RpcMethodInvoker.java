@@ -24,11 +24,15 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 import cn.taketoday.rpc.registry.ServiceDefinition;
+import cn.taketoday.rpc.serialize.JdkSerialization;
+import cn.taketoday.rpc.serialize.Serialization;
 
 /**
  * @author TODAY 2021/7/4 01:58
  */
 public abstract class RpcMethodInvoker {
+
+  private Serialization<RpcResponse> serialization = new JdkSerialization<>();
 
   public Object invoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
     // pre
@@ -49,5 +53,13 @@ public abstract class RpcMethodInvoker {
 
   protected void postProcess(ServiceDefinition definition, Object ret) {
     // no-op
+  }
+
+  public void setSerialization(Serialization<RpcResponse> serialization) {
+    this.serialization = serialization;
+  }
+
+  public Serialization<RpcResponse> getSerialization() {
+    return serialization;
   }
 }

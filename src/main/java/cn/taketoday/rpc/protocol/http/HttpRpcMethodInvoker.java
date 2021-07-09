@@ -28,19 +28,13 @@ import cn.taketoday.rpc.RpcMethodInvoker;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.serialize.Deserializer;
-import cn.taketoday.rpc.serialize.JdkDeserializer;
-import cn.taketoday.rpc.serialize.JdkSerializer;
-import cn.taketoday.rpc.serialize.Serializer;
+import cn.taketoday.rpc.serialize.Serialization;
 import cn.taketoday.rpc.utils.HttpUtils;
 
 /**
  * @author TODAY 2021/7/4 23:10
  */
 public class HttpRpcMethodInvoker extends RpcMethodInvoker {
-
-  private Serializer serializer = new JdkSerializer();
-  private Deserializer deserializer = new JdkDeserializer();
 
   @Override
   protected Object doInvoke(ServiceDefinition definition, Method method, Object[] args) throws IOException {
@@ -50,13 +44,13 @@ public class HttpRpcMethodInvoker extends RpcMethodInvoker {
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);
 
-    final InputStream inputStream = HttpUtils.postInputStream(buildProviderURL(definition), output -> {
-      serializer.serialize(rpcRequest, output);
-    });
+    final Serialization<RpcResponse> serialization = getSerialization();
+    final InputStream inputStream = HttpUtils.postInputStream(
+            buildProviderURL(definition),
+            output -> serialization.serialize(rpcRequest, output)
+    );
 
-    final Object deserialize = deserializer.deserialize(inputStream);
-
-    final RpcResponse rpcResponse = (RpcResponse) deserialize;
+    final RpcResponse rpcResponse = serialization.deserialize(inputStream);
     return rpcResponse.getResult();
   }
 
@@ -64,22 +58,6 @@ public class HttpRpcMethodInvoker extends RpcMethodInvoker {
     final String host = definition.getHost();
     final int port = definition.getPort();
     return "http://" + host + ":" + port + "/provider";
-  }
-
-  public Deserializer getDeserializer() {
-    return deserializer;
-  }
-
-  public void setDeserializer(Deserializer deserializer) {
-    this.deserializer = deserializer;
-  }
-
-  public void setSerializer(Serializer serializer) {
-    this.serializer = serializer;
-  }
-
-  public Serializer getSerializer() {
-    return serializer;
   }
 
 }

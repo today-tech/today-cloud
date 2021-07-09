@@ -20,7 +20,6 @@
 
 package cn.taketoday.rpc.protocol.http;
 
-import cn.taketoday.context.utils.Assert;
 import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.registry.JdkServiceProxy;
 import cn.taketoday.rpc.registry.ServiceDefinition;
@@ -35,7 +34,7 @@ import cn.taketoday.rpc.utils.ObjectMapperUtils;
 public class HttpServiceRegistry implements ServiceRegistry {
 
   private String registryURL;
-  private ServiceProxy serviceProxy = new JdkServiceProxy();
+  private ServiceProxy serviceProxy;
 
   public HttpServiceRegistry() {}
 
@@ -52,12 +51,18 @@ public class HttpServiceRegistry implements ServiceRegistry {
   }
 
   public void setServiceProxy(ServiceProxy serviceProxy) {
-    Assert.notNull(serviceProxy, "serviceProxy must not be null");
     this.serviceProxy = serviceProxy;
   }
 
   public ServiceProxy getServiceProxy() {
+    if (serviceProxy == null) {
+      serviceProxy = createServiceProxy();
+    }
     return serviceProxy;
+  }
+
+  protected JdkServiceProxy createServiceProxy() {
+    return new JdkServiceProxy();
   }
 
   @Override
@@ -85,15 +90,19 @@ public class HttpServiceRegistry implements ServiceRegistry {
   @SuppressWarnings("unchecked")
   public <T> T lookup(Class<T> serviceInterface) {
     try {
-      final String json = HttpUtils.get(registryURL + "/" + serviceInterface.getName());
+      final String json = HttpUtils.get(buildGetServiceDefinitionURL(serviceInterface));
       final ServiceDefinition serviceDefinition = fromJSON(json);
       serviceDefinition.setServiceInterface(serviceInterface);
       final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
-      return (T) serviceProxy.getProxy(serviceDefinition, methodInvoker);
+      return (T) getServiceProxy().getProxy(serviceDefinition, methodInvoker);
     }
     catch (HttpRuntimeException e) {
       throw new IllegalStateException("Cannot found a service: " + serviceInterface);
     }
+  }
+
+  private <T> String buildGetServiceDefinitionURL(Class<T> serviceInterface) {
+    return registryURL + '/' + serviceInterface.getName();
   }
 
   private ServiceDefinition fromJSON(String json) {

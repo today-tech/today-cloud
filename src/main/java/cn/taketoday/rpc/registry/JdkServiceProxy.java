@@ -38,6 +38,7 @@ public class JdkServiceProxy implements ServiceProxy {
   @Override
   public <T> Object getProxy(
           Class<T> serviceInterface, Supplier<List<ServiceDefinition>> serviceSupplier, HttpRpcMethodInvoker rpcInvoker) {
+
     final class ServiceInvocationHandler implements InvocationHandler {
       final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>(serviceSupplier.get());
 

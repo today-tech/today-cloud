@@ -1,0 +1,7 @@
+service:
+  provider:
+    uri: '/provider'
+
+
+service:
+  "http://localhost:8080/services"

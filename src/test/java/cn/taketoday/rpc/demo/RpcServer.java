@@ -20,18 +20,26 @@
 
 package cn.taketoday.rpc.demo;
 
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import cn.taketoday.context.ApplicationContext;
+import cn.taketoday.context.annotation.Service;
+import cn.taketoday.context.annotation.Singleton;
+import cn.taketoday.context.logger.Logger;
+import cn.taketoday.context.logger.LoggerFactory;
+import cn.taketoday.context.utils.ClassUtils;
 import cn.taketoday.framework.ServletWebServerApplicationContext;
 import cn.taketoday.framework.WebApplication;
-import cn.taketoday.framework.server.AbstractServletWebServer;
+import cn.taketoday.framework.server.AbstractWebServer;
 import cn.taketoday.rpc.demo.service.UserService;
 import cn.taketoday.rpc.demo.service.impl.DefaultUserService;
 import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.server.HttpServiceEndpoint;
+import cn.taketoday.rpc.server.RpcServerConfig;
+import cn.taketoday.web.annotation.RequestMapping;
 import cn.taketoday.web.annotation.RestController;
 
 /**
@@ -39,39 +47,12 @@ import cn.taketoday.web.annotation.RestController;
  */
 public class RpcServer {
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
     final ServletWebServerApplicationContext context = new ServletWebServerApplicationContext(RpcServer.class, args);
     context.importBeans(RpcServerConfig.class);
 
     new WebApplication(context).run(args);
-    System.in.read();
   }
 
-  static class RpcServerConfig {
-
-//    @Singleton
-//    TomcatServer tomcatServer() {
-//      final TomcatServer tomcatServer = new TomcatServer();
-//      tomcatServer.setPort(9000);
-//      return tomcatServer;
-//    }
-
-    @RestController
-    HttpServiceEndpoint endpoint(/*Environment environment,*/ AbstractServletWebServer server) {
-      final ServiceDefinition definition = new ServiceDefinition();
-
-      definition.setHost("localhost");
-      definition.setPort(server.getPort());
-      definition.setName(UserService.class.getName());
-      final HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
-
-      serviceRegistry.register(definition);
-      Map<String, Object> local = new HashMap<>();
-
-      local.put(UserService.class.getName(), new DefaultUserService());
-      return new HttpServiceEndpoint(local);
-    }
-
-  }
 
 }

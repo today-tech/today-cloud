@@ -98,21 +98,21 @@ public class HttpServiceRegistry implements ServiceRegistry {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T lookup(Class<T> serviceInterface) {
-    try {
-      final Supplier<List<ServiceDefinition>> serviceSupplier = new Supplier<List<ServiceDefinition>>() {
-        @Override
-        public List<ServiceDefinition> get() {
+    final class ServiceSupplier implements Supplier<List<ServiceDefinition>> {
+      @Override
+      public List<ServiceDefinition> get() {
+        try {
           final String json = HttpUtils.get(buildGetServiceDefinitionURL(serviceInterface));
           return fromJSON(json);
         }
-      };
+        catch (HttpRuntimeException e) {
+          throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
+        }
+      }
+    }
 
-      final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
-      return (T) getServiceProxy().getProxy(serviceInterface, serviceSupplier, methodInvoker);
-    }
-    catch (HttpRuntimeException e) {
-      throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
-    }
+    final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
+    return (T) getServiceProxy().getProxy(serviceInterface, new ServiceSupplier(), methodInvoker);
   }
 
   private <T> String buildGetServiceDefinitionURL(Class<T> serviceInterface) {

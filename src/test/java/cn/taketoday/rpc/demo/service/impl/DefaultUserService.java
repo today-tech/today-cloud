@@ -20,12 +20,14 @@
 
 package cn.taketoday.rpc.demo.service.impl;
 
+import cn.taketoday.context.annotation.Service;
 import cn.taketoday.rpc.demo.model.User;
 import cn.taketoday.rpc.demo.service.UserService;
 
 /**
  * @author TODAY 2021/7/3 22:46
  */
+@Service
 public class DefaultUserService implements UserService {
 
   @Override

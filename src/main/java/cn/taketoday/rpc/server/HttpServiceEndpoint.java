@@ -36,12 +36,10 @@ import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
 import cn.taketoday.web.annotation.POST;
-import cn.taketoday.web.annotation.RequestMapping;
 
 /**
  * @author TODAY 2021/7/4 01:14
  */
-@RequestMapping("/provider")
 public class HttpServiceEndpoint {
 
   /** service mapping */

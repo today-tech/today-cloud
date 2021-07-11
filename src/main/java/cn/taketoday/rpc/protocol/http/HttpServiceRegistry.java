@@ -22,13 +22,16 @@ package cn.taketoday.rpc.protocol.http;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
 import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.registry.JdkServiceProxy;
+import cn.taketoday.rpc.registry.RegisteredStatus;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceProxy;
+import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
 import cn.taketoday.rpc.server.ServiceNotFoundException;
 import cn.taketoday.rpc.utils.HttpRuntimeException;
 import cn.taketoday.rpc.utils.HttpUtils;
@@ -76,13 +79,20 @@ public class HttpServiceRegistry implements ServiceRegistry {
 
   @Override
   public void register(ServiceDefinition definition) {
-    final String json = toJSON(definition);
-    HttpUtils.post(registryURL, json);
+    register(Collections.singletonList(definition));
   }
 
   @Override
-  public void unregister(ServiceDefinition definition) {
-    // TODO
+  public void register(List<ServiceDefinition> definitions) {
+    RegisteredStatus status = HttpUtils.post(registryURL, definitions, RegisteredStatus.class);
+    if (status.registeredCount != definitions.size()) {
+      throw new ServiceRegisterFailedException(definitions);
+    }
+  }
+
+  @Override
+  public void unregister(List<ServiceDefinition> definitions) {
+    HttpUtils.delete(registryURL, definitions);
   }
 
   /**
@@ -103,7 +113,7 @@ public class HttpServiceRegistry implements ServiceRegistry {
       public List<ServiceDefinition> get() {
         try {
           final String json = HttpUtils.get(buildGetServiceDefinitionURL(serviceInterface));
-          return fromJSON(json);
+          return ObjectMapperUtils.fromJSON(json, reference);
         }
         catch (HttpRuntimeException e) {
           throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
@@ -119,12 +129,12 @@ public class HttpServiceRegistry implements ServiceRegistry {
     return registryURL + '/' + serviceInterface.getName();
   }
 
-  private List<ServiceDefinition> fromJSON(String json) {
-    return ObjectMapperUtils.fromJSON(json, reference);
-  }
-
-  private String toJSON(ServiceDefinition definition) {
-    return ObjectMapperUtils.toJSON(definition);
+  @Override
+  public String toString() {
+    return "HttpServiceRegistry{" +
+            "registryURL='" + registryURL + '\'' +
+            ", serviceProxy=" + serviceProxy +
+            '}';
   }
 
   // static

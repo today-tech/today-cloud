@@ -62,8 +62,11 @@ public abstract class Serialization<T> implements Serializer, Deserializer {
    *
    * @throws IOException
    *         in case of errors reading from the stream
+   * @throws ClassNotFoundException
+   *         if target type not in classpath
    */
   @Override
-  public abstract T deserialize(InputStream inputStream) throws IOException;
+  public abstract T deserialize(InputStream inputStream)
+          throws IOException, ClassNotFoundException;
 
 }

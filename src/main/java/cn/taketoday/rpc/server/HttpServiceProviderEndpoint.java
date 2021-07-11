@@ -20,8 +20,7 @@
 
 package cn.taketoday.rpc.server;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
@@ -33,14 +32,18 @@ import cn.taketoday.context.utils.ClassUtils;
 import cn.taketoday.context.utils.Mappings;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
+import cn.taketoday.rpc.serialize.DeserializeFailedException;
 import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
-import cn.taketoday.web.annotation.POST;
+import cn.taketoday.web.RequestContext;
+import cn.taketoday.web.handler.HandlerAdapter;
 
 /**
+ * Http service-provider handler
+ *
  * @author TODAY 2021/7/4 01:14
  */
-public class HttpServiceEndpoint {
+public class HttpServiceProviderEndpoint implements HandlerAdapter {
 
   /** service mapping */
   private final Map<String, Object> serviceMapping;
@@ -49,54 +52,55 @@ public class HttpServiceEndpoint {
   /** fast method mapping cache */
   private final MethodMappings methodMappings = new MethodMappings();
 
-  public HttpServiceEndpoint(Map<String, Object> local) {
+  public HttpServiceProviderEndpoint(Map<String, Object> local) {
     this(local, new JdkSerialization<>());
   }
 
-  public HttpServiceEndpoint(Map<String, Object> serviceMapping, Serialization<RpcRequest> serialization) {
+  public HttpServiceProviderEndpoint(Map<String, Object> serviceMapping, Serialization<RpcRequest> serialization) {
     this.serialization = serialization;
     this.serviceMapping = serviceMapping;
   }
 
-  @POST
-  public void provider(
-          final InputStream inputStream, final OutputStream outputStream) throws Exception {
-
-    final Serialization<RpcRequest> serialization = this.serialization;
-    final RpcRequest request = serialization.deserialize(inputStream);
-
-    final Object service = serviceMapping.get(request.getServiceName());
-    final String method = request.getMethod();
-    final String[] paramTypes = request.getParamTypes();
-
-    final MethodInvoker invoker = methodMappings.get(new MethodCacheKey(method, paramTypes), service);
-    final Object[] args = request.getArguments();
-    final RpcResponse response = createResponse(service, args, invoker);
-    serialization.serialize(response, outputStream);
+  @Override
+  public boolean supports(Object handler) {
+    return handler == this;
   }
 
-  private static class MethodCacheKey {
-    public final String method;
-    public final String[] paramTypes;
+  @Override
+  public Object handle(final RequestContext context, final Object handler) throws Throwable {
+    final Serialization<RpcRequest> serialization = getSerialization();
+    final RpcResponse response = getResponse(context, serialization);
+    serialization.serialize(response, context.getOutputStream());
+    return NONE_RETURN_VALUE;
+  }
 
-    MethodCacheKey(String method, String[] paramTypes) {
-      this.method = method;
-      this.paramTypes = paramTypes;
+  /**
+   * @param context
+   *         http request context
+   * @param serialization
+   *         serialize strategy
+   *
+   * @return returns a {@link RpcResponse}
+   */
+  private RpcResponse getResponse(RequestContext context, Serialization<RpcRequest> serialization) {
+    try {
+      final RpcRequest request = serialization.deserialize(context.getInputStream());
+      final Object service = serviceMapping.get(request.getServiceName());
+      if (service == null) {
+        return RpcResponse.ofThrowable(new ServiceNotFoundException());
+      }
+      final MethodInvoker invoker = methodMappings.get(new MethodCacheKey(request), service);
+      final Object[] args = request.getArguments();
+      return createResponse(service, args, invoker);
     }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o)
-        return true;
-      if (!(o instanceof MethodCacheKey))
-        return false;
-      final MethodCacheKey that = (MethodCacheKey) o;
-      return Objects.equals(method, that.method) && Arrays.equals(paramTypes, that.paramTypes);
+    catch (IOException io) {
+      return RpcResponse.ofThrowable(new DeserializeFailedException(io));
     }
-
-    @Override
-    public int hashCode() {
-      return 31 * Objects.hash(method) + Arrays.hashCode(paramTypes);
+    catch (ClassNotFoundException e) {
+      return RpcResponse.ofThrowable(new ServiceNotFoundException(e));
+    }
+    catch (Throwable e) {
+      return RpcResponse.ofThrowable(e);
     }
   }
 
@@ -129,7 +133,7 @@ public class HttpServiceEndpoint {
     @Override
     protected MethodInvoker createValue(final Object key, final Object service) {
       final MethodCacheKey methodCacheKey = (MethodCacheKey) key;
-      Method methodToUse = getMethod(methodCacheKey, service);
+      final Method methodToUse = getMethod(methodCacheKey, service);
       if (methodToUse == null) {
         return null;
       }
@@ -163,4 +167,28 @@ public class HttpServiceEndpoint {
     }
   }
 
+  private static class MethodCacheKey {
+    public final String method;
+    public final String[] paramTypes;
+
+    MethodCacheKey(RpcRequest request) {
+      this.method = request.getMethod();
+      this.paramTypes = request.getParamTypes();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof MethodCacheKey))
+        return false;
+      final MethodCacheKey that = (MethodCacheKey) o;
+      return Objects.equals(method, that.method) && Arrays.equals(paramTypes, that.paramTypes);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Objects.hash(method) + Arrays.hashCode(paramTypes);
+    }
+  }
 }

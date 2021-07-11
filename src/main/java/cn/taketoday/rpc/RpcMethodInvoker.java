@@ -69,7 +69,7 @@ public abstract class RpcMethodInvoker {
   }
 
   protected abstract RpcResponse invokeInternal(
-          ServiceDefinition selected, Method method, Object[] args) throws IOException;
+          ServiceDefinition selected, Method method, Object[] args) throws IOException, ClassNotFoundException;
 
   protected void preProcess(List<ServiceDefinition> definitions, Method method, Object[] args) {
     // no-op

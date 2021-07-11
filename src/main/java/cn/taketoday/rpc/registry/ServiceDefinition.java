@@ -95,4 +95,15 @@ public class ServiceDefinition implements Serializable {
   public int hashCode() {
     return Objects.hash(port, host, name, version, serviceInterface);
   }
+
+  @Override
+  public String toString() {
+    return "ServiceDefinition{" +
+            "port=" + port +
+            ", host='" + host + '\'' +
+            ", name='" + name + '\'' +
+            ", version='" + version + '\'' +
+            ", serviceInterface=" + serviceInterface +
+            '}';
+  }
 }

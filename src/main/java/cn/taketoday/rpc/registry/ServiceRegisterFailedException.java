@@ -18,38 +18,26 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
-import java.util.Collections;
 import java.util.List;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
+import cn.taketoday.rpc.RpcNestedRuntimeException;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/11 17:19
  */
-public interface ServiceRegistry {
+public class ServiceRegisterFailedException extends RpcNestedRuntimeException {
+  private static final long serialVersionUID = 1L;
+  private final List<ServiceDefinition> definitions;
 
-  default void register(ServiceDefinition definition) {
-    register(Collections.singletonList(definition));
+  public ServiceRegisterFailedException(List<ServiceDefinition> definitions) {
+    super("Service register failed");
+    this.definitions = definitions;
   }
 
-  /**
-   * @param definitions
-   *         services
-   *
-   * @throws ServiceRegisterFailedException
-   *         If register failed
-   */
-  void register(List<ServiceDefinition> definitions);
-
-  default void unregister(ServiceDefinition definition) {
-    unregister(Collections.singletonList(definition));
+  public List<ServiceDefinition> getDefinitions() {
+    return definitions;
   }
-
-  void unregister(List<ServiceDefinition> definitions);
-
-  <T> T lookup(Class<T> serviceInterface);
-
 }
+

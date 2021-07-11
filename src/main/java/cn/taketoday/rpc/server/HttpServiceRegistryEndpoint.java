@@ -24,9 +24,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import cn.taketoday.context.logger.Logger;
+import cn.taketoday.context.logger.LoggerFactory;
 import cn.taketoday.context.utils.CollectionUtils;
 import cn.taketoday.context.utils.DefaultMultiValueMap;
 import cn.taketoday.context.utils.MultiValueMap;
+import cn.taketoday.rpc.registry.RegisteredStatus;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.web.annotation.DELETE;
 import cn.taketoday.web.annotation.GET;
@@ -37,13 +40,14 @@ import cn.taketoday.web.annotation.RequestBody;
  * @author TODAY 2021/7/9 23:08
  */
 public class HttpServiceRegistryEndpoint {
+  private static final Logger log = LoggerFactory.getLogger(HttpServiceRegistryEndpoint.class);
 
   private final MultiValueMap<String, ServiceDefinition>
-          multiValueMap = new DefaultMultiValueMap<>(new ConcurrentHashMap<>());
+          serviceMapping = new DefaultMultiValueMap<>(new ConcurrentHashMap<>());
 
   @GET("/{name}")
   public List<ServiceDefinition> lookup(String name) {
-    final List<ServiceDefinition> serviceDefinitions = multiValueMap.get(name);
+    final List<ServiceDefinition> serviceDefinitions = serviceMapping.get(name);
     if (CollectionUtils.isEmpty(serviceDefinitions)) {
       throw new IllegalStateException("cannot found a service: " + name);
     }
@@ -52,16 +56,29 @@ public class HttpServiceRegistryEndpoint {
   }
 
   @POST
-  public void register(@RequestBody ServiceDefinition definition) {
-    multiValueMap.add(definition.getName(), definition);
+  public RegisteredStatus register(@RequestBody List<ServiceDefinition> definitions) {
+    Logger log = HttpServiceRegistryEndpoint.log;
+    MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
+    for (final ServiceDefinition definition : definitions) {
+      log.info("Registering service: [{}] ", definition);
+      serviceMapping.add(definition.getName(), definition);
+    }
+    return RegisteredStatus.ofRegistered(definitions.size());
   }
 
   @DELETE
-  public void unregister(@RequestBody ServiceDefinition definition) {
-    final List<ServiceDefinition> serviceDefinitions = multiValueMap.get(definition.getName());
-    if (!CollectionUtils.isEmpty(serviceDefinitions)) {
-      serviceDefinitions.removeIf(def -> Objects.equals(def, definition));
+  public void unregister(@RequestBody List<ServiceDefinition> definitions) {
+    MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
+    for (final ServiceDefinition definition : definitions) {
+      final List<ServiceDefinition> serviceDefinitions = serviceMapping.get(definition.getName());
+      if (!CollectionUtils.isEmpty(serviceDefinitions)
+              && serviceDefinitions.removeIf(def -> Objects.equals(def, definition))) {
+        log.info("un-register service: [{}] ", definition);
+      }
     }
   }
 
+  public MultiValueMap<String, ServiceDefinition> getServiceMapping() {
+    return serviceMapping;
+  }
 }

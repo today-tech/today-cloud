@@ -18,38 +18,36 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
-import java.util.Collections;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
+import cn.taketoday.context.annotation.Import;
+import cn.taketoday.context.annotation.MissingBean;
+import cn.taketoday.rpc.server.HttpServiceRegistryEndpoint;
+import cn.taketoday.web.annotation.RequestMapping;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * Enable Http registry
+ *
+ * @author TODAY 2021/7/11 16:14
  */
-public interface ServiceRegistry {
+@Import(HttpRegistryConfig.class)
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE, ElementType.METHOD })
+public @interface EnableHttpRegistry {
 
-  default void register(ServiceDefinition definition) {
-    register(Collections.singletonList(definition));
+}
+
+final class HttpRegistryConfig {
+
+  @MissingBean
+  @RequestMapping("#{registry.services.uri}")
+  public HttpServiceRegistryEndpoint serviceRegistryEndpoint() {
+    return new HttpServiceRegistryEndpoint();
   }
-
-  /**
-   * @param definitions
-   *         services
-   *
-   * @throws ServiceRegisterFailedException
-   *         If register failed
-   */
-  void register(List<ServiceDefinition> definitions);
-
-  default void unregister(ServiceDefinition definition) {
-    unregister(Collections.singletonList(definition));
-  }
-
-  void unregister(List<ServiceDefinition> definitions);
-
-  <T> T lookup(Class<T> serviceInterface);
 
 }

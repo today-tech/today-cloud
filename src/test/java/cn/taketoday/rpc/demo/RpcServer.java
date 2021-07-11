@@ -20,39 +20,17 @@
 
 package cn.taketoday.rpc.demo;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import cn.taketoday.context.ApplicationContext;
-import cn.taketoday.context.annotation.Service;
-import cn.taketoday.context.annotation.Singleton;
-import cn.taketoday.context.logger.Logger;
-import cn.taketoday.context.logger.LoggerFactory;
-import cn.taketoday.context.utils.ClassUtils;
-import cn.taketoday.framework.ServletWebServerApplicationContext;
 import cn.taketoday.framework.WebApplication;
-import cn.taketoday.framework.server.AbstractWebServer;
-import cn.taketoday.rpc.demo.service.UserService;
-import cn.taketoday.rpc.demo.service.impl.DefaultUserService;
-import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
-import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.server.HttpServiceEndpoint;
-import cn.taketoday.rpc.server.RpcServerConfig;
-import cn.taketoday.web.annotation.RequestMapping;
-import cn.taketoday.web.annotation.RestController;
+import cn.taketoday.rpc.server.EnableHttpServiceProvider;
 
 /**
  * @author TODAY 2021/7/3 22:48
  */
+@EnableHttpServiceProvider
 public class RpcServer {
 
   public static void main(String[] args) {
-    final ServletWebServerApplicationContext context = new ServletWebServerApplicationContext(RpcServer.class, args);
-    context.importBeans(RpcServerConfig.class);
-
-    new WebApplication(context).run(args);
+    WebApplication.run(RpcServer.class, args);
   }
-
 
 }

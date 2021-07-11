@@ -47,6 +47,6 @@ public interface Deserializer {
    * @throws IOException
    *         in case of errors reading from the stream
    */
-  Object deserialize(InputStream inputStream) throws IOException;
+  Object deserialize(InputStream inputStream) throws IOException, ClassNotFoundException;
 
 }

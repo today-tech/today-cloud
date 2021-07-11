@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
@@ -64,9 +65,15 @@ public class ObjectMapperUtils {
     }
   }
 
-  /**
-   * json 转JavaBean
-   */
+  public static <T> T fromJSON(InputStream in, Class<T> clazz) {
+    try {
+      return objectMapper.readValue(in, clazz);
+    }
+    catch (IOException io) {
+      throw new IllegalStateException(io);
+    }
+  }
+
   public static <T> T fromJSON(String jsonString, Class<T> clazz) {
     try {
       return objectMapper.readValue(jsonString, clazz);

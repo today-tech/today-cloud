@@ -40,12 +40,9 @@ public class JdkSerialization<T> extends Serialization<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public T deserialize(final InputStream inputStream) throws IOException {
+  public T deserialize(final InputStream inputStream) throws IOException, ClassNotFoundException {
     try (final ObjectInputStream objectInput = new ObjectInputStream(inputStream)) {
       return (T) objectInput.readObject();
-    }
-    catch (ClassNotFoundException e) {
-      throw new IOException("target type not in classpath", e);
     }
   }
 }

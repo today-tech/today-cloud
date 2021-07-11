@@ -18,38 +18,31 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.serialize;
 
-import java.util.Collections;
-import java.util.List;
-
-import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
+import cn.taketoday.rpc.RpcNestedRuntimeException;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * Deserialize Failed
+ *
+ * @author TODAY 2021/7/11 23:54
  */
-public interface ServiceRegistry {
+public class DeserializeFailedException extends RpcNestedRuntimeException {
+  private static final long serialVersionUID = 1L;
 
-  default void register(ServiceDefinition definition) {
-    register(Collections.singletonList(definition));
+  public DeserializeFailedException() {
+    super();
   }
 
-  /**
-   * @param definitions
-   *         services
-   *
-   * @throws ServiceRegisterFailedException
-   *         If register failed
-   */
-  void register(List<ServiceDefinition> definitions);
-
-  default void unregister(ServiceDefinition definition) {
-    unregister(Collections.singletonList(definition));
+  public DeserializeFailedException(String message) {
+    super(message);
   }
 
-  void unregister(List<ServiceDefinition> definitions);
+  public DeserializeFailedException(Throwable cause) {
+    super(cause);
+  }
 
-  <T> T lookup(Class<T> serviceInterface);
-
+  public DeserializeFailedException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

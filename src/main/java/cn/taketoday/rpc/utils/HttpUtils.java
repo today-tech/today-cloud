@@ -30,7 +30,7 @@ import java.net.URL;
 
 import cn.taketoday.web.Constant;
 
-import static cn.taketoday.context.Constant.DEFAULT_CHARSET;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author TODAY 2021/7/4 23:15
@@ -42,13 +42,31 @@ public abstract class HttpUtils {
    *
    * @param method
    *         request method
-   * @param urlStr
+   * @param url
    *         url
    * @param body
    *         request body
    */
-  public static HttpURLConnection getConnection(String method, String urlStr, byte[] body) {
-    return getConnection(method, urlStr, Constant.CONTENT_TYPE_JSON, body);
+  public static HttpURLConnection getConnection(String method, String url, Object body) {
+    final byte[] jsonBytes = getJsonBytes(body);
+    return getConnection(method, url, jsonBytes);
+  }
+
+  public static byte[] getJsonBytes(Object body) {
+    if (body instanceof String) {
+      return ((String) body).getBytes(UTF_8);
+    }
+    else if (body instanceof byte[]) {
+      return (byte[]) body;
+    }
+    else {
+      final String json = ObjectMapperUtils.toJSON(body);
+      return json.getBytes(UTF_8);
+    }
+  }
+
+  public static HttpURLConnection getConnection(String method, String url, byte[] body) {
+    return getConnection(method, url, Constant.CONTENT_TYPE_JSON, body);
   }
 
   /**
@@ -56,14 +74,14 @@ public abstract class HttpUtils {
    *
    * @param method
    *         request method
-   * @param urlStr
+   * @param url
    *         url
    * @param body
    *         request body
    */
   public static HttpURLConnection getConnection(
-          String method, String urlStr, String contentType, byte[] body) {
-    return getConnection(method, urlStr, contentType, (outputStream) -> {
+          String method, String url, String contentType, byte[] body) {
+    return getConnection(method, url, contentType, (outputStream) -> {
       if (body != null) {
         outputStream.write(body);
       }
@@ -89,23 +107,6 @@ public abstract class HttpUtils {
       connection.setDoOutput(true);// 允许输出
       connection.setUseCaches(false); // 不允许使用缓存
       connection.setRequestMethod(method);
-      return connection;
-    }
-    catch (IOException e) {
-      throw new HttpRuntimeException("cannot open connection", e);
-    }
-  }
-
-  /**
-   * @param urlStr
-   */
-  public static HttpURLConnection getConnection(String urlStr) {
-    try {
-      URL url = new URL(urlStr);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setConnectTimeout(3000);
-      connection.setDoOutput(true);// 允许输出
-      connection.setUseCaches(true); // 不允许使用缓存
       return connection;
     }
     catch (IOException e) {
@@ -142,7 +143,7 @@ public abstract class HttpUtils {
 
   public static String getResponse(HttpURLConnection conn) {
     try (BufferedReader reader
-            = new BufferedReader(new InputStreamReader(conn.getInputStream(), DEFAULT_CHARSET))) {
+            = new BufferedReader(new InputStreamReader(conn.getInputStream(), UTF_8))) {
       String line;
       final StringBuilder response = new StringBuilder();
       while ((line = reader.readLine()) != null) {
@@ -168,19 +169,12 @@ public abstract class HttpUtils {
     return getResponse(getConnection(method, urlStr));
   }
 
-  /**
-   * @param method
-   *         request method
-   * @param urlStr
-   *         url
-   * @param body
-   */
   public static String getResponse(String method, String urlStr, byte[] body) {
     return getResponse(getConnection(method, urlStr, body));
   }
 
   public static String getResponse(String method, String urlStr, String body) {
-    return getResponse(getConnection(method, urlStr, body.getBytes(DEFAULT_CHARSET)));
+    return getResponse(getConnection(method, urlStr, body.getBytes(UTF_8)));
   }
 
   /**
@@ -204,16 +198,23 @@ public abstract class HttpUtils {
     return getInputStream(getConnection("POST", urlStr, null, callback));
   }
 
-  public static String post(String urlStr) {
-    return getResponse(getConnection("POST", urlStr, null, (byte[]) null));
+  public static String post(String url) {
+    return getResponse(getConnection("POST", url, null, (byte[]) null));
   }
 
-  public static String post(String urlStr, OutputStreamCallback callback) {
-    return getResponse(getConnection("POST", urlStr, null, callback));
+  public static String post(String url, OutputStreamCallback callback) {
+    return getResponse(getConnection("POST", url, null, callback));
   }
 
-  public static String post(String urlStr, String params) {
-    return getResponse(getConnection("POST", urlStr, null, params.getBytes(DEFAULT_CHARSET)));
+  public static String post(String url, Object body) {
+    final byte[] jsonBytes = getJsonBytes(body);
+    final HttpURLConnection post = getConnection("POST", url, jsonBytes);
+    return getResponse(post);
+  }
+
+  public static <T> T post(String url, Object body, Class<T> targetClass) {
+    final InputStream in = getInputStream(getConnection("POST", url, body));
+    return ObjectMapperUtils.fromJSON(in, targetClass);
   }
 
   public static <T> T post(String urlStr, String params, Class<T> targetClass) {
@@ -225,7 +226,7 @@ public abstract class HttpUtils {
   }
 
   public static String postJson(String urlStr, String body) {
-    return getResponse(getConnection("POST", urlStr, body.getBytes(DEFAULT_CHARSET)));
+    return getResponse(getConnection("POST", urlStr, body.getBytes(UTF_8)));
   }
 
   public static <T> T postJson(String urlStr, byte[] body, Class<T> targetClass) {
@@ -247,7 +248,7 @@ public abstract class HttpUtils {
   }
 
   public static String put(String urlStr, String body) {
-    return getResponse(getConnection("PUT", urlStr, body.getBytes(DEFAULT_CHARSET)));
+    return getResponse(getConnection("PUT", urlStr, body.getBytes(UTF_8)));
   }
 
   public static <T> T put(String urlStr, byte[] body, Class<T> targetClass) {
@@ -266,7 +267,12 @@ public abstract class HttpUtils {
   }
 
   public static String delete(String urlStr, String body) {
-    return getResponse(getConnection("DELETE", urlStr, body.getBytes(DEFAULT_CHARSET)));
+    return getResponse(getConnection("DELETE", urlStr, body.getBytes(UTF_8)));
+  }
+
+  public static String delete(String urlStr, Object body) {
+    String json = ObjectMapperUtils.toJSON(body);
+    return delete(urlStr, json);
   }
 
   public static <T> T delete(String urlStr, byte[] body, Class<T> targetClass) {

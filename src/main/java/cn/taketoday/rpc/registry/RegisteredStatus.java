@@ -18,38 +18,24 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.rpc;
+package cn.taketoday.rpc.registry;
 
-import java.util.Collections;
-import java.util.List;
-
-import cn.taketoday.rpc.registry.ServiceDefinition;
-import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * @author TODAY 2021/7/4 23:12
+ * @author TODAY 2021/7/11 16:56
  */
-public interface ServiceRegistry {
+public final class RegisteredStatus {
+  public final int registeredCount;
 
-  default void register(ServiceDefinition definition) {
-    register(Collections.singletonList(definition));
+  RegisteredStatus(int registeredCount) {
+    this.registeredCount = registeredCount;
   }
 
-  /**
-   * @param definitions
-   *         services
-   *
-   * @throws ServiceRegisterFailedException
-   *         If register failed
-   */
-  void register(List<ServiceDefinition> definitions);
-
-  default void unregister(ServiceDefinition definition) {
-    unregister(Collections.singletonList(definition));
+  @JsonCreator
+  public static RegisteredStatus ofRegistered(@JsonProperty("registeredCount") int registeredCount) {
+    return new RegisteredStatus(registeredCount);
   }
-
-  void unregister(List<ServiceDefinition> definitions);
-
-  <T> T lookup(Class<T> serviceInterface);
 
 }

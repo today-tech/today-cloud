@@ -20,30 +20,17 @@
 
 package cn.taketoday.rpc.demo;
 
-import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.framework.WebApplication;
-import cn.taketoday.rpc.server.HttpServiceRegistryEndpoint;
-import cn.taketoday.web.annotation.RequestMapping;
-import cn.taketoday.web.annotation.RestController;
+import cn.taketoday.rpc.registry.EnableHttpRegistry;
 
 /**
  * @author TODAY 2021/7/3 23:22
  */
+@EnableHttpRegistry
 public class Registry {
 
   public static void main(String[] args) {
     WebApplication.run(Registry.class, args);
-  }
-
-  @Configuration
-  static class AppConfig {
-
-    @RestController
-    @RequestMapping("/services")
-    public HttpServiceRegistryEndpoint serviceRegistryEndpoint() {
-      return new HttpServiceRegistryEndpoint();
-    }
-
   }
 
 }

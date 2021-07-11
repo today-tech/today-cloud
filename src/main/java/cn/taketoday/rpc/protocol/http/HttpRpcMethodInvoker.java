@@ -37,7 +37,7 @@ import cn.taketoday.rpc.utils.HttpUtils;
 public class HttpRpcMethodInvoker extends RpcMethodInvoker {
 
   @Override
-  protected RpcResponse doInvoke(ServiceDefinition selected, Method method, Object[] args) throws IOException {
+  protected RpcResponse invokeInternal(ServiceDefinition selected, Method method, Object[] args) throws IOException {
     final RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(selected.getName());

@@ -44,15 +44,31 @@ public abstract class RpcMethodInvoker {
     // pre
     preProcess(definitions, method, args);
     // process
-    final ServiceSelector serviceSelector = getServiceSelector();
-    final ServiceDefinition selected = serviceSelector.select(definitions);
-    RpcResponse ret = doInvoke(selected, method, args);
+    RpcResponse response = doInvoke(definitions, method, args);
     // post
-    return postProcess(definitions, ret)
+    return postProcess(definitions, response)
             .getResult();
   }
 
-  protected abstract RpcResponse doInvoke(
+  protected RpcResponse doInvoke(
+          List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
+    final ServiceSelector serviceSelector = getServiceSelector();
+    final ServiceDefinition selected = serviceSelector.select(definitions);
+    try {
+      return invokeInternal(selected, method, args);
+    }
+    catch (Throwable e) {
+      return handleInvocationException(e, definitions, selected, method, args);
+    }
+  }
+
+  protected RpcResponse handleInvocationException(
+          Throwable e, List<ServiceDefinition> definitions,
+          ServiceDefinition selected, Method method, Object[] args) throws Throwable {
+    throw e;
+  }
+
+  protected abstract RpcResponse invokeInternal(
           ServiceDefinition selected, Method method, Object[] args) throws IOException;
 
   protected void preProcess(List<ServiceDefinition> definitions, Method method, Object[] args) {

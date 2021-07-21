@@ -1,6 +1,6 @@
 /*
  * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2017 - 2021 All Rights Reserved.
+ * Copyright © TODAY & 2021 All Rights Reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
  *
@@ -20,30 +20,47 @@
 
 package cn.taketoday.rpc.serialize;
 
+import com.esotericsoftware.kryo.kryo5.Kryo;
+import com.esotericsoftware.kryo.kryo5.io.Input;
+import com.esotericsoftware.kryo.kryo5.io.Output;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
+import cn.taketoday.context.utils.Assert;
+
 /**
- * Jdk Serialization
+ * Kryo Serialization
  *
- * @author TODAY 2021/7/9 21:25
+ * @author TODAY 2021/7/21 22:12
  */
-public class JdkSerialization<T> extends Serialization<T> {
+public class KryoSerialization<T> extends Serialization<T> {
+  private final Kryo kryo;
 
-  @Override
-  public void serialize(final Object object, final OutputStream output) throws IOException {
-    try (ObjectOutputStream oos = new ObjectOutputStream(output)) {
-      oos.writeObject(object);
-    }
+  public KryoSerialization() {
+    this(new Kryo());
+  }
+
+  public KryoSerialization(Kryo kryo) {
+    Assert.notNull(kryo, "Kryo must not be null");
+    this.kryo = kryo;
   }
 
   @Override
-  protected final Object deserializeInternal(final InputStream inputStream) throws IOException, ClassNotFoundException {
-    try (final ObjectInputStream objectInput = new ObjectInputStream(inputStream)) {
-      return objectInput.readObject();
-    }
+  public void serialize(Object object, OutputStream output) throws IOException {
+    Output kryoOutput = new Output(output);
+    kryo.writeObject(kryoOutput, object);
   }
+
+  @Override
+  public Object deserializeInternal(InputStream inputStream) {
+    Input input = new Input(inputStream);
+    return kryo.readClassAndObject(input);
+  }
+
+  public Kryo getKryo() {
+    return kryo;
+  }
+
 }

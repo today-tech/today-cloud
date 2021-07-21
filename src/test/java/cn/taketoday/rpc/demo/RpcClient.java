@@ -20,9 +20,16 @@
 
 package cn.taketoday.rpc.demo;
 
+import com.esotericsoftware.kryo.kryo5.Kryo;
+
+import cn.taketoday.rpc.RpcRequest;
+import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.demo.model.User;
 import cn.taketoday.rpc.demo.service.UserService;
+import cn.taketoday.rpc.demo.service.impl.DefaultUserService;
 import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
+import cn.taketoday.rpc.serialize.KryoClassResolver;
+import cn.taketoday.rpc.serialize.KryoSerialization;
 
 /**
  * @author TODAY 2021/7/3 22:47
@@ -31,6 +38,10 @@ public class RpcClient {
 
   public static void main(String[] args) {
     final HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
+
+    final Kryo kryo = new Kryo(new KryoClassResolver(), null);
+    final KryoSerialization<RpcResponse> serialization = new KryoSerialization<>(kryo);
+    serviceRegistry.setSerialization(serialization);
     UserService userService = serviceRegistry.lookup(UserService.class);
 
     final String ret = userService.hello("today rpc");
@@ -47,6 +58,22 @@ public class RpcClient {
     }
 
     userService.notFound();
+
+    final DefaultUserService service = new DefaultUserService();
+    long start = System.currentTimeMillis();
+    for (int i = 0; i < 100_000_000; i++) {
+      service.hello("121121");
+    }
+    System.out.println(System.currentTimeMillis() - start + "ms");
+    start = System.currentTimeMillis();
+
+//    for (int i = 0; i < 100/*_000_000*/; i++) {
+    for (int i = 0; i < 100_000/*_000*/; i++) {
+      userService.hello("121121");
+    }
+
+    System.out.println(System.currentTimeMillis() - start + "ms");
+
   }
 
 }

@@ -55,6 +55,8 @@ import cn.taketoday.web.view.ResultHandlers;
 import cn.taketoday.web.view.RuntimeResultHandler;
 
 /**
+ * Enable service provider based on HTTP
+ *
  * @author TODAY 2021/7/11 15:31
  */
 @Import(HttpServiceProviderConfig.class)

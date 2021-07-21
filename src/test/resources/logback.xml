@@ -41,6 +41,12 @@
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
+<!--
+
+  <logger name="cn.taketoday.rpc" level="TRACE">
+    <appender-ref ref="STDOUT" />
+  </logger>
+-->
 
 </configuration>
 

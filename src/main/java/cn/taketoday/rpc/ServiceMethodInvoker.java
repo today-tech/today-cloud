@@ -28,17 +28,23 @@ import cn.taketoday.context.utils.Assert;
 import cn.taketoday.rpc.registry.RandomServiceSelector;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceSelector;
-import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
 
 /**
+ * Service Method Invoker
+ *
  * @author TODAY 2021/7/4 01:58
  */
-public abstract class RpcMethodInvoker {
+public abstract class ServiceMethodInvoker {
+  private final Serialization<RpcResponse> serialization;
 
   private ServiceSelector serviceSelector = new RandomServiceSelector();
-  private Serialization<RpcResponse> serialization = new JdkSerialization<>();
   private RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
+
+  protected ServiceMethodInvoker(Serialization<RpcResponse> serialization) {
+    Assert.notNull(serialization, "serialization most not be null");
+    this.serialization = serialization;
+  }
 
   public Object invoke(List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
     // pre
@@ -76,8 +82,8 @@ public abstract class RpcMethodInvoker {
   }
 
   protected RpcResponse postProcess(List<ServiceDefinition> definitions, RpcResponse response) throws Throwable {
-    final Throwable exception = response.getException();
-    if (exception != null) {
+    final Throwable serviceException = response.getException();
+    if (serviceException != null) {
       return exceptionHandler.handle(definitions, response);
     }
     return response;
@@ -90,11 +96,6 @@ public abstract class RpcMethodInvoker {
 
   public RemoteExceptionHandler getExceptionHandler() {
     return exceptionHandler;
-  }
-
-  public void setSerialization(Serialization<RpcResponse> serialization) {
-    Assert.notNull(exceptionHandler, "serialization most not be null");
-    this.serialization = serialization;
   }
 
   public Serialization<RpcResponse> getSerialization() {

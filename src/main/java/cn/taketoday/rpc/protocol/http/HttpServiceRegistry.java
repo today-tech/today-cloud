@@ -26,12 +26,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import cn.taketoday.context.utils.Assert;
+import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.registry.JdkServiceProxy;
 import cn.taketoday.rpc.registry.RegisteredStatus;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceProxy;
 import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
+import cn.taketoday.rpc.serialize.Serialization;
 import cn.taketoday.rpc.server.ServiceNotFoundException;
 import cn.taketoday.rpc.utils.HttpRuntimeException;
 import cn.taketoday.rpc.utils.HttpUtils;
@@ -47,6 +50,8 @@ public class HttpServiceRegistry implements ServiceRegistry {
 
   private String registryURL;
   private ServiceProxy serviceProxy;
+
+  private Serialization<RpcResponse> serialization;
 
   public HttpServiceRegistry() {}
 
@@ -75,6 +80,14 @@ public class HttpServiceRegistry implements ServiceRegistry {
 
   protected JdkServiceProxy createServiceProxy() {
     return new JdkServiceProxy();
+  }
+
+  public void setSerialization(Serialization<RpcResponse> serialization) {
+    this.serialization = serialization;
+  }
+
+  public Serialization<RpcResponse> getSerialization() {
+    return serialization;
   }
 
   @Override
@@ -116,12 +129,13 @@ public class HttpServiceRegistry implements ServiceRegistry {
           return ObjectMapperUtils.fromJSON(json, reference);
         }
         catch (HttpRuntimeException e) {
-          throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
+          throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface, e);
         }
       }
     }
 
-    final HttpRpcMethodInvoker methodInvoker = new HttpRpcMethodInvoker();
+    Assert.state(serialization != null, "No serialization settings");
+    final HttpServiceMethodInvoker methodInvoker = new HttpServiceMethodInvoker(serialization);
     return (T) getServiceProxy().getProxy(serviceInterface, new ServiceSupplier(), methodInvoker);
   }
 

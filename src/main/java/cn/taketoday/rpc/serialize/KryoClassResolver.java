@@ -1,6 +1,6 @@
 /*
  * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2017 - 2021 All Rights Reserved.
+ * Copyright © TODAY & 2021 All Rights Reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
  *
@@ -20,30 +20,30 @@
 
 package cn.taketoday.rpc.serialize;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import com.esotericsoftware.kryo.kryo5.ClassResolver;
+import com.esotericsoftware.kryo.kryo5.Kryo;
+import com.esotericsoftware.kryo.kryo5.Registration;
+import com.esotericsoftware.kryo.kryo5.io.Input;
+import com.esotericsoftware.kryo.kryo5.io.Output;
+import com.esotericsoftware.kryo.kryo5.util.DefaultClassResolver;
 
 /**
- * Jdk Serialization
- *
- * @author TODAY 2021/7/9 21:25
+ * @author TODAY 2021/7/21 23:28
  */
-public class JdkSerialization<T> extends Serialization<T> {
+public class KryoClassResolver extends DefaultClassResolver implements ClassResolver {
 
   @Override
-  public void serialize(final Object object, final OutputStream output) throws IOException {
-    try (ObjectOutputStream oos = new ObjectOutputStream(output)) {
-      oos.writeObject(object);
+  public Registration getRegistration(Class type) {
+    final Registration registration = super.getRegistration(type);
+    if (registration == null) {
+      try {
+        return registerImplicit(type);
+      }
+      catch (Throwable e) {
+        return null;
+      }
     }
+    return registration;
   }
 
-  @Override
-  protected final Object deserializeInternal(final InputStream inputStream) throws IOException, ClassNotFoundException {
-    try (final ObjectInputStream objectInput = new ObjectInputStream(inputStream)) {
-      return objectInput.readObject();
-    }
-  }
 }

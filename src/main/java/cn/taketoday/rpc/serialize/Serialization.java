@@ -66,7 +66,13 @@ public abstract class Serialization<T> implements Serializer, Deserializer {
    *         if target type not in classpath
    */
   @Override
-  public abstract T deserialize(InputStream inputStream)
-          throws IOException, ClassNotFoundException;
+  @SuppressWarnings("unchecked")
+  public T deserialize(InputStream inputStream) throws IOException, ClassNotFoundException {
+    return (T) deserializeInternal(inputStream);
+  }
+
+  protected Object deserializeInternal(InputStream inputStream) throws IOException, ClassNotFoundException {
+    throw new UnsupportedOperationException();
+  }
 
 }

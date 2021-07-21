@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 
-import cn.taketoday.rpc.RpcMethodInvoker;
+import cn.taketoday.rpc.ServiceMethodInvoker;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.registry.ServiceDefinition;
@@ -34,7 +34,11 @@ import cn.taketoday.rpc.utils.HttpUtils;
 /**
  * @author TODAY 2021/7/4 23:10
  */
-public class HttpRpcMethodInvoker extends RpcMethodInvoker {
+public class HttpServiceMethodInvoker extends ServiceMethodInvoker {
+
+  public HttpServiceMethodInvoker(Serialization<RpcResponse> serialization) {
+    super(serialization);
+  }
 
   @Override
   protected RpcResponse invokeInternal(ServiceDefinition selected, Method method, Object[] args)

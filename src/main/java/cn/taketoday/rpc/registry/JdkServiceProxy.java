@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
-import cn.taketoday.rpc.protocol.http.HttpRpcMethodInvoker;
+import cn.taketoday.rpc.protocol.http.HttpServiceMethodInvoker;
 import cn.taketoday.rpc.server.ServiceNotFoundException;
 
 /**
@@ -37,7 +37,7 @@ public class JdkServiceProxy implements ServiceProxy {
 
   @Override
   public <T> Object getProxy(
-          Class<T> serviceInterface, Supplier<List<ServiceDefinition>> serviceSupplier, HttpRpcMethodInvoker rpcInvoker) {
+          Class<T> serviceInterface, Supplier<List<ServiceDefinition>> serviceSupplier, HttpServiceMethodInvoker rpcInvoker) {
 
     final class ServiceInvocationHandler implements InvocationHandler {
       final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>(serviceSupplier.get());

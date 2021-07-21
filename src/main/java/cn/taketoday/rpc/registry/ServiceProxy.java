@@ -23,7 +23,7 @@ package cn.taketoday.rpc.registry;
 import java.util.List;
 import java.util.function.Supplier;
 
-import cn.taketoday.rpc.protocol.http.HttpRpcMethodInvoker;
+import cn.taketoday.rpc.protocol.http.HttpServiceMethodInvoker;
 
 /**
  * @author TODAY 2021/7/4 22:58
@@ -31,5 +31,5 @@ import cn.taketoday.rpc.protocol.http.HttpRpcMethodInvoker;
 public interface ServiceProxy {
 
   <T> Object getProxy(Class<T> serviceInterface,
-                      Supplier<List<ServiceDefinition>> serviceSupplier, HttpRpcMethodInvoker methodInvoker);
+                      Supplier<List<ServiceDefinition>> serviceSupplier, HttpServiceMethodInvoker methodInvoker);
 }

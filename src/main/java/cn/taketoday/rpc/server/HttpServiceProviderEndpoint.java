@@ -26,31 +26,31 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
-import cn.taketoday.context.reflect.MethodInvoker;
-import cn.taketoday.context.utils.Assert;
-import cn.taketoday.context.utils.ClassUtils;
-import cn.taketoday.context.utils.Mappings;
+import cn.taketoday.core.reflect.MethodInvoker;
+import cn.taketoday.lang.Assert;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.serialize.DeserializeFailedException;
 import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
+import cn.taketoday.util.ClassUtils;
+import cn.taketoday.util.MapCache;
+import cn.taketoday.web.HttpRequestHandler;
 import cn.taketoday.web.RequestContext;
-import cn.taketoday.web.handler.HandlerAdapter;
 
 /**
  * Http service-provider handler
  *
  * @author TODAY 2021/7/4 01:14
  */
-public class HttpServiceProviderEndpoint implements HandlerAdapter {
+public class HttpServiceProviderEndpoint implements HttpRequestHandler {
 
   /** service mapping */
   private final Map<String, Object> serviceMapping;
   /** for serialize and deserialize */
   private Serialization<RpcRequest> serialization;
   /** fast method mapping cache */
-  private final MethodMappings methodMappings = new MethodMappings();
+  private final MethodMapCache methodMapCache = new MethodMapCache();
 
   public HttpServiceProviderEndpoint(Map<String, Object> local) {
     this(local, new JdkSerialization<>());
@@ -62,35 +62,27 @@ public class HttpServiceProviderEndpoint implements HandlerAdapter {
   }
 
   @Override
-  public boolean supports(Object handler) {
-    return handler == this;
-  }
-
-  @Override
-  public Object handle(final RequestContext context, final Object handler) throws Throwable {
-    final Serialization<RpcRequest> serialization = getSerialization();
-    final RpcResponse response = getResponse(context, serialization);
-    serialization.serialize(response, context.getOutputStream());
+  public Object handleRequest(RequestContext request) throws Throwable {
+    Serialization<RpcRequest> serialization = getSerialization();
+    RpcResponse response = getResponse(request, serialization);
+    serialization.serialize(response, request.getOutputStream());
     return NONE_RETURN_VALUE;
   }
 
   /**
-   * @param context
-   *         http request context
-   * @param serialization
-   *         serialize strategy
-   *
+   * @param context http request context
+   * @param serialization serialize strategy
    * @return returns a {@link RpcResponse}
    */
   private RpcResponse getResponse(RequestContext context, Serialization<RpcRequest> serialization) {
     try {
-      final RpcRequest request = serialization.deserialize(context.getInputStream());
-      final Object service = serviceMapping.get(request.getServiceName());
+      RpcRequest request = serialization.deserialize(context.getInputStream());
+      Object service = serviceMapping.get(request.getServiceName());
       if (service == null) {
         return RpcResponse.ofThrowable(new ServiceNotFoundException());
       }
-      final MethodInvoker invoker = methodMappings.get(new MethodCacheKey(request), service);
-      final Object[] args = request.getArguments();
+      MethodInvoker invoker = methodMapCache.get(new MethodCacheKey(request), service);
+      Object[] args = request.getArguments();
       return createResponse(service, args, invoker);
     }
     catch (IOException io) {
@@ -128,30 +120,29 @@ public class HttpServiceProviderEndpoint implements HandlerAdapter {
     return serialization;
   }
 
-  private static final class MethodMappings extends Mappings<MethodInvoker, Object> {
+  private static final class MethodMapCache extends MapCache<MethodCacheKey, MethodInvoker, Object> {
 
     @Override
-    protected MethodInvoker createValue(final Object key, final Object service) {
-      final MethodCacheKey methodCacheKey = (MethodCacheKey) key;
-      final Method methodToUse = getMethod(methodCacheKey, service);
+    protected MethodInvoker createValue(MethodCacheKey key, Object service) {
+      Method methodToUse = getMethod(key, service);
       if (methodToUse == null) {
         return null;
       }
-      return MethodInvoker.create(methodToUse);
+      return MethodInvoker.fromMethod(methodToUse);
     }
 
-    private static Method getMethod(MethodCacheKey key, final Object service) {
-      final String method = key.method;
-      final String[] paramTypes = key.paramTypes;
-      final int parameterLength = paramTypes.length;
+    private static Method getMethod(MethodCacheKey key, Object service) {
+      String method = key.method;
+      String[] paramTypes = key.paramTypes;
+      int parameterLength = paramTypes.length;
 
-      final Class<Object> serviceImpl = ClassUtils.getUserClass(service);
-      for (final Method serviceMethod : serviceImpl.getMethods()) {
+      Class<Object> serviceImpl = ClassUtils.getUserClass(service);
+      for (Method serviceMethod : serviceImpl.getMethods()) {
         if (Objects.equals(serviceMethod.getName(), method)
                 && parameterLength == serviceMethod.getParameterCount()) {
           int current = 0;
           boolean equals = true;
-          for (final Class<?> parameterType : serviceMethod.getParameterTypes()) {
+          for (Class<?> parameterType : serviceMethod.getParameterTypes()) {
             if (!parameterType.getName().equals(paramTypes[current++])) {
               // not target method
               equals = false;
@@ -182,7 +173,7 @@ public class HttpServiceProviderEndpoint implements HandlerAdapter {
         return true;
       if (!(o instanceof MethodCacheKey))
         return false;
-      final MethodCacheKey that = (MethodCacheKey) o;
+      MethodCacheKey that = (MethodCacheKey) o;
       return Objects.equals(method, that.method) && Arrays.equals(paramTypes, that.paramTypes);
     }
 

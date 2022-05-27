@@ -28,19 +28,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import cn.taketoday.beans.factory.annotation.Value;
 import cn.taketoday.context.ApplicationContext;
-import cn.taketoday.context.Ordered;
-import cn.taketoday.context.annotation.Env;
 import cn.taketoday.context.annotation.Import;
 import cn.taketoday.context.annotation.MissingBean;
-import cn.taketoday.context.annotation.Order;
-import cn.taketoday.context.annotation.Service;
-import cn.taketoday.context.annotation.Singleton;
-import cn.taketoday.context.logger.Logger;
-import cn.taketoday.context.logger.LoggerFactory;
-import cn.taketoday.context.utils.ClassUtils;
-import cn.taketoday.context.utils.ObjectUtils;
-import cn.taketoday.framework.server.AbstractWebServer;
+import cn.taketoday.context.properties.EnableConfigurationProperties;
+import cn.taketoday.framework.web.server.ServerProperties;
+import cn.taketoday.lang.Service;
+import cn.taketoday.lang.Singleton;
+import cn.taketoday.logging.Logger;
+import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.rpc.RpcRequest;
 import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.ServiceRegistry;
@@ -48,11 +45,13 @@ import cn.taketoday.rpc.protocol.http.HttpServiceRegistry;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
+import cn.taketoday.util.ClassUtils;
+import cn.taketoday.util.ObjectUtils;
+import cn.taketoday.web.HandlerExceptionHandler;
+import cn.taketoday.web.HandlerMapping;
 import cn.taketoday.web.RequestContext;
-import cn.taketoday.web.handler.HandlerExceptionHandler;
-import cn.taketoday.web.registry.HandlerRegistry;
-import cn.taketoday.web.view.ResultHandlers;
-import cn.taketoday.web.view.RuntimeResultHandler;
+import cn.taketoday.web.ReturnValueHandler;
+import cn.taketoday.web.handler.ReturnValueHandlerManager;
 
 /**
  * Enable service provider based on HTTP
@@ -66,25 +65,25 @@ public @interface EnableHttpServiceProvider {
 
 }
 
+@EnableConfigurationProperties(ServerProperties.class)
 final class HttpServiceProviderConfig {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
 
-  @MissingBean(type = ServiceRegistry.class)
-  static HttpServiceRegistry serviceRegistry(@Env("registry.url") String registryURL) {
+  @MissingBean
+  static ServiceRegistry serviceRegistry(@Value("${registry.url}") String registryURL) {
     return HttpServiceRegistry.ofURL(registryURL);
   }
 
-  @MissingBean(type = Serialization.class)
-  static JdkSerialization<RpcRequest> requestSerialization() {
+  @MissingBean
+  static Serialization<RpcRequest> requestSerialization() {
     return new JdkSerialization<>();
   }
 
   @Singleton
-  @Order(Ordered.HIGHEST_PRECEDENCE << 1)
-  static HandlerRegistry handlerRegistry(
-          AbstractWebServer server, ApplicationContext context,
+  static HandlerMapping handlerRegistry(
+          ServerProperties serverProperties, ApplicationContext context,
           ServiceRegistry serviceRegistry, Serialization<RpcRequest> requestSerialization,
-          @Env(value = "service.provider.uri", defaultValue = "/provider") String serviceProviderPath) {
+          @Value("${service.provider.uri:/provider}") String serviceProviderPath) {
 
     List<Object> services = context.getAnnotatedBeans(Service.class);
     HashMap<String, Object> local = new HashMap<>();
@@ -108,8 +107,8 @@ final class HttpServiceProviderConfig {
 
       ServiceDefinition definition = new ServiceDefinition();
 
-      definition.setHost(server.getHost()); // TODO resolve target host
-      definition.setPort(server.getPort());
+      definition.setHost(serverProperties.getAddress().getHostName()); // TODO resolve target host
+      definition.setPort(serverProperties.getPort());
       definition.setName(interfaceToUse.getName());
       definition.setServiceInterface(interfaceToUse);
 
@@ -125,8 +124,8 @@ final class HttpServiceProviderConfig {
   }
 
   @Singleton
-  static ResultHandlers resultHandlers(Serialization<RpcRequest> requestSerialization) {
-    ResultHandlers resultHandlers = new ResultHandlers();
+  static ReturnValueHandlerManager returnValueHandlerManager(Serialization<RpcRequest> requestSerialization) {
+    ReturnValueHandlerManager resultHandlers = new ReturnValueHandlerManager();
     resultHandlers.addHandlers(new SerializationResultHandler(requestSerialization));
     return resultHandlers;
   }
@@ -137,7 +136,7 @@ final class HttpServiceProviderConfig {
   }
 
   /** HandlerRegistry for rpc */
-  static final class ServiceProviderRegistry implements HandlerRegistry {
+  static final class ServiceProviderRegistry implements HandlerMapping {
     final String serviceProviderPath;
     final HttpServiceProviderEndpoint providerEndpoint;
 
@@ -147,8 +146,8 @@ final class HttpServiceProviderConfig {
     }
 
     @Override
-    public Object lookup(RequestContext context) {
-      if (context.getRequestPath().equals(serviceProviderPath)) {
+    public Object getHandler(RequestContext request) throws Exception {
+      if (request.getRequestPath().equals(serviceProviderPath)) {
         return providerEndpoint;
       }
       return null;
@@ -156,7 +155,7 @@ final class HttpServiceProviderConfig {
   }
 
   /** RuntimeResultHandler for rpc */
-  static final class SerializationResultHandler implements RuntimeResultHandler {
+  static final class SerializationResultHandler implements ReturnValueHandler {
     private final Serialization<RpcRequest> requestSerialization;
 
     public SerializationResultHandler(Serialization<RpcRequest> requestSerialization) {
@@ -164,13 +163,18 @@ final class HttpServiceProviderConfig {
     }
 
     @Override
-    public boolean supportsResult(Object result) {
-      return result instanceof RpcResponse;
+    public boolean supportsHandler(Object handler) {
+      return handler instanceof HttpServiceProviderEndpoint;
     }
 
     @Override
-    public void handleResult(RequestContext context, Object handler, Object result) throws Throwable {
-      requestSerialization.serialize(result, context.getOutputStream());
+    public boolean supportsReturnValue(Object returnValue) {
+      return returnValue instanceof RpcResponse;
+    }
+
+    @Override
+    public void handleReturnValue(RequestContext context, Object handler, Object returnValue) throws Exception {
+      requestSerialization.serialize(returnValue, context.getOutputStream());
     }
   }
 
@@ -178,7 +182,7 @@ final class HttpServiceProviderConfig {
   static final class RpcHandlerExceptionHandler implements HandlerExceptionHandler {
 
     @Override
-    public Object handleException(RequestContext context, Throwable exception, Object handler) throws Throwable {
+    public Object handleException(RequestContext context, Throwable exception, Object handler) {
       if (exception instanceof ClassNotFoundException) {
         return RpcResponse.ofThrowable(new ServiceNotFoundException());
       }

@@ -20,7 +20,7 @@
 
 package cn.taketoday.rpc.utils;
 
-import cn.taketoday.context.NestedRuntimeException;
+import cn.taketoday.core.NestedRuntimeException;
 
 /**
  * @author TODAY 2021/7/8 10:02

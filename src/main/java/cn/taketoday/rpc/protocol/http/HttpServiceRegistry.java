@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-import cn.taketoday.context.utils.Assert;
+import cn.taketoday.lang.Assert;
 import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.ServiceRegistry;
 import cn.taketoday.rpc.registry.JdkServiceProxy;
@@ -53,7 +53,7 @@ public class HttpServiceRegistry implements ServiceRegistry {
 
   private Serialization<RpcResponse> serialization;
 
-  public HttpServiceRegistry() {}
+  public HttpServiceRegistry() { }
 
   public HttpServiceRegistry(String registryURL) {
     this.registryURL = registryURL;
@@ -111,11 +111,8 @@ public class HttpServiceRegistry implements ServiceRegistry {
   /**
    * lookup for a target service
    *
-   * @param serviceInterface
-   *         target service interface
-   * @param <T>
-   *         service type
-   *
+   * @param serviceInterface target service interface
+   * @param <T> service type
    * @return target service interface
    */
   @Override

@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import cn.taketoday.context.utils.Assert;
+import cn.taketoday.lang.Assert;
 import cn.taketoday.rpc.registry.RandomServiceSelector;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceSelector;

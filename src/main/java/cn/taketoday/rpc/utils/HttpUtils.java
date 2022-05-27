@@ -28,7 +28,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import cn.taketoday.web.Constant;
+import cn.taketoday.http.HttpHeaders;
+import cn.taketoday.http.MediaType;
+import cn.taketoday.lang.Constant;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -40,12 +42,9 @@ public abstract class HttpUtils {
   /**
    * get a connection with request body
    *
-   * @param method
-   *         request method
-   * @param url
-   *         url
-   * @param body
-   *         request body
+   * @param method request method
+   * @param url url
+   * @param body request body
    */
   public static HttpURLConnection getConnection(String method, String url, Object body) {
     final byte[] jsonBytes = getJsonBytes(body);
@@ -66,18 +65,15 @@ public abstract class HttpUtils {
   }
 
   public static HttpURLConnection getConnection(String method, String url, byte[] body) {
-    return getConnection(method, url, Constant.CONTENT_TYPE_JSON, body);
+    return getConnection(method, url, MediaType.APPLICATION_JSON_VALUE, body);
   }
 
   /**
    * get a connection with request body
    *
-   * @param method
-   *         request method
-   * @param url
-   *         url
-   * @param body
-   *         request body
+   * @param method request method
+   * @param url url
+   * @param body request body
    */
   public static HttpURLConnection getConnection(
           String method, String url, String contentType, byte[] body) {
@@ -91,10 +87,8 @@ public abstract class HttpUtils {
   /**
    * get a connection
    *
-   * @param method
-   *         request method
-   * @param urlStr
-   *         url
+   * @param method request method
+   * @param urlStr url
    */
   public static HttpURLConnection getConnection(String method, String urlStr) {
     try {
@@ -118,7 +112,7 @@ public abstract class HttpUtils {
           String method, String urlStr, String contentType, OutputStreamCallback callback) {
     HttpURLConnection connection = getConnection(method, urlStr);
     if (contentType != null) {
-      connection.setRequestProperty(Constant.CONTENT_TYPE, contentType);
+      connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, contentType);
     }
     if (callback != null) {
       try {
@@ -160,10 +154,8 @@ public abstract class HttpUtils {
   /**
    * get response string
    *
-   * @param method
-   *         request method
-   * @param urlStr
-   *         url
+   * @param method request method
+   * @param urlStr url
    */
   public static String getResponse(String method, String urlStr) {
     return getResponse(getConnection(method, urlStr));

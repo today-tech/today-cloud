@@ -23,7 +23,7 @@ package cn.taketoday.rpc.registry;
 import java.util.List;
 import java.util.Random;
 
-import cn.taketoday.context.utils.Assert;
+import cn.taketoday.lang.Assert;
 
 /**
  * @author TODAY 2021/7/9 23:20

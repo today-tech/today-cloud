@@ -22,20 +22,25 @@ package cn.taketoday.rpc.demo;
 
 import com.esotericsoftware.kryo.kryo5.Kryo;
 
+import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.context.annotation.Primary;
-import cn.taketoday.context.annotation.Singleton;
-import cn.taketoday.framework.WebApplication;
+import cn.taketoday.context.annotation.config.EnableAutoConfiguration;
+import cn.taketoday.framework.web.WebApplication;
+import cn.taketoday.lang.Singleton;
 import cn.taketoday.rpc.RpcRequest;
-import cn.taketoday.rpc.RpcResponse;
 import cn.taketoday.rpc.serialize.KryoClassResolver;
 import cn.taketoday.rpc.serialize.KryoSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
 import cn.taketoday.rpc.server.EnableHttpServiceProvider;
+import cn.taketoday.web.config.EnableWebMvc;
 
 /**
  * @author TODAY 2021/7/3 22:48
  */
 @EnableHttpServiceProvider
+@EnableWebMvc
+@Configuration
+@EnableAutoConfiguration
 public class RpcServer {
 
   public static void main(String[] args) {

@@ -20,13 +20,17 @@
 
 package cn.taketoday.rpc.demo;
 
-import cn.taketoday.framework.WebApplication;
+import cn.taketoday.context.annotation.config.EnableAutoConfiguration;
+import cn.taketoday.framework.web.WebApplication;
 import cn.taketoday.rpc.registry.EnableHttpRegistry;
+import cn.taketoday.web.config.EnableWebMvc;
 
 /**
  * @author TODAY 2021/7/3 23:22
  */
+@EnableWebMvc
 @EnableHttpRegistry
+@EnableAutoConfiguration
 public class Registry {
 
   public static void main(String[] args) {

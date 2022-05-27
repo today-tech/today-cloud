@@ -59,20 +59,20 @@ public class RpcClient {
 
     userService.notFound();
 
-    final DefaultUserService service = new DefaultUserService();
-    long start = System.currentTimeMillis();
-    for (int i = 0; i < 100_000_000; i++) {
-      service.hello("121121");
-    }
-    System.out.println(System.currentTimeMillis() - start + "ms");
-    start = System.currentTimeMillis();
-
-//    for (int i = 0; i < 100/*_000_000*/; i++) {
-    for (int i = 0; i < 100_000/*_000*/; i++) {
-      userService.hello("121121");
-    }
-
-    System.out.println(System.currentTimeMillis() - start + "ms");
+//    final DefaultUserService service = new DefaultUserService();
+//    long start = System.currentTimeMillis();
+//    for (int i = 0; i < 100_000_000; i++) {
+//      service.hello("121121");
+//    }
+//    System.out.println(System.currentTimeMillis() - start + "ms");
+//    start = System.currentTimeMillis();
+//
+////    for (int i = 0; i < 100/*_000_000*/; i++) {
+//    for (int i = 0; i < 100_000/*_000*/; i++) {
+//      userService.hello("121121");
+//    }
+//
+//    System.out.println(System.currentTimeMillis() - start + "ms");
 
   }
 

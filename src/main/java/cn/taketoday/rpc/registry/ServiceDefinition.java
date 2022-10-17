@@ -23,6 +23,8 @@ package cn.taketoday.rpc.registry;
 import java.io.Serializable;
 import java.util.Objects;
 
+import cn.taketoday.core.style.ToStringBuilder;
+
 /**
  * @author TODAY 2021/7/4 00:36
  */
@@ -98,12 +100,13 @@ public class ServiceDefinition implements Serializable {
 
   @Override
   public String toString() {
-    return "ServiceDefinition{" +
-            "port=" + port +
-            ", host='" + host + '\'' +
-            ", name='" + name + '\'' +
-            ", version='" + version + '\'' +
-            ", serviceInterface=" + serviceInterface +
-            '}';
+    return ToStringBuilder.from(this)
+            .append("port", port)
+            .append("host", host)
+            .append("name", name)
+            .append("version", version)
+            .append("serviceInterface", serviceInterface)
+            .toString();
   }
+
 }

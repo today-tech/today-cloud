@@ -34,6 +34,7 @@ import cn.taketoday.rpc.registry.RegisteredStatus;
 import cn.taketoday.rpc.registry.ServiceDefinition;
 import cn.taketoday.rpc.registry.ServiceProxy;
 import cn.taketoday.rpc.registry.ServiceRegisterFailedException;
+import cn.taketoday.rpc.serialize.JdkSerialization;
 import cn.taketoday.rpc.serialize.Serialization;
 import cn.taketoday.rpc.server.ServiceNotFoundException;
 import cn.taketoday.rpc.utils.HttpRuntimeException;
@@ -51,7 +52,7 @@ public class HttpServiceRegistry implements ServiceRegistry {
   private String registryURL;
   private ServiceProxy serviceProxy;
 
-  private Serialization<RpcResponse> serialization;
+  private Serialization<RpcResponse> serialization = new JdkSerialization<>();
 
   public HttpServiceRegistry() { }
 
@@ -83,6 +84,7 @@ public class HttpServiceRegistry implements ServiceRegistry {
   }
 
   public void setSerialization(Serialization<RpcResponse> serialization) {
+    Assert.notNull(serialization, "serialization is required");
     this.serialization = serialization;
   }
 

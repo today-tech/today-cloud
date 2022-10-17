@@ -20,9 +20,9 @@
 
 package cn.taketoday.rpc.demo.service.impl;
 
-import cn.taketoday.lang.Service;
 import cn.taketoday.rpc.demo.model.User;
 import cn.taketoday.rpc.demo.service.UserService;
+import cn.taketoday.stereotype.Service;
 
 /**
  * @author TODAY 2021/7/3 22:46

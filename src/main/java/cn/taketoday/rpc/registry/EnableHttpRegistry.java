@@ -28,6 +28,7 @@ import java.lang.annotation.Target;
 import cn.taketoday.context.annotation.Import;
 import cn.taketoday.context.annotation.MissingBean;
 import cn.taketoday.rpc.server.HttpServiceRegistryEndpoint;
+import cn.taketoday.stereotype.Component;
 import cn.taketoday.web.annotation.RequestMapping;
 
 /**
@@ -44,8 +45,7 @@ public @interface EnableHttpRegistry {
 
 final class HttpRegistryConfig {
 
-  @MissingBean
-  @RequestMapping("#{registry.services.uri}")
+  @Component
   public HttpServiceRegistryEndpoint serviceRegistryEndpoint() {
     return new HttpServiceRegistryEndpoint();
   }

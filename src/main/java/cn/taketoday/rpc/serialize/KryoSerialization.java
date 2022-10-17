@@ -50,7 +50,7 @@ public class KryoSerialization<T> extends Serialization<T> {
   @Override
   public void serialize(Object object, OutputStream output) throws IOException {
     Output kryoOutput = new Output(output);
-    kryo.writeObject(kryoOutput, object);
+    kryo.writeClassAndObject(kryoOutput, object);
   }
 
   @Override

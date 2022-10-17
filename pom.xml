@@ -97,6 +97,11 @@
       <version>5.1.1</version>
     </dependency>
 
+    <dependency>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
+    </dependency>
+
     <!-- test -->
 
     <dependency>
@@ -129,11 +134,11 @@
       <scope>test</scope>
     </dependency>
 
-<!--    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
-      <scope>provided</scope>
-    </dependency>-->
+    <!--    <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-all</artifactId>
+          <scope>provided</scope>
+        </dependency>-->
 
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
@@ -145,6 +150,11 @@
       <groupId>cn.taketoday</groupId>
       <artifactId>today-test</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>cn.taketoday</groupId>
+      <artifactId>today-web</artifactId>
     </dependency>
 
   </dependencies>
@@ -265,14 +275,6 @@
   -->
 
   <profiles>
-    <profile>
-      <id>ci</id>
-      <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      </properties>
-    </profile>
 
     <profile>
       <id>release</id>

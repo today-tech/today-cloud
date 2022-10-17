@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import cn.taketoday.core.DefaultMultiValueMap;
 import cn.taketoday.core.MultiValueMap;
+import cn.taketoday.http.MediaType;
+import cn.taketoday.http.ResponseEntity;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.rpc.registry.RegisteredStatus;
@@ -34,19 +36,36 @@ import cn.taketoday.util.CollectionUtils;
 import cn.taketoday.web.annotation.DELETE;
 import cn.taketoday.web.annotation.GET;
 import cn.taketoday.web.annotation.POST;
+import cn.taketoday.web.annotation.PathVariable;
 import cn.taketoday.web.annotation.RequestBody;
+import cn.taketoday.web.annotation.RequestMapping;
+import cn.taketoday.web.annotation.ResponseStatus;
+import cn.taketoday.web.annotation.RestController;
 
 /**
  * @author TODAY 2021/7/9 23:08
  */
+@RestController
+@RequestMapping("${registry.services.uri}")
 public class HttpServiceRegistryEndpoint {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceRegistryEndpoint.class);
 
   private final MultiValueMap<String, ServiceDefinition>
           serviceMapping = new DefaultMultiValueMap<>(new ConcurrentHashMap<>());
 
+  @GET(produces = MediaType.APPLICATION_JSON_VALUE)
+  public MultiValueMap<String, ServiceDefinition> services() {
+    return serviceMapping;
+  }
+
+//  public ResponseEntity<MultiValueMap<String, ServiceDefinition>> services() {
+//    return ResponseEntity.ok()
+//            .contentType(MediaType.APPLICATION_JSON)
+//            .body(serviceMapping);
+//  }
+
   @GET("/{name}")
-  public List<ServiceDefinition> lookup(String name) {
+  public List<ServiceDefinition> lookup(@PathVariable String name) {
     final List<ServiceDefinition> serviceDefinitions = serviceMapping.get(name);
     if (CollectionUtils.isEmpty(serviceDefinitions)) {
       throw new IllegalStateException("cannot found a service: " + name);

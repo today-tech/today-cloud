@@ -2,12 +2,30 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>cn.taketoday</groupId>
-  <artifactId>today-rpc</artifactId>
-  <version>${revision}</version>
+  <parent>
+    <groupId>cn.taketoday</groupId>
+    <artifactId>today-cloud-build</artifactId>
+    <version>${revision}</version>
+    <relativePath>today-cloud-build/pom.xml</relativePath>
+  </parent>
 
-  <name>TODAY rpc</name>
-  <description>A Java library for Remote Procedure Call.</description>
+  <artifactId>today-cloud</artifactId>
+
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>today-service-provider</module>
+    <module>today-service-client</module>
+    <module>today-service-registry</module>
+    <module>today-cloud-gateway</module>
+    <module>today-cloud-config-server</module>
+    <module>today-cloud-bom</module>
+    <module>today-cloud-core</module>
+  </modules>
+
+  <name>TODAY Cloud</name>
+
+  <description>A Java library for studying to create a microservices framework like Spring Cloud.</description>
 
   <licenses>
     <license>
@@ -17,7 +35,7 @@
     </license>
   </licenses>
 
-  <url>https://github.com/TAKETODAY/today-rpc</url>
+  <url>https://github.com/TAKETODAY/today-cloud</url>
   <organization>
     <name>TODAY</name>
     <url>https://taketoday.cn</url>
@@ -32,27 +50,18 @@
   </developers>
 
   <scm>
-    <url>https://github.com/TAKETODAY/today-rpc.git</url>
+    <url>https://github.com/TAKETODAY/today-cloud.git</url>
     <developerConnection>Harry Yang</developerConnection>
     <tag>rpc</tag>
   </scm>
 
   <issueManagement>
     <system>Github Issues</system>
-    <url>https://github.com/TAKETODAY/today-rpc/issues</url>
+    <url>https://github.com/TAKETODAY/today-cloud/issues</url>
   </issueManagement>
 
   <properties>
-    <revision>1.0.0-Draft.1</revision>
-
     <skipTests>true</skipTests>
-    <java.version>17</java.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <today.version>4.0.0-Draft.1</today.version>
 
   </properties>
 
@@ -66,7 +75,6 @@
     <dependency>
       <groupId>cn.taketoday</groupId>
       <artifactId>today-framework</artifactId>
-      <version>${today.version}</version>
     </dependency>
 
     <dependency>
@@ -74,14 +82,6 @@
       <artifactId>snakeyaml</artifactId>
     </dependency>
 
-    <!-- logging -->
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- cache -->
 
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
@@ -164,12 +164,22 @@
       <dependency>
         <groupId>cn.taketoday</groupId>
         <artifactId>today-infrastructure-bom</artifactId>
-        <version>${today.version}</version>
+        <version>${today-infra.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>cn.taketoday</groupId>
+        <artifactId>today-cloud-bom</artifactId>
+        <version>${revision}</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
+
     </dependencies>
   </dependencyManagement>
+
 
   <distributionManagement>
     <snapshotRepository>

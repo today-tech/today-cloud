@@ -18,20 +18,24 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.demo.model;
+package cn.taketoday.demo.service;
 
-import java.io.Serializable;
-
-import lombok.Data;
+import cn.taketoday.cloud.provider.EnableHttpServiceProvider;
+import cn.taketoday.framework.Application;
+import cn.taketoday.framework.InfraApplication;
+import cn.taketoday.web.config.EnableWebMvc;
 
 /**
- * @author TODAY 2021/7/3 22:51
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2022/10/18 00:04
  */
-@Data
-public class User implements Serializable {
+@EnableHttpServiceProvider
+@EnableWebMvc
+@InfraApplication
+public class UserServiceApplication {
 
-  private Integer id;
-  private Integer age;
-  private String name;
+  public static void main(String[] args) {
+    Application.run(UserServiceApplication.class, args);
+  }
 
 }

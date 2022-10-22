@@ -18,67 +18,36 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.demo;
+package cn.taketoday.demo;
 
-import cn.taketoday.cloud.demo.model.User;
-import cn.taketoday.cloud.demo.service.UserService;
 import cn.taketoday.cloud.protocol.http.HttpServiceRegistry;
-import cn.taketoday.cloud.provider.EnableHttpServiceProvider;
-import cn.taketoday.cloud.registry.EnableHttpRegistry;
-import cn.taketoday.context.annotation.Configuration;
-import cn.taketoday.context.annotation.config.EnableAutoConfiguration;
-import cn.taketoday.framework.web.WebApplication;
-import cn.taketoday.web.config.EnableWebMvc;
+import cn.taketoday.demo.model.User;
+import cn.taketoday.demo.service.UserService;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2022/10/17 22:50
+ * @since 1.0 2022/10/18 00:06
  */
-public class App {
+public class Client {
 
-  @EnableWebMvc
-  @EnableHttpRegistry
-  @EnableAutoConfiguration
-  public static class Registry {
+  public static void main(String[] args) {
+    HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
+    UserService userService = serviceRegistry.lookup(UserService.class);
 
-    public static void main(String[] args) {
-      WebApplication.run(Registry.class, args);
+    String ret = userService.hello("today rpc");
+    System.out.println(ret);
+
+    User byId = userService.getById(1);
+    System.out.println(byId);
+
+    try {
+      userService.throwEx();
+    }
+    catch (Throwable e) {
+      e.printStackTrace();
     }
 
-  }
-
-  @EnableHttpServiceProvider
-  @EnableWebMvc
-  @Configuration
-  @EnableAutoConfiguration
-  public static class RpcServer {
-
-    public static void main(String[] args) {
-      WebApplication.run(RpcServer.class, args);
-    }
-
-  }
-
-  public static class RpcClient {
-
-    public static void main(String[] args) {
-      HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
-      UserService userService = serviceRegistry.lookup(UserService.class);
-
-      String ret = userService.hello("today rpc");
-      System.out.println(ret);
-
-      User byId = userService.getById(1);
-      System.out.println(byId);
-
-      try {
-        userService.throwEx();
-      }
-      catch (Throwable e) {
-        e.printStackTrace();
-      }
-
-      userService.notFound();
+    userService.notFound();
 
 //    DefaultUserService service = new DefaultUserService();
 //    long start = System.currentTimeMillis();
@@ -94,8 +63,6 @@ public class App {
 //    }
 //
 //    System.out.println(System.currentTimeMillis() - start + "ms");
-
-    }
 
   }
 

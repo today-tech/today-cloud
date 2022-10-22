@@ -23,12 +23,12 @@ package cn.taketoday.cloud.registry;
 import java.io.Serial;
 import java.util.List;
 
-import cn.taketoday.core.NestedRuntimeException;
+import cn.taketoday.cloud.core.RemotingException;
 
 /**
  * @author TODAY 2021/7/11 17:19
  */
-public class ServiceRegisterFailedException extends NestedRuntimeException {
+public class ServiceRegisterFailedException extends RemotingException {
   @Serial
   private static final long serialVersionUID = 1L;
 

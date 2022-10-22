@@ -18,39 +18,21 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.demo.service.impl;
+package cn.taketoday.demo.service;
 
-import cn.taketoday.cloud.demo.model.User;
-import cn.taketoday.cloud.demo.service.UserService;
-import cn.taketoday.stereotype.Service;
+import cn.taketoday.demo.model.User;
 
 /**
- * @author TODAY 2021/7/3 22:46
+ * @author TODAY 2021/7/3 22:45
  */
-@Service
-public class DefaultUserService implements UserService {
+public interface UserService {
 
-  @Override
-  public String hello(String text) {
-    return "Hello " + text;
-  }
+  String hello(String text);
 
-  @Override
-  public User getById(Integer id) {
-    final User user = new User();
-    user.setAge(23);
-    user.setId(id);
-    user.setName("TODAY");
-    return user;
-  }
+  User getById(Integer id);
 
-  @Override
-  public void throwEx() {
-    throw new RuntimeException("throwEx");
-  }
+  void throwEx();
 
-  @Override
-  public void notFound() {
+  void notFound();
 
-  }
 }

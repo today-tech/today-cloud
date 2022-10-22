@@ -19,38 +19,36 @@
   ~ along with this program.  If not, see [http://www.gnu.org/licenses/]
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<configuration>
+  <contextName>TODAY Cloud Demos</contextName>
 
-  <modelVersion>4.0.0</modelVersion>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>
+        %red(%d{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level) - %blue([%16.16t]) %cyan(%-40.40logger{40}) %4.4L - %m%n
+      </pattern>
+      <!-- 	<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p %c{1}:%L [%t:%r] - %m%n</pattern> -->
+    </encoder>
+  </appender>
 
-  <parent>
-    <artifactId>today-cloud</artifactId>
-    <groupId>cn.taketoday</groupId>
-    <version>${revision}</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>
+  <!--
+    <logger name="cn.taketoday.context.logger" level="TRACE">
+      <appender-ref ref="STDOUT" />
+    </logger>
+  -->
 
-  <artifactId>today-service-registry</artifactId>
+  <!--  <root level="TRACE">-->
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT" />
+  </root>
+  <!--
 
-  <dependencies>
+    <logger name="cn.taketoday.rpc" level="TRACE">
+      <appender-ref ref="STDOUT" />
+    </logger>
+  -->
 
-    <dependency>
-      <groupId>cn.taketoday</groupId>
-      <artifactId>today-core</artifactId>
-    </dependency>
+</configuration>
 
-    <dependency>
-      <groupId>cn.taketoday</groupId>
-      <artifactId>today-cloud-core</artifactId>
-    </dependency>
 
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-codec-http</artifactId>
-    </dependency>
 
-  </dependencies>
-
-</project>

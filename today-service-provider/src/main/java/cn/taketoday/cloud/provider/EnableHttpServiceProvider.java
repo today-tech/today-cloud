@@ -24,22 +24,17 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import cn.taketoday.beans.factory.DisposableBean;
 import cn.taketoday.beans.factory.annotation.Value;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
-import cn.taketoday.cloud.registry.ServiceDefinition;
+import cn.taketoday.cloud.protocol.http.HttpServiceRegistry;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.cloud.registry.ServiceRegistry;
-import cn.taketoday.context.ApplicationContext;
+import cn.taketoday.context.SmartLifecycle;
 import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.context.annotation.Import;
 import cn.taketoday.context.annotation.MissingBean;
@@ -48,10 +43,7 @@ import cn.taketoday.core.Ordered;
 import cn.taketoday.framework.web.server.ServerProperties;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
-import cn.taketoday.stereotype.Service;
 import cn.taketoday.stereotype.Singleton;
-import cn.taketoday.util.ClassUtils;
-import cn.taketoday.util.ObjectUtils;
 import cn.taketoday.web.HandlerExceptionHandler;
 import cn.taketoday.web.HandlerMapping;
 import cn.taketoday.web.RequestContext;
@@ -77,10 +69,10 @@ public @interface EnableHttpServiceProvider {
 final class HttpServiceProviderConfig {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
 
-//  @MissingBean
-//  static ServiceRegistry serviceRegistry(@Value("${registry.url}") String registryURL) {
-//    return HttpServiceRegistry.ofURL(registryURL);
-//  }
+  @MissingBean
+  static ServiceRegistry serviceRegistry(@Value("${registry.url}") String registryURL) {
+    return HttpServiceRegistry.ofURL(registryURL);
+  }
 
   @MissingBean
   static Serialization<RpcRequest> requestSerialization() {
@@ -91,54 +83,13 @@ final class HttpServiceProviderConfig {
 
   @Singleton
   HandlerMapping httpServiceHandlerMapping(
-          ServerProperties serverProperties, ApplicationContext context,
-          ServiceRegistry serviceRegistry, Serialization<RpcRequest> requestSerialization,
-          @Value("${service.provider.uri:/provider}") String serviceProviderPath) throws UnknownHostException {
-
-    List<Object> services = context.getAnnotatedBeans(Service.class);
-    HashMap<String, Object> local = new HashMap<>();
-    ArrayList<ServiceDefinition> definitions = new ArrayList<>();
-    for (Object service : services) {
-      Class<Object> serviceImpl = ClassUtils.getUserClass(service);
-      Class<?>[] interfaces = serviceImpl.getInterfaces();
-      if (ObjectUtils.isEmpty(interfaces)) {
-        continue;
-      }
-
-      Class<?> interfaceToUse = interfaces[0];
-      if (interfaces.length > 1) {
-        for (final Class<?> anInterface : interfaces) {
-          if (anInterface.isAnnotationPresent(Service.class)) {
-            interfaceToUse = anInterface;
-            break;
-          }
-        }
-      }
-
-      ServiceDefinition definition = new ServiceDefinition();
-
-      if (serverProperties.getAddress() != null) {
-        definition.setHost(serverProperties.getAddress().getHostName());
-      }
-      else {
-        InetAddress localHost = InetAddress.getLocalHost();
-        definition.setHost(localHost.getHostName()); // TODO resolve target host
-      }
-      definition.setPort(serverProperties.getPort());
-      definition.setName(interfaceToUse.getName());
-      definition.setServiceInterface(interfaceToUse);
-
-      log.info("add service: [{}] to interface: [{}]", service, definition.getName());
-      definitions.add(definition);
-      local.put(interfaceToUse.getName(), service); // register object
-    }
-
-    log.info("Registering services to registry: [{}]", serviceRegistry);
-    serviceRegistry.register(definitions); // register to registry
+          Serialization<RpcRequest> requestSerialization,
+          @Value("${service.provider.uri:/provider}") String serviceProviderPath,
+          LocalServiceHolder serviceHolder) {
 
     PathPattern pathPattern = pathPatternParser.parse(serviceProviderPath);
-    return new ServiceProviderRegistry(pathPattern, serviceRegistry, definitions,
-            new HttpServiceProviderEndpoint(local, requestSerialization));
+    return new ServiceProviderRegistry(pathPattern,
+            new HttpServiceProviderEndpoint(serviceHolder, requestSerialization));
   }
 
   @Singleton
@@ -153,18 +104,68 @@ final class HttpServiceProviderConfig {
     return new RpcHandlerExceptionHandler();
   }
 
+  @Singleton
+  LocalServiceHolder localServiceHolder() {
+    return new LocalServiceHolder();
+  }
+
+  @Singleton
+  ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry serviceRegistry,
+          LocalServiceHolder serviceHolder) {
+    return new ServiceProviderLifecycle(serviceRegistry, serviceHolder);
+  }
+
+  static class ServiceProviderLifecycle implements SmartLifecycle {
+    final ServiceRegistry serviceRegistry;
+    final LocalServiceHolder serviceHolder;
+
+    private final AtomicBoolean started = new AtomicBoolean();
+
+    ServiceProviderLifecycle(ServiceRegistry serviceRegistry, LocalServiceHolder serviceHolder) {
+      this.serviceRegistry = serviceRegistry;
+      this.serviceHolder = serviceHolder;
+    }
+
+    @Override
+    public void start() {
+      if (started.compareAndSet(false, true)) {
+        log.info("Registering services to registry: [{}]", serviceRegistry);
+        serviceRegistry.register(serviceHolder.getServices()); // register to registry
+      }
+    }
+
+    @Override
+    public void stop() {
+      throw new UnsupportedOperationException("Stop must not be invoked directly");
+    }
+
+    /**
+     * Go offline to delete the service registered on the machine
+     */
+    @Override
+    public void stop(Runnable callback) {
+      if (started.compareAndSet(true, false)) {
+        log.info("Un-Registering services: [{}]", serviceRegistry);
+        serviceRegistry.unregister(serviceHolder.getServices());
+        callback.run();
+      }
+    }
+
+    @Override
+    public boolean isRunning() {
+      return started.get();
+    }
+
+  }
+
   /** HandlerMapping for rpc */
-  static final class ServiceProviderRegistry implements HandlerMapping, DisposableBean, Ordered {
+  static final class ServiceProviderRegistry implements HandlerMapping, Ordered {
 
     final PathPattern serviceProviderPath;
-    final ServiceRegistry serviceRegistry;
-    final List<ServiceDefinition> definitions;
     final HttpServiceProviderEndpoint providerEndpoint;
 
-    ServiceProviderRegistry(PathPattern serviceProviderPath, ServiceRegistry serviceRegistry,
-            List<ServiceDefinition> definitions, HttpServiceProviderEndpoint providerEndpoint) {
-      this.definitions = definitions;
-      this.serviceRegistry = serviceRegistry;
+    ServiceProviderRegistry(PathPattern serviceProviderPath,
+            HttpServiceProviderEndpoint providerEndpoint) {
       this.providerEndpoint = providerEndpoint;
       this.serviceProviderPath = serviceProviderPath;
     }
@@ -175,14 +176,6 @@ final class HttpServiceProviderConfig {
         return providerEndpoint;
       }
       return null;
-    }
-
-    /**
-     * Go offline to delete the service registered on the machine
-     */
-    @Override
-    public void destroy() throws Exception {
-      serviceRegistry.unregister(definitions);
     }
 
     @Override

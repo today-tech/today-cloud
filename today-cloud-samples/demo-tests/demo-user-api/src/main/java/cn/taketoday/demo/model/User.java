@@ -18,35 +18,20 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.core.serialize;
+package cn.taketoday.demo.model;
 
-import java.io.Serial;
+import java.io.Serializable;
 
-import cn.taketoday.cloud.core.RemotingException;
-import cn.taketoday.core.NestedRuntimeException;
+import lombok.Data;
 
 /**
- * Deserialize Failed
- *
- * @author TODAY 2021/7/11 23:54
+ * @author TODAY 2021/7/3 22:51
  */
-public class DeserializeFailedException extends RemotingException {
-  @Serial
-  private static final long serialVersionUID = 1L;
+@Data
+public class User implements Serializable {
 
-  public DeserializeFailedException() {
-    super();
-  }
+  private Integer id;
+  private Integer age;
+  private String name;
 
-  public DeserializeFailedException(String message) {
-    super(message);
-  }
-
-  public DeserializeFailedException(Throwable cause) {
-    super(cause);
-  }
-
-  public DeserializeFailedException(String message, Throwable cause) {
-    super(message, cause);
-  }
 }

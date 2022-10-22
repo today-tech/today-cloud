@@ -18,35 +18,38 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.core.serialize;
+package cn.taketoday.demo.service;
 
-import java.io.Serial;
-
-import cn.taketoday.cloud.core.RemotingException;
-import cn.taketoday.core.NestedRuntimeException;
+import cn.taketoday.stereotype.Service;
+import cn.taketoday.demo.model.User;
 
 /**
- * Deserialize Failed
- *
- * @author TODAY 2021/7/11 23:54
+ * @author TODAY 2021/7/3 22:46
  */
-public class DeserializeFailedException extends RemotingException {
-  @Serial
-  private static final long serialVersionUID = 1L;
+@Service
+public class DefaultUserService implements UserService {
 
-  public DeserializeFailedException() {
-    super();
+  @Override
+  public String hello(String text) {
+    return "Hello " + text;
   }
 
-  public DeserializeFailedException(String message) {
-    super(message);
+  @Override
+  public User getById(Integer id) {
+    final User user = new User();
+    user.setAge(23);
+    user.setId(id);
+    user.setName("TODAY");
+    return user;
   }
 
-  public DeserializeFailedException(Throwable cause) {
-    super(cause);
+  @Override
+  public void throwEx() {
+    throw new RuntimeException("throwEx");
   }
 
-  public DeserializeFailedException(String message, Throwable cause) {
-    super(message, cause);
+  @Override
+  public void notFound() {
+
   }
 }

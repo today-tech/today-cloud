@@ -23,7 +23,6 @@ package cn.taketoday.cloud.provider;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
 
 import cn.taketoday.cloud.RpcRequest;
@@ -46,20 +45,21 @@ import cn.taketoday.web.RequestContext;
  */
 public class HttpServiceProviderEndpoint implements HttpRequestHandler {
 
-  /** service mapping */
-  private final Map<String, Object> serviceMapping;
   /** for serialize and deserialize */
   private Serialization<RpcRequest> serialization;
+
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
 
-  public HttpServiceProviderEndpoint(Map<String, Object> local) {
-    this(local, new JdkSerialization<>());
+  private final LocalServiceHolder serviceHolder;
+
+  public HttpServiceProviderEndpoint(LocalServiceHolder serviceHolder) {
+    this(serviceHolder, new JdkSerialization<>());
   }
 
-  public HttpServiceProviderEndpoint(Map<String, Object> serviceMapping, Serialization<RpcRequest> serialization) {
+  public HttpServiceProviderEndpoint(LocalServiceHolder serviceHolder, Serialization<RpcRequest> serialization) {
     this.serialization = serialization;
-    this.serviceMapping = serviceMapping;
+    this.serviceHolder = serviceHolder;
   }
 
   @Override
@@ -78,7 +78,7 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
   private RpcResponse getResponse(RequestContext context, Serialization<RpcRequest> serialization) {
     try {
       RpcRequest request = serialization.deserialize(context.getInputStream());
-      Object service = serviceMapping.get(request.getServiceName());
+      Object service = serviceHolder.getService(request.getServiceName());
       if (service == null) {
         return RpcResponse.ofThrowable(new ServiceNotFoundException());
       }
@@ -172,10 +172,10 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
     public boolean equals(Object o) {
       if (this == o)
         return true;
-      if (!(o instanceof MethodCacheKey))
+      if (!(o instanceof MethodCacheKey that))
         return false;
-      MethodCacheKey that = (MethodCacheKey) o;
-      return Objects.equals(method, that.method) && Arrays.equals(paramTypes, that.paramTypes);
+      return Objects.equals(method, that.method)
+              && Arrays.equals(paramTypes, that.paramTypes);
     }
 
     @Override

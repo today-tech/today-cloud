@@ -18,21 +18,26 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.demo.service;
+package cn.taketoday.demo;
 
-import cn.taketoday.cloud.demo.model.User;
+import cn.taketoday.cloud.registry.EnableHttpRegistry;
+import cn.taketoday.framework.Application;
+import cn.taketoday.framework.InfraApplication;
+import cn.taketoday.framework.web.netty.EnableNettyHandling;
+import cn.taketoday.web.config.EnableWebMvc;
 
 /**
- * @author TODAY 2021/7/3 22:45
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2022/10/18 00:02
  */
-public interface UserService {
+@EnableHttpRegistry
+@EnableWebMvc
+@InfraApplication
+@EnableNettyHandling
+public class RegistryApplication {
 
-  String hello(String text);
-
-  User getById(Integer id);
-
-  void throwEx();
-
-  void notFound();
+  public static void main(String[] args) {
+    Application.run(RegistryApplication.class, args);
+  }
 
 }

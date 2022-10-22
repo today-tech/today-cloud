@@ -22,13 +22,14 @@ package cn.taketoday.cloud.registry;
 
 import java.io.Serial;
 
-import cn.taketoday.core.NestedRuntimeException;
+import cn.taketoday.cloud.core.RemotingException;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2021/7/9 22:40
  */
-public class ServiceNotFoundException extends NestedRuntimeException {
+public class ServiceNotFoundException extends RemotingException {
+
   @Serial
   private static final long serialVersionUID = 1L;
 

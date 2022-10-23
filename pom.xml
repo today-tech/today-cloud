@@ -82,7 +82,6 @@
       <artifactId>snakeyaml</artifactId>
     </dependency>
 
-
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
@@ -199,9 +198,6 @@
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
         <version>4.3.0</version>
-        <configuration>
-          <repoToken>QnCQitLt7wun8tpjDfVy7ZuAfEb8tDnlC</repoToken>
-        </configuration>
         <dependencies>
           <dependency>
             <groupId>javax.xml.bind</groupId>

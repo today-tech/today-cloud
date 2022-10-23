@@ -41,6 +41,15 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <today-infra.version>4.0.0-Draft.1</today-infra.version>
+    <!--doc-->
+    <site.output.dir>${project.build.directory}/staging</site.output.dir>
+    <maven.site.skip>true</maven.site.skip>
+    <asciidoctorj.version>2.5.2</asciidoctorj.version>
+    <asciidoctorj.pdf.version>1.6.0</asciidoctorj.pdf.version>
+    <jruby.version>9.2.19.0</jruby.version>
+    <!-- status: DRAFT, BETA, etc., or blank for final -->
+    <doc-status>DRAFT</doc-status>
+    <revisiondate>${maven.build.timestamp}</revisiondate>
 
     <add-opens>
       --add-opens java.base/java.io=ALL-UNNAMED
@@ -315,7 +324,7 @@
                     <source-highlighter>coderay</source-highlighter>
                     <imagesdir>images</imagesdir>
                     <doctype>book</doctype>
-                    <status>${status}</status>
+                    <status>${doc-status}</status>
                     <data-uri />
                     <icons>font</icons>
                     <toc>left</toc>
@@ -345,7 +354,7 @@
                     <pdf-stylesdir>${project.basedir}/docs/theme</pdf-stylesdir>
                     <pdf-style>today</pdf-style>
                     <doctype>book</doctype>
-                    <status>${status}</status>
+                    <status>${doc-status}</status>
                     <data-uri />
                     <icons>font</icons>
                     <pagenums />
@@ -365,7 +374,7 @@
               <sourceDocumentName>index.adoc</sourceDocumentName>
               <attributes>
                 <revnumber>${project.version}</revnumber>
-                <revremark>${status}</revremark>
+                <revremark>${doc-status}</revremark>
                 <revdate>${revisiondate}</revdate>
               </attributes>
             </configuration>
@@ -410,7 +419,7 @@
           <plugin>
             <groupId>cn.taketoday</groupId>
             <artifactId>today-infra-maven-plugin</artifactId>
-            <version>${revision}</version>
+            <version>${today-infra.version}</version>
             <configuration>
               <!--put parent dir-->
               <destFile>${project.parent.build.directory}/jacoco/jacoco-unit.exec</destFile>

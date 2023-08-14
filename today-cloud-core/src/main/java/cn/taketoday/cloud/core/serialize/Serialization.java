@@ -38,13 +38,9 @@ public abstract class Serialization<T> implements Serializer, Deserializer {
    * (or any decorators of that OutputStream) but rather leave this up
    * to the caller.
    *
-   * @param object
-   *         the object to serialize
-   * @param output
-   *         the output stream
-   *
-   * @throws IOException
-   *         in case of errors writing to the stream
+   * @param object the object to serialize
+   * @param output the output stream
+   * @throws IOException in case of errors writing to the stream
    */
   @Override
   public abstract void serialize(Object object, OutputStream output) throws IOException;
@@ -55,15 +51,10 @@ public abstract class Serialization<T> implements Serializer, Deserializer {
    * (or any decorators of that InputStream) but rather leave this up
    * to the caller.
    *
-   * @param inputStream
-   *         the input stream
-   *
+   * @param inputStream the input stream
    * @return the deserialized object
-   *
-   * @throws IOException
-   *         in case of errors reading from the stream
-   * @throws ClassNotFoundException
-   *         if target type not in classpath
+   * @throws IOException in case of errors reading from the stream
+   * @throws ClassNotFoundException if target type not in classpath
    */
   @Override
   @SuppressWarnings("unchecked")

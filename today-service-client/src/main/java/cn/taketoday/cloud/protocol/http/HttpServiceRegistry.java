@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,51 +17,40 @@
 
 package cn.taketoday.cloud.protocol.http;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import cn.taketoday.cloud.JdkServiceProxy;
 import cn.taketoday.cloud.RpcResponse;
-import cn.taketoday.cloud.core.HttpRuntimeException;
-import cn.taketoday.cloud.core.HttpUtils;
-import cn.taketoday.cloud.core.ObjectMapperUtils;
+import cn.taketoday.cloud.ServiceProvider;
+import cn.taketoday.cloud.ServiceProxy;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
-import cn.taketoday.cloud.JdkServiceProxy;
 import cn.taketoday.cloud.registry.RegisteredStatus;
 import cn.taketoday.cloud.registry.ServiceDefinition;
-import cn.taketoday.cloud.registry.ServiceNotFoundException;
-import cn.taketoday.cloud.ServiceProxy;
 import cn.taketoday.cloud.registry.ServiceRegisterFailedException;
 import cn.taketoday.cloud.registry.ServiceRegistry;
-import cn.taketoday.lang.Assert;
+import cn.taketoday.core.style.ToStringBuilder;
 
 /**
  * @author TODAY 2021/7/3 23:48
  */
-public class HttpServiceRegistry implements ServiceRegistry {
+public class HttpServiceRegistry implements ServiceRegistry, ServiceProvider {
 
-  private static final TypeReference<List<ServiceDefinition>> reference = new TypeReference<List<ServiceDefinition>>() { };
-
-  private String registryURL;
   private ServiceProxy serviceProxy;
 
-  private Serialization<RpcResponse> serialization = new JdkSerialization<>();
-
-  public HttpServiceRegistry() { }
+  private final HttpOperations httpOperations;
+  private final HttpServiceMethodInvoker methodInvoker;
 
   public HttpServiceRegistry(String registryURL) {
-    this.registryURL = registryURL;
+    this.httpOperations = new HttpOperations(registryURL, new JdkSerialization<>());
+    this.methodInvoker = new HttpServiceMethodInvoker(httpOperations);
   }
 
-  public void setRegistryURL(String registryURL) {
-    this.registryURL = registryURL;
-  }
-
-  public String getRegistryURL() {
-    return registryURL;
+  public HttpServiceRegistry(HttpOperations httpOperations) {
+    this.httpOperations = httpOperations;
+    this.methodInvoker = new HttpServiceMethodInvoker(httpOperations);
   }
 
   public void setServiceProxy(ServiceProxy serviceProxy) {
@@ -82,31 +68,33 @@ public class HttpServiceRegistry implements ServiceRegistry {
     return new JdkServiceProxy();
   }
 
-  public void setSerialization(Serialization<RpcResponse> serialization) {
-    Assert.notNull(serialization, "serialization is required");
-    this.serialization = serialization;
-  }
-
-  public Serialization<RpcResponse> getSerialization() {
-    return serialization;
+  @Override
+  public RegisteredStatus register(ServiceDefinition definition) {
+    return register(Collections.singletonList(definition));
   }
 
   @Override
-  public void register(ServiceDefinition definition) {
-    register(Collections.singletonList(definition));
-  }
-
-  @Override
-  public void register(List<ServiceDefinition> definitions) {
-    RegisteredStatus status = HttpUtils.post(registryURL, definitions, RegisteredStatus.class);
+  public RegisteredStatus register(List<ServiceDefinition> definitions) {
+    RegisteredStatus status = httpOperations.register(definitions, RegisteredStatus.class);
     if (status.registeredCount != definitions.size()) {
       throw new ServiceRegisterFailedException(definitions);
     }
+    return status;
   }
 
   @Override
   public void unregister(List<ServiceDefinition> definitions) {
-    HttpUtils.delete(registryURL, definitions);
+    httpOperations.delete(definitions);
+  }
+
+  @Override
+  public List<ServiceDefinition> lookup(String name) {
+    return httpOperations.getServiceDefinitions(name);
+  }
+
+  @Override
+  public List<ServiceDefinition> lookup(Class<?> serviceInterface) {
+    return lookup(serviceInterface.getName());
   }
 
   /**
@@ -117,42 +105,32 @@ public class HttpServiceRegistry implements ServiceRegistry {
    * @return target service interface
    */
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> T lookup(Class<T> serviceInterface) {
+  public <T> T lookupService(Class<T> serviceInterface) {
     final class ServiceSupplier implements Supplier<List<ServiceDefinition>> {
       @Override
       public List<ServiceDefinition> get() {
-        try {
-          final String json = HttpUtils.get(buildGetServiceDefinitionURL(serviceInterface));
-          return ObjectMapperUtils.fromJSON(json, reference);
-        }
-        catch (HttpRuntimeException e) {
-          throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface, e);
-        }
+        return lookup(serviceInterface);
       }
     }
-
-    Assert.state(serialization != null, "No serialization settings");
-    final HttpServiceMethodInvoker methodInvoker = new HttpServiceMethodInvoker(serialization);
-    return (T) getServiceProxy().getProxy(serviceInterface, new ServiceSupplier(), methodInvoker);
-  }
-
-  private <T> String buildGetServiceDefinitionURL(Class<T> serviceInterface) {
-    return registryURL + '/' + serviceInterface.getName();
+    return getServiceProxy().getProxy(serviceInterface, new ServiceSupplier(), methodInvoker);
   }
 
   @Override
   public String toString() {
-    return "HttpServiceRegistry{" +
-            "registryURL='" + registryURL + '\'' +
-            ", serviceProxy=" + serviceProxy +
-            '}';
+    return ToStringBuilder.from(this)
+            .append("serviceProxy", serviceProxy)
+            .append("httpOperations", httpOperations)
+            .toString();
   }
 
   // static
 
   public static HttpServiceRegistry ofURL(String registryURL) {
     return new HttpServiceRegistry(registryURL);
+  }
+
+  public static HttpServiceRegistry ofURL(String registryURL, Serialization<RpcResponse> serialization) {
+    return new HttpServiceRegistry(new HttpOperations(registryURL, serialization));
   }
 
 }

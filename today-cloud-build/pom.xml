@@ -40,7 +40,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <today-infra.version>4.0.0-Draft.1</today-infra.version>
+    <today-infra.version>4.0.0-Draft.4-SNAPSHOT</today-infra.version>
     <!--doc-->
     <site.output.dir>${project.build.directory}/staging</site.output.dir>
     <maven.site.skip>true</maven.site.skip>
@@ -382,65 +382,6 @@
 
         </plugins>
       </build>
-    </profile>
-
-    <profile>
-      <id>coverage</id>
-      <build>
-        <plugins>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.22.2</version>
-            <configuration>
-              <argLine>
-                ${argLine} -Dcoverage=true -DtestGroups=all ${add-opens}
-              </argLine>
-              <excludedGroups>failing-test-case</excludedGroups>
-            </configuration>
-          </plugin>
-
-          <plugin>
-            <groupId>org.eluder.coveralls</groupId>
-            <artifactId>coveralls-maven-plugin</artifactId>
-            <dependencies>
-              <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>2.3.3</version>
-              </dependency>
-            </dependencies>
-            <configuration>
-              <jacocoReports>${project.build.directory}/jacoco/jacoco.xml</jacocoReports>
-            </configuration>
-          </plugin>
-
-          <plugin>
-            <groupId>cn.taketoday</groupId>
-            <artifactId>today-infra-maven-plugin</artifactId>
-            <version>${today-infra.version}</version>
-            <configuration>
-              <!--put parent dir-->
-              <destFile>${project.parent.build.directory}/jacoco/jacoco-unit.exec</destFile>
-              <formats>XML,HTML</formats>
-              <append>true</append>
-            </configuration>
-
-            <executions>
-              <execution>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-              </execution>
-
-            </executions>
-
-          </plugin>
-        </plugins>
-      </build>
-
-
     </profile>
 
     <profile>

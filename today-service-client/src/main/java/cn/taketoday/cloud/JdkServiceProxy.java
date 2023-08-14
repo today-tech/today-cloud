@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,8 +33,9 @@ import cn.taketoday.cloud.registry.ServiceNotFoundException;
 public class JdkServiceProxy implements ServiceProxy {
 
   @Override
-  public <T> Object getProxy(
-          Class<T> serviceInterface, Supplier<List<ServiceDefinition>> serviceSupplier, ServiceMethodInvoker rpcInvoker) {
+  @SuppressWarnings("unchecked")
+  public <T> T getProxy(Class<T> serviceInterface,
+          Supplier<List<ServiceDefinition>> serviceSupplier, ServiceMethodInvoker rpcInvoker) {
 
     final class ServiceInvocationHandler implements InvocationHandler {
       final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>(serviceSupplier.get());
@@ -55,7 +53,7 @@ public class JdkServiceProxy implements ServiceProxy {
       }
     }
 
-    return Proxy.newProxyInstance(
+    return (T) Proxy.newProxyInstance(
             serviceInterface.getClassLoader(), new Class[] { serviceInterface }, new ServiceInvocationHandler());
   }
 }

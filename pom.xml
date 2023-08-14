@@ -162,7 +162,7 @@
     <dependencies>
       <dependency>
         <groupId>cn.taketoday</groupId>
-        <artifactId>today-infrastructure-bom</artifactId>
+        <artifactId>infra-dependencies</artifactId>
         <version>${today-infra.version}</version>
         <type>pom</type>
         <scope>import</scope>

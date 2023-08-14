@@ -36,6 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * @author TODAY 2021/7/4 23:15
  */
+@Deprecated
 public abstract class HttpUtils {
 
   /**

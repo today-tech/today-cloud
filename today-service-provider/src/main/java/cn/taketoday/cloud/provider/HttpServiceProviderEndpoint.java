@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +29,7 @@ import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.lang.Assert;
+import cn.taketoday.lang.Nullable;
 import cn.taketoday.reflect.MethodInvoker;
 import cn.taketoday.util.ClassUtils;
 import cn.taketoday.util.MapCache;
@@ -124,7 +122,7 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
   private static final class MethodMapCache extends MapCache<MethodCacheKey, MethodInvoker, Object> {
 
     @Override
-    protected MethodInvoker createValue(MethodCacheKey key, Object service) {
+    protected MethodInvoker createValue(MethodCacheKey key, @Nullable Object service) {
       Method methodToUse = getMethod(key, service);
       if (methodToUse == null) {
         return null;

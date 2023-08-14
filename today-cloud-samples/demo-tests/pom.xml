@@ -41,7 +41,7 @@
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <today-infra.version>4.0.0-Draft.1</today-infra.version>
+    <today-infra.version>4.0.0-Draft.4-SNAPSHOT</today-infra.version>
     <today-cloud-version>1.0.0-Draft.1</today-cloud-version>
 
   </properties>
@@ -81,7 +81,7 @@
     <dependencies>
       <dependency>
         <groupId>cn.taketoday</groupId>
-        <artifactId>today-infrastructure-bom</artifactId>
+        <artifactId>infra-dependencies</artifactId>
         <version>${today-infra.version}</version>
         <type>pom</type>
         <scope>import</scope>

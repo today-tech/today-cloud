@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,15 +25,15 @@ import java.util.List;
  */
 public interface ServiceRegistry {
 
-  default void register(ServiceDefinition definition) {
-    register(Collections.singletonList(definition));
+  default RegisteredStatus register(ServiceDefinition definition) {
+    return register(Collections.singletonList(definition));
   }
 
   /**
    * @param definitions services
    * @throws ServiceRegisterFailedException If register failed
    */
-  void register(List<ServiceDefinition> definitions);
+  RegisteredStatus register(List<ServiceDefinition> definitions);
 
   default void unregister(ServiceDefinition definition) {
     unregister(Collections.singletonList(definition));
@@ -44,6 +41,8 @@ public interface ServiceRegistry {
 
   void unregister(List<ServiceDefinition> definitions);
 
-  <T> T lookup(Class<T> serviceInterface);
+  List<ServiceDefinition> lookup(String name);
+
+  List<ServiceDefinition> lookup(Class<?> serviceInterface);
 
 }

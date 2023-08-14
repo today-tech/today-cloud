@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,18 +21,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import cn.taketoday.core.DefaultMultiValueMap;
-import cn.taketoday.core.MultiValueMap;
+import cn.taketoday.http.HttpStatus;
 import cn.taketoday.http.MediaType;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.util.CollectionUtils;
+import cn.taketoday.util.DefaultMultiValueMap;
+import cn.taketoday.util.MultiValueMap;
 import cn.taketoday.web.annotation.DELETE;
+import cn.taketoday.web.annotation.ExceptionHandler;
 import cn.taketoday.web.annotation.GET;
 import cn.taketoday.web.annotation.POST;
 import cn.taketoday.web.annotation.PathVariable;
 import cn.taketoday.web.annotation.RequestBody;
 import cn.taketoday.web.annotation.RequestMapping;
+import cn.taketoday.web.annotation.ResponseStatus;
 import cn.taketoday.web.annotation.RestController;
 
 /**
@@ -43,7 +43,7 @@ import cn.taketoday.web.annotation.RestController;
  */
 @RestController
 @RequestMapping("${registry.services.uri}")
-public class HttpServiceRegistryEndpoint {
+public class HttpServiceRegistryEndpoint implements ServiceRegistry {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceRegistryEndpoint.class);
 
   private final MultiValueMap<String, ServiceDefinition>
@@ -61,16 +61,23 @@ public class HttpServiceRegistryEndpoint {
 //  }
 
   @GET("/{name}")
+  @Override
   public List<ServiceDefinition> lookup(@PathVariable String name) {
     final List<ServiceDefinition> serviceDefinitions = serviceMapping.get(name);
     if (CollectionUtils.isEmpty(serviceDefinitions)) {
-      throw new IllegalStateException("cannot found a service: " + name);
+      throw new ServiceNotFoundException("cannot found a service: " + name);
     }
     // select one
     return serviceDefinitions;
   }
 
+  @Override
+  public List<ServiceDefinition> lookup(Class<?> serviceInterface) {
+    return lookup(serviceInterface.getName());
+  }
+
   @POST
+  @Override
   public RegisteredStatus register(@RequestBody List<ServiceDefinition> definitions) {
     Logger log = HttpServiceRegistryEndpoint.log;
     MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
@@ -82,6 +89,7 @@ public class HttpServiceRegistryEndpoint {
   }
 
   @DELETE
+  @Override
   public void unregister(@RequestBody List<ServiceDefinition> definitions) {
     MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
     for (final ServiceDefinition definition : definitions) {
@@ -96,4 +104,11 @@ public class HttpServiceRegistryEndpoint {
   public MultiValueMap<String, ServiceDefinition> getServiceMapping() {
     return serviceMapping;
   }
+
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  @ExceptionHandler(ServiceNotFoundException.class)
+  void handleServiceNotFound(ServiceNotFoundException serviceNotFound) {
+
+  }
+
 }

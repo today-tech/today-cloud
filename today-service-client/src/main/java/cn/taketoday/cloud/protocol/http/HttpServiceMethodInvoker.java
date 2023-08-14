@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,41 +17,34 @@
 
 package cn.taketoday.cloud.protocol.http;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceMethodInvoker;
-import cn.taketoday.cloud.core.HttpUtils;
-import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.ServiceDefinition;
+import cn.taketoday.http.HttpMethod;
 
 /**
  * @author TODAY 2021/7/4 23:10
  */
 public class HttpServiceMethodInvoker extends ServiceMethodInvoker {
 
-  public HttpServiceMethodInvoker(Serialization<RpcResponse> serialization) {
-    super(serialization);
+  private final HttpOperations httpOperations;
+
+  public HttpServiceMethodInvoker(HttpOperations httpOperations) {
+    this.httpOperations = httpOperations;
   }
 
   @Override
-  protected RpcResponse invokeInternal(ServiceDefinition selected, Method method, Object[] args)
-          throws IOException, ClassNotFoundException {
-    final RpcRequest rpcRequest = new RpcRequest();
+  protected RpcResponse invokeInternal(ServiceDefinition selected, Method method, Object[] args) {
+    RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(selected.getName());
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);
 
-    final Serialization<RpcResponse> serialization = getSerialization();
-    final InputStream inputStream = HttpUtils.postInputStream(
-            buildServiceProviderURL(selected),
-            output -> serialization.serialize(rpcRequest, output)
-    );
-    return serialization.deserialize(inputStream);
+    return httpOperations.execute(buildServiceProviderURL(selected), HttpMethod.POST, rpcRequest);
   }
 
   protected String buildServiceProviderURL(ServiceDefinition definition) {

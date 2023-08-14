@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,16 +15,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.core;
-
-import java.io.IOException;
-import java.io.OutputStream;
+package cn.taketoday.cloud;
 
 /**
- * @author TODAY 2021/7/8 23:17
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/8/14 21:53
  */
-@Deprecated
-public interface OutputStreamCallback {
+public interface ServiceProvider {
 
-  void doInOutputStream(OutputStream outputStream) throws IOException;
+  <T> T lookupService(Class<T> serviceInterface);
+
 }

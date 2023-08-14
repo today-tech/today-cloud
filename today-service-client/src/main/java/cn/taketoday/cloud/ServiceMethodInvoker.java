@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +21,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.RandomServiceSelector;
 import cn.taketoday.cloud.registry.ServiceDefinition;
 import cn.taketoday.cloud.registry.ServiceSelector;
@@ -36,15 +32,9 @@ import cn.taketoday.lang.Assert;
  * @author TODAY 2021/7/4 01:58
  */
 public abstract class ServiceMethodInvoker {
-  private final Serialization<RpcResponse> serialization;
 
-  private ServiceSelector serviceSelector = new RandomServiceSelector();
-  private RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
-
-  protected ServiceMethodInvoker(Serialization<RpcResponse> serialization) {
-    Assert.notNull(serialization, "serialization most not be null");
-    this.serialization = serialization;
-  }
+  protected ServiceSelector serviceSelector = new RandomServiceSelector();
+  protected RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
 
   public Object invoke(List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
     // pre
@@ -56,8 +46,7 @@ public abstract class ServiceMethodInvoker {
             .getResult();
   }
 
-  protected RpcResponse doInvoke(
-          List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
+  protected RpcResponse doInvoke(List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
     final ServiceSelector serviceSelector = getServiceSelector();
     final ServiceDefinition selected = serviceSelector.select(definitions);
     try {
@@ -96,10 +85,6 @@ public abstract class ServiceMethodInvoker {
 
   public RemoteExceptionHandler getExceptionHandler() {
     return exceptionHandler;
-  }
-
-  public Serialization<RpcResponse> getSerialization() {
-    return serialization;
   }
 
   public void setServiceSelector(ServiceSelector serviceSelector) {

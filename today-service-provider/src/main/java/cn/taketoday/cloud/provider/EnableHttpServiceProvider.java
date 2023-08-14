@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,22 +67,20 @@ final class HttpServiceProviderConfig {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
 
   @MissingBean
-  static ServiceRegistry serviceRegistry(@Value("${registry.url}") String registryURL) {
-    return HttpServiceRegistry.ofURL(registryURL);
+  static ServiceRegistry serviceRegistry(@Value("${registry.url}") String registryURL, Serialization<RpcResponse> serialization) {
+    return HttpServiceRegistry.ofURL(registryURL, serialization);
   }
 
   @MissingBean
-  static Serialization<RpcRequest> requestSerialization() {
+  static Serialization requestSerialization() {
     return new JdkSerialization<>();
   }
 
   private final PathPatternParser pathPatternParser = PathPatternParser.defaultInstance;
 
   @Singleton
-  HandlerMapping httpServiceHandlerMapping(
-          Serialization<RpcRequest> requestSerialization,
-          @Value("${service.provider.uri:/provider}") String serviceProviderPath,
-          LocalServiceHolder serviceHolder) {
+  HandlerMapping httpServiceHandlerMapping(Serialization<RpcRequest> requestSerialization,
+          @Value("${service.provider.uri:/provider}") String serviceProviderPath, LocalServiceHolder serviceHolder) {
 
     PathPattern pathPattern = pathPatternParser.parse(serviceProviderPath);
     return new ServiceProviderRegistry(pathPattern,
@@ -105,13 +100,14 @@ final class HttpServiceProviderConfig {
   }
 
   @Singleton
-  LocalServiceHolder localServiceHolder() {
-    return new LocalServiceHolder();
+  LocalServiceHolder localServiceHolder(@Value("${server.port}") int port) {
+    LocalServiceHolder holder = new LocalServiceHolder();
+    holder.setPort(port);
+    return holder;
   }
 
   @Singleton
-  ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry serviceRegistry,
-          LocalServiceHolder serviceHolder) {
+  ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry serviceRegistry, LocalServiceHolder serviceHolder) {
     return new ServiceProviderLifecycle(serviceRegistry, serviceHolder);
   }
 

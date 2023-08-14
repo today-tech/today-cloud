@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +16,8 @@
  */
 
 package cn.taketoday.cloud.registry;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -37,6 +36,7 @@ public class ServiceDefinition implements Serializable {
 
   private String version;
 
+  @JsonIgnore
   private transient Class<?> serviceInterface;
 
   public void setVersion(String version) {
@@ -71,10 +71,12 @@ public class ServiceDefinition implements Serializable {
     return host;
   }
 
+  @JsonIgnore
   public Class<?> getServiceInterface() {
     return serviceInterface;
   }
 
+  @JsonIgnore
   public void setServiceInterface(Class<?> serviceInterface) {
     this.serviceInterface = serviceInterface;
   }
@@ -83,9 +85,8 @@ public class ServiceDefinition implements Serializable {
   public boolean equals(Object o) {
     if (this == o)
       return true;
-    if (!(o instanceof ServiceDefinition))
+    if (!(o instanceof ServiceDefinition that))
       return false;
-    final ServiceDefinition that = (ServiceDefinition) o;
     return port == that.port
             && Objects.equals(host, that.host)
             && Objects.equals(name, that.name)

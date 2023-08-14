@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +18,6 @@
 package cn.taketoday.cloud.provider;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,29 +25,20 @@ import java.util.List;
 import cn.taketoday.beans.factory.SmartInitializingSingleton;
 import cn.taketoday.cloud.registry.ServiceDefinition;
 import cn.taketoday.context.ApplicationContext;
-import cn.taketoday.context.aware.ApplicationContextSupport;
-import cn.taketoday.lang.Assert;
+import cn.taketoday.context.support.ApplicationObjectSupport;
 import cn.taketoday.lang.Nullable;
 import cn.taketoday.stereotype.Service;
 import cn.taketoday.util.ClassUtils;
+import cn.taketoday.util.ExceptionUtils;
 import cn.taketoday.util.ObjectUtils;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2022/10/19 21:40
  */
-public class LocalServiceHolder extends ApplicationContextSupport implements SmartInitializingSingleton {
+public class LocalServiceHolder extends ApplicationObjectSupport implements SmartInitializingSingleton {
 
-  InetAddress localHost;
-
-  {
-    try {
-      localHost = InetAddress.getLocalHost();
-    }
-    catch (UnknownHostException e) {
-      throw new RuntimeException(e);
-    }
-  }
+  private final InetAddress localHost = ExceptionUtils.sneakyThrow(InetAddress::getLocalHost);
 
   private String localHostName;
 
@@ -78,7 +65,6 @@ public class LocalServiceHolder extends ApplicationContextSupport implements Sma
 
   @Override
   public void afterSingletonsInstantiated() {
-    Assert.state(localHostName != null, "'local-host-address' is required");
     ApplicationContext context = obtainApplicationContext();
     List<Object> services = context.getAnnotatedBeans(Service.class);
     for (Object service : services) {
@@ -100,7 +86,7 @@ public class LocalServiceHolder extends ApplicationContextSupport implements Sma
 
       ServiceDefinition definition = new ServiceDefinition();
 
-      definition.setHost(localHostName);
+      definition.setHost(localHostName == null ? localHost.getHostName() : localHostName);
 
       definition.setPort(port);
       definition.setName(interfaceToUse.getName());

@@ -1,0 +1,7 @@
+description = "TODAY Service Registry"
+
+dependencies {
+  implementation project(":today-cloud-core")
+  implementation 'cn.taketoday:today-starter-web'
+
+}

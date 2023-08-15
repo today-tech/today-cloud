@@ -1,0 +1,26 @@
+description = 'TODAY Cloud Dependencies'
+
+apply plugin: 'java-platform'
+apply from: "$rootDir/gradle/publications.gradle"
+
+javaPlatform {
+  allowDependencies()
+}
+
+dependencies {
+  api(platform("cn.taketoday:infra-bom:$infraVersion"))
+  api(platform("cn.taketoday:infra-dependencies:$infraVersion"))
+
+  constraints {
+
+  }
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      artifactId = 'today-cloud-dependencies'
+      from components.javaPlatform
+    }
+  }
+}

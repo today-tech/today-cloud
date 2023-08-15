@@ -1,0 +1,21 @@
+description = "TODAY Cloud (Bill of Materials)"
+
+apply plugin: 'java-platform'
+apply from: "$rootDir/gradle/publications.gradle"
+
+dependencies {
+  constraints {
+    parent.moduleProjects.sort { "$it.name" }.each {
+      api it
+    }
+  }
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      artifactId = 'today-cloud-bom'
+      from components.javaPlatform
+    }
+  }
+}

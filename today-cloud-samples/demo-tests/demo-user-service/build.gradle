@@ -1,0 +1,12 @@
+description = "Demo User Service"
+
+dependencies {
+  implementation project(":today-service-provider")
+
+  implementation 'cn.taketoday:today-starter-web'
+  implementation 'cn.taketoday:today-starter-netty'
+  implementation 'ch.qos.logback:logback-classic'
+  implementation project(":today-cloud-samples:demo-tests:demo-user-api")
+
+
+}

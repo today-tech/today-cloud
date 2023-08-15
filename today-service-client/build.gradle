@@ -1,0 +1,11 @@
+description = "TODAY Service Client"
+
+
+dependencies {
+  api project(":today-cloud-core")
+  api project(":today-service-registry")
+
+  implementation 'cn.taketoday:today-web'
+  implementation 'cn.taketoday:today-framework'
+
+}

@@ -1,0 +1,7 @@
+description = "Demo User API"
+
+dependencies {
+  compileOnly("org.projectlombok:lombok")
+  annotationProcessor("org.projectlombok:lombok")
+
+}

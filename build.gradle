@@ -1,0 +1,67 @@
+plugins {
+  id 'de.undercouch.download' version '5.4.0'
+}
+
+ext {
+  configProjects = [project(":today-cloud-bom"), project(":today-cloud-dependencies")]
+  javaProjects = subprojects - configProjects
+  samplesProjects = subprojects.findAll { it.path.startsWith(":today-cloud-samples") }
+  moduleProjects = javaProjects - samplesProjects
+}
+
+configure(allprojects) {
+  group = "cn.taketoday"
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    if (infraVersion.endsWith("-SNAPSHOT")) {
+      maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    }
+  }
+  configurations.configureEach {
+    resolutionStrategy {
+      cacheChangingModulesFor 0, "seconds"
+      cacheDynamicVersionsFor 0, "seconds"
+    }
+  }
+}
+
+configure([rootProject] + javaProjects) {
+  apply plugin: "java"
+  apply plugin: 'jacoco'
+  apply plugin: 'cn.taketoday.cloud.conventions'
+  apply from: "${rootDir}/gradle/toolchains.gradle"
+
+  jacocoTestReport {
+    enabled = false
+  }
+
+  dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testImplementation("org.junit.jupiter:junit-jupiter-params")
+    testImplementation("org.junit.platform:junit-platform-suite-api")
+    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.mockito:mockito-junit-jupiter")
+    testImplementation("org.assertj:assertj-core")
+    testImplementation 'org.projectlombok:lombok'
+    testAnnotationProcessor("org.projectlombok:lombok")
+
+    // Pull in the latest JUnit 5 Launcher API to ensure proper support in IDEs.
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly("org.junit.platform:junit-platform-suite-engine")
+    // JSR-305 only used for non-required meta-annotations
+    compileOnly("com.google.code.findbugs:jsr305")
+    testCompileOnly("com.google.code.findbugs:jsr305")
+  }
+}
+
+configure(moduleProjects) {
+  apply from: "${rootDir}/gradle/cloud-module.gradle"
+}
+
+configure(rootProject) {
+  description = "TODAY Cloud"
+}
+

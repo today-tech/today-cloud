@@ -1,0 +1,38 @@
+plugins {
+  id 'java-gradle-plugin'
+  id 'io.spring.javaformat' version "${javaFormatVersion}"
+}
+
+repositories {
+  mavenLocal()
+  maven { url "https://maven.aliyun.com/repository/public" }
+  mavenCentral()
+  gradlePluginPortal()
+}
+
+ext {
+
+}
+
+dependencies {
+  implementation "me.champeau.gradle:japicmp-gradle-plugin:0.4.1"
+  implementation "org.gradle:test-retry-gradle-plugin:1.4.1"
+  // implementation("org.asciidoctor:asciidoctor-gradle-jvm:3.3.2")
+  implementation "io.spring.javaformat:spring-javaformat-gradle-plugin:${javaFormatVersion}"
+  implementation "org.apache.maven:maven-artifact:3.6.3"
+  implementation 'cn.taketoday:today-core:4.0.0-Draft.3'
+}
+
+gradlePlugin {
+  plugins {
+    conventionsPlugin {
+      id = "cn.taketoday.cloud.conventions"
+      implementationClass = "cn.taketoday.cloud.ConventionsPlugin"
+    }
+    optionalDependenciesPlugin {
+      id = "cn.taketoday.cloud.optional-dependencies"
+      implementationClass = "cn.taketoday.cloud.optional.OptionalDependenciesPlugin"
+    }
+
+  }
+}

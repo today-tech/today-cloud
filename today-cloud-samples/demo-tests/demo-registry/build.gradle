@@ -1,0 +1,14 @@
+description = "Demo Service Registry"
+apply plugin: "cn.taketoday.application"
+
+infraJar {
+  enabled = false
+}
+
+dependencies {
+  implementation project(":today-service-registry")
+  implementation 'cn.taketoday:today-starter-web'
+  implementation 'cn.taketoday:today-starter-netty'
+  implementation 'ch.qos.logback:logback-classic'
+
+}

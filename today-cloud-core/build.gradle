@@ -1,0 +1,7 @@
+description = "TODAY Cloud Core Technologies"
+
+dependencies {
+  implementation 'cn.taketoday:today-core'
+  optional 'com.esotericsoftware.kryo:kryo5:5.1.1'
+
+}

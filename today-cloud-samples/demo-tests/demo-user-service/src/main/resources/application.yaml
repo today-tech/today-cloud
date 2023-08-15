@@ -10,3 +10,7 @@ registry:
 
   services:
     uri: '/services'
+
+web:
+  resources:
+    add-default-mappings: false

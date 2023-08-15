@@ -28,7 +28,7 @@ import cn.taketoday.core.ParameterizedTypeReference;
 import cn.taketoday.http.HttpEntity;
 import cn.taketoday.http.HttpMethod;
 import cn.taketoday.http.client.JdkClientHttpRequestFactory;
-import cn.taketoday.web.client.RestOperations;
+import cn.taketoday.web.client.HttpClientErrorException;
 import cn.taketoday.web.client.RestTemplate;
 
 /**
@@ -63,7 +63,12 @@ public class HttpOperations {
   }
 
   public List<ServiceDefinition> getServiceDefinitions(String name) {
-    return restOperations.exchange(buildGetServiceDefinitionURL(name), HttpMethod.GET, HttpEntity.EMPTY, reference).getBody();
+    try {
+      return restOperations.exchange(buildGetServiceDefinitionURL(name), HttpMethod.GET, HttpEntity.EMPTY, reference).getBody();
+    }
+    catch (HttpClientErrorException.NotFound e) {
+      throw new ServiceNotFoundException(name, e);
+    }
   }
 
   private String buildGetServiceDefinitionURL(String serviceInterface) {

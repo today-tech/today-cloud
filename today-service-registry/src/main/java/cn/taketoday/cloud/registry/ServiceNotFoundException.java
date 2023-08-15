@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +20,7 @@ package cn.taketoday.cloud.registry;
 import java.io.Serial;
 
 import cn.taketoday.cloud.core.RemotingException;
+import cn.taketoday.lang.Nullable;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -33,20 +31,37 @@ public class ServiceNotFoundException extends RemotingException {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Constructs a ServiceNotFoundException
+   */
   public ServiceNotFoundException() {
     super();
   }
 
-  public ServiceNotFoundException(String message) {
-    super(message);
+  /**
+   * Constructs a ServiceNotFoundException
+   *
+   * @param name service name
+   */
+  public ServiceNotFoundException(String name) {
+    this(name, null);
   }
 
-  public ServiceNotFoundException(Throwable cause) {
+  /**
+   * Constructs a ServiceNotFoundException
+   *
+   * @param serviceInterface service
+   */
+  public ServiceNotFoundException(Class<?> serviceInterface) {
+    super(serviceInterface.getName());
+  }
+
+  public ServiceNotFoundException(@Nullable Throwable cause) {
     super(cause);
   }
 
-  public ServiceNotFoundException(String message, Throwable cause) {
-    super(message, cause);
+  public ServiceNotFoundException(String name, @Nullable Throwable cause) {
+    super("Cannot found a service: '" + name + "'", cause);
   }
 
 }

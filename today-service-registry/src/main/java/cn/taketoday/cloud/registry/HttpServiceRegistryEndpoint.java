@@ -63,9 +63,9 @@ public class HttpServiceRegistryEndpoint implements ServiceRegistry {
   @GET("/{name}")
   @Override
   public List<ServiceDefinition> lookup(@PathVariable String name) {
-    final List<ServiceDefinition> serviceDefinitions = serviceMapping.get(name);
+    List<ServiceDefinition> serviceDefinitions = serviceMapping.get(name);
     if (CollectionUtils.isEmpty(serviceDefinitions)) {
-      throw new ServiceNotFoundException("cannot found a service: " + name);
+      throw new ServiceNotFoundException(name);
     }
     // select one
     return serviceDefinitions;
@@ -81,7 +81,7 @@ public class HttpServiceRegistryEndpoint implements ServiceRegistry {
   public RegisteredStatus register(@RequestBody List<ServiceDefinition> definitions) {
     Logger log = HttpServiceRegistryEndpoint.log;
     MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
-    for (final ServiceDefinition definition : definitions) {
+    for (ServiceDefinition definition : definitions) {
       log.info("Registering service: [{}] ", definition);
       serviceMapping.add(definition.getName(), definition);
     }
@@ -92,9 +92,9 @@ public class HttpServiceRegistryEndpoint implements ServiceRegistry {
   @Override
   public void unregister(@RequestBody List<ServiceDefinition> definitions) {
     MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
-    for (final ServiceDefinition definition : definitions) {
-      final List<ServiceDefinition> serviceDefinitions = serviceMapping.get(definition.getName());
-      if (!CollectionUtils.isEmpty(serviceDefinitions)
+    for (ServiceDefinition definition : definitions) {
+      List<ServiceDefinition> serviceDefinitions = serviceMapping.get(definition.getName());
+      if (CollectionUtils.isNotEmpty(serviceDefinitions)
               && serviceDefinitions.removeIf(def -> Objects.equals(def, definition))) {
         log.info("un-register service: [{}] ", definition);
       }

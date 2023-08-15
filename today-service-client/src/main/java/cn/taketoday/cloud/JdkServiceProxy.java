@@ -20,12 +20,11 @@ package cn.taketoday.cloud;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 
 import cn.taketoday.cloud.registry.ServiceDefinition;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
+import cn.taketoday.cloud.registry.ServiceRegistry;
 
 /**
  * @author TODAY 2021/7/4 22:58
@@ -35,18 +34,18 @@ public class JdkServiceProxy implements ServiceProxy {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T getProxy(Class<T> serviceInterface,
-          Supplier<List<ServiceDefinition>> serviceSupplier, ServiceMethodInvoker rpcInvoker) {
+          ServiceRegistry serviceRegistry, ServiceMethodInvoker rpcInvoker) {
 
     final class ServiceInvocationHandler implements InvocationHandler {
-      final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>(serviceSupplier.get());
+      final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>();
 
       @Override
       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         final CopyOnWriteArrayList<ServiceDefinition> definitions = this.definitions;
         if (definitions.isEmpty()) {
-          definitions.addAll(serviceSupplier.get());
+          definitions.addAll(serviceRegistry.lookup(serviceInterface));
           if (definitions.isEmpty()) {
-            throw new ServiceNotFoundException("Cannot found a service: " + serviceInterface);
+            throw new ServiceNotFoundException(serviceInterface);
           }
         }
         return rpcInvoker.invoke(definitions, method, args);

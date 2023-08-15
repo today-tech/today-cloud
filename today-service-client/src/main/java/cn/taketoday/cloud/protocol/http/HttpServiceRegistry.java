@@ -19,7 +19,6 @@ package cn.taketoday.cloud.protocol.http;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 
 import cn.taketoday.cloud.JdkServiceProxy;
 import cn.taketoday.cloud.RpcResponse;
@@ -106,13 +105,7 @@ public class HttpServiceRegistry implements ServiceRegistry, ServiceProvider {
    */
   @Override
   public <T> T lookupService(Class<T> serviceInterface) {
-    final class ServiceSupplier implements Supplier<List<ServiceDefinition>> {
-      @Override
-      public List<ServiceDefinition> get() {
-        return lookup(serviceInterface);
-      }
-    }
-    return getServiceProxy().getProxy(serviceInterface, new ServiceSupplier(), methodInvoker);
+    return getServiceProxy().getProxy(serviceInterface, this, methodInvoker);
   }
 
   @Override

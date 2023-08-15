@@ -23,6 +23,7 @@
 
 .gradle
 /build/
+**/out
 /tmp/
 /today-framework/target/
 .flattened-pom.xml

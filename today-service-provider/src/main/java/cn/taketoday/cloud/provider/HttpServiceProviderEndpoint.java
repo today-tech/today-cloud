@@ -28,7 +28,6 @@ import cn.taketoday.cloud.core.serialize.DeserializeFailedException;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
-import cn.taketoday.lang.Assert;
 import cn.taketoday.lang.Nullable;
 import cn.taketoday.reflect.MethodInvoker;
 import cn.taketoday.util.ClassUtils;
@@ -44,7 +43,7 @@ import cn.taketoday.web.RequestContext;
 public class HttpServiceProviderEndpoint implements HttpRequestHandler {
 
   /** for serialize and deserialize */
-  private Serialization<RpcRequest> serialization;
+  private final Serialization<RpcRequest> serialization;
 
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
@@ -62,7 +61,6 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
 
   @Override
   public Object handleRequest(RequestContext request) throws Throwable {
-    Serialization<RpcRequest> serialization = getSerialization();
     RpcResponse response = getResponse(request, serialization);
     serialization.serialize(response, request.getOutputStream());
     return NONE_RETURN_VALUE;
@@ -105,18 +103,6 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
     catch (Throwable e) {
       return RpcResponse.ofThrowable(e);
     }
-  }
-
-  /**
-   * set a serialization
-   */
-  public void setSerialization(Serialization<RpcRequest> serialization) {
-    Assert.notNull(serialization, "serialization must not be null");
-    this.serialization = serialization;
-  }
-
-  public Serialization<RpcRequest> getSerialization() {
-    return serialization;
   }
 
   private static final class MethodMapCache extends MapCache<MethodCacheKey, MethodInvoker, Object> {

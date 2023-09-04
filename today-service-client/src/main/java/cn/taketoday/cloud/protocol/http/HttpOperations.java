@@ -17,6 +17,7 @@
 
 package cn.taketoday.cloud.protocol.http;
 
+import java.net.URI;
 import java.util.List;
 
 import cn.taketoday.cloud.RpcRequest;
@@ -29,6 +30,7 @@ import cn.taketoday.http.HttpEntity;
 import cn.taketoday.http.HttpMethod;
 import cn.taketoday.http.client.JdkClientHttpRequestFactory;
 import cn.taketoday.web.client.HttpClientErrorException;
+import cn.taketoday.web.client.RestClient;
 import cn.taketoday.web.client.RestTemplate;
 
 /**
@@ -36,20 +38,26 @@ import cn.taketoday.web.client.RestTemplate;
  * @since 1.0 2023/8/14 17:46
  */
 public class HttpOperations {
-  private static final ParameterizedTypeReference<List<ServiceDefinition>> reference = new ParameterizedTypeReference<List<ServiceDefinition>>() { };
+  private static final ParameterizedTypeReference<List<ServiceDefinition>> reference = new ParameterizedTypeReference<>() { };
 
   private final Serialization<RpcResponse> serialization;
   private final RestTemplate restOperations = new RestTemplate();
 
+  private final RestClient restClient = RestClient.create(restOperations);
+
   private final String registryURL;
 
   public HttpOperations(String registryURL, Serialization<RpcResponse> serialization) {
-    this.serialization = serialization;
     this.registryURL = registryURL;
+    this.serialization = serialization;
     restOperations.setRequestFactory(new JdkClientHttpRequestFactory());
   }
 
-  public RpcResponse execute(String uri, HttpMethod method, RpcRequest rpcRequest) {
+  public RpcResponse execute(ServiceDefinition selected, RpcRequest rpcRequest) {
+    return execute(selected.getHttpURI(), HttpMethod.POST, rpcRequest);
+  }
+
+  public RpcResponse execute(URI uri, HttpMethod method, RpcRequest rpcRequest) {
     return restOperations.execute(uri, method,
             request -> serialization.serialize(rpcRequest, request.getBody()),
             response -> {
@@ -80,7 +88,10 @@ public class HttpOperations {
   }
 
   public void delete(Object body) {
-    restOperations.delete(registryURL, body);
+    restClient.delete()
+            .uri(registryURL)
+            .body(body)
+            .execute();
   }
 
 }

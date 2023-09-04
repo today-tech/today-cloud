@@ -19,15 +19,21 @@ package cn.taketoday.cloud.registry;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Objects;
 
 import cn.taketoday.core.style.ToStringBuilder;
+import cn.taketoday.lang.Constant;
+import cn.taketoday.web.util.UriComponentsBuilder;
 
 /**
  * @author TODAY 2021/7/4 00:36
  */
 public class ServiceDefinition implements Serializable {
+
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private int port;
@@ -38,6 +44,8 @@ public class ServiceDefinition implements Serializable {
 
   @JsonIgnore
   private transient Class<?> serviceInterface;
+
+  private transient URI httpURI;
 
   public void setVersion(String version) {
     this.version = version;
@@ -79,6 +87,15 @@ public class ServiceDefinition implements Serializable {
   @JsonIgnore
   public void setServiceInterface(Class<?> serviceInterface) {
     this.serviceInterface = serviceInterface;
+  }
+
+  public URI getHttpURI() {
+    URI httpURI = this.httpURI;
+    if (httpURI == null) {
+      httpURI = UriComponentsBuilder.newInstance().scheme(Constant.HTTP).host(host).port(port).build().toUri();
+      this.httpURI = httpURI;
+    }
+    return httpURI;
   }
 
   @Override

@@ -11,4 +11,5 @@ dependencies {
   implementation 'cn.taketoday:today-starter-netty'
   implementation 'ch.qos.logback:logback-classic'
 
+  annotationProcessor 'cn.taketoday:infra-configuration-processor'
 }

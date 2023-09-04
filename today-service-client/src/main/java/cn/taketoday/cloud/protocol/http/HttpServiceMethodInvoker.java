@@ -23,10 +23,10 @@ import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceMethodInvoker;
 import cn.taketoday.cloud.registry.ServiceDefinition;
-import cn.taketoday.http.HttpMethod;
 
 /**
- * @author TODAY 2021/7/4 23:10
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 2021/7/4 23:10
  */
 public class HttpServiceMethodInvoker extends ServiceMethodInvoker {
 
@@ -44,13 +44,7 @@ public class HttpServiceMethodInvoker extends ServiceMethodInvoker {
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);
 
-    return httpOperations.execute(buildServiceProviderURL(selected), HttpMethod.POST, rpcRequest);
-  }
-
-  protected String buildServiceProviderURL(ServiceDefinition definition) {
-    final String host = definition.getHost();
-    final int port = definition.getPort();
-    return "http://" + host + ':' + port + "/provider";
+    return httpOperations.execute(selected, rpcRequest);
   }
 
 }

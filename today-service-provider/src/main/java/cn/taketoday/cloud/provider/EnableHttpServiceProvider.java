@@ -29,6 +29,7 @@ import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.protocol.http.HttpServiceRegistry;
+import cn.taketoday.cloud.registry.RegistryProperties;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.cloud.registry.ServiceRegistry;
 import cn.taketoday.context.SmartLifecycle;
@@ -40,14 +41,13 @@ import cn.taketoday.core.Ordered;
 import cn.taketoday.framework.web.server.ServerProperties;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
+import cn.taketoday.stereotype.Component;
 import cn.taketoday.stereotype.Singleton;
 import cn.taketoday.web.HandlerExceptionHandler;
 import cn.taketoday.web.HandlerMapping;
 import cn.taketoday.web.RequestContext;
 import cn.taketoday.web.ReturnValueHandler;
 import cn.taketoday.web.handler.ReturnValueHandlerManager;
-import cn.taketoday.web.util.pattern.PathPattern;
-import cn.taketoday.web.util.pattern.PathPatternParser;
 
 /**
  * Enable service provider based on HTTP
@@ -62,13 +62,13 @@ public @interface EnableHttpServiceProvider {
 }
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(ServerProperties.class)
-final class HttpServiceProviderConfig {
+@EnableConfigurationProperties({ ServerProperties.class, RegistryProperties.class })
+class HttpServiceProviderConfig {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
 
   @MissingBean
-  static ServiceRegistry serviceRegistry(@Value("${registry.url}") String registryURL, Serialization<RpcResponse> serialization) {
-    return HttpServiceRegistry.ofURL(registryURL, serialization);
+  static ServiceRegistry serviceRegistry(RegistryProperties properties, Serialization<RpcResponse> serialization) {
+    return HttpServiceRegistry.ofURL(properties.getUrl(), serialization);
   }
 
   @MissingBean
@@ -76,18 +76,13 @@ final class HttpServiceProviderConfig {
     return new JdkSerialization<>();
   }
 
-  private final PathPatternParser pathPatternParser = PathPatternParser.defaultInstance;
-
   @Singleton
-  HandlerMapping httpServiceHandlerMapping(Serialization<RpcRequest> requestSerialization,
-          @Value("${service.provider.uri:/provider}") String serviceProviderPath, LocalServiceHolder serviceHolder) {
-
-    PathPattern pathPattern = pathPatternParser.parse(serviceProviderPath);
-    return new ServiceProviderRegistry(pathPattern,
+  HandlerMapping httpServiceHandlerMapping(Serialization<RpcRequest> requestSerialization, LocalServiceHolder serviceHolder) {
+    return new ServiceProviderRegistry(
             new HttpServiceProviderEndpoint(serviceHolder, requestSerialization));
   }
 
-  @Singleton
+  @Singleton(initMethods = "registerDefaultHandlers")
   static ReturnValueHandlerManager returnValueHandlerManager(Serialization<RpcRequest> requestSerialization) {
     ReturnValueHandlerManager resultHandlers = new ReturnValueHandlerManager();
     resultHandlers.addHandlers(new SerializationResultHandler(requestSerialization));
@@ -100,14 +95,14 @@ final class HttpServiceProviderConfig {
   }
 
   @Singleton
-  LocalServiceHolder localServiceHolder(@Value("${server.port}") int port) {
+  static LocalServiceHolder localServiceHolder(@Value("${server.port}") int port) {
     LocalServiceHolder holder = new LocalServiceHolder();
     holder.setPort(port);
     return holder;
   }
 
-  @Singleton
-  ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry serviceRegistry, LocalServiceHolder serviceHolder) {
+  @Component
+  static ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry serviceRegistry, LocalServiceHolder serviceHolder) {
     return new ServiceProviderLifecycle(serviceRegistry, serviceHolder);
   }
 
@@ -142,8 +137,12 @@ final class HttpServiceProviderConfig {
     public void stop(Runnable callback) {
       if (started.compareAndSet(true, false)) {
         log.info("Un-Registering services: [{}]", serviceRegistry);
-        serviceRegistry.unregister(serviceHolder.getServices());
-        callback.run();
+        try {
+          serviceRegistry.unregister(serviceHolder.getServices());
+        }
+        finally {
+          callback.run();
+        }
       }
     }
 
@@ -157,21 +156,15 @@ final class HttpServiceProviderConfig {
   /** HandlerMapping for rpc */
   static final class ServiceProviderRegistry implements HandlerMapping, Ordered {
 
-    final PathPattern serviceProviderPath;
     final HttpServiceProviderEndpoint providerEndpoint;
 
-    ServiceProviderRegistry(PathPattern serviceProviderPath,
-            HttpServiceProviderEndpoint providerEndpoint) {
+    ServiceProviderRegistry(HttpServiceProviderEndpoint providerEndpoint) {
       this.providerEndpoint = providerEndpoint;
-      this.serviceProviderPath = serviceProviderPath;
     }
 
     @Override
     public Object getHandler(RequestContext request) throws Exception {
-      if (serviceProviderPath.matches(request.getLookupPath())) {
-        return providerEndpoint;
-      }
-      return null;
+      return providerEndpoint;
     }
 
     @Override

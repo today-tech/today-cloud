@@ -86,7 +86,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
 
       ServiceDefinition definition = new ServiceDefinition();
 
-      definition.setHost(localHostName == null ? localHost.getHostName() : localHostName);
+      definition.setHost(localHostName == null ? localHost.getHostAddress() : localHostName);
 
       definition.setPort(port);
       definition.setName(interfaceToUse.getName());

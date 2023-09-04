@@ -4,4 +4,6 @@ dependencies {
   implementation project(":today-cloud-core")
   implementation 'cn.taketoday:today-starter-web'
 
+  annotationProcessor 'cn.taketoday:infra-configuration-processor'
+
 }

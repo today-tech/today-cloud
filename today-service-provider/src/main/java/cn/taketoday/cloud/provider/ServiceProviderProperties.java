@@ -15,33 +15,15 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.registry;
+package cn.taketoday.cloud.provider;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import cn.taketoday.context.annotation.Import;
-import cn.taketoday.stereotype.Component;
+import cn.taketoday.context.properties.ConfigurationProperties;
 
 /**
- * Enable Http registry
- *
- * @author TODAY 2021/7/11 16:14
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/9/4 16:56
  */
-@Import(HttpRegistryConfig.class)
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface EnableHttpRegistry {
-
-}
-
-final class HttpRegistryConfig {
-
-  @Component
-  public HttpServiceRegistryEndpoint serviceRegistryEndpoint() {
-    return new HttpServiceRegistryEndpoint();
-  }
+@ConfigurationProperties("service.provider")
+public class ServiceProviderProperties {
 
 }

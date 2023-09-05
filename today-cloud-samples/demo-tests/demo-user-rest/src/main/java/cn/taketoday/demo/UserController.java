@@ -17,35 +17,30 @@
 
 package cn.taketoday.demo;
 
-import cn.taketoday.cloud.protocol.http.HttpServiceRegistry;
+import cn.taketoday.cloud.ServiceProvider;
 import cn.taketoday.demo.model.User;
 import cn.taketoday.demo.service.UserService;
+import cn.taketoday.web.annotation.GET;
+import cn.taketoday.web.annotation.RequestMapping;
+import cn.taketoday.web.annotation.RestController;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2022/10/18 00:06
+ * @since 1.0 2023/9/5 10:06
  */
-public class Client {
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
 
-  public static void main(String[] args) {
-    HttpServiceRegistry serviceRegistry = HttpServiceRegistry.ofURL("http://localhost:8080/services");
-    UserService userService = serviceRegistry.lookupService(UserService.class);
+  private final UserService userService;
 
-    String ret = userService.hello("today rpc");
-    System.out.println(ret);
+  public UserController(ServiceProvider serviceProvider) {
+    this.userService = serviceProvider.lookupService(UserService.class);
+  }
 
-    User byId = userService.getById(1);
-    System.out.println(byId);
-
-    try {
-      userService.throwEx();
-    }
-    catch (Throwable e) {
-      e.printStackTrace();
-    }
-
-    userService.notFound();
-
+  @GET("/{id}")
+  public User get(int id) {
+    return userService.getById(id);
   }
 
 }

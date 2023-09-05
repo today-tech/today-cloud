@@ -68,7 +68,7 @@ class HttpServiceProviderConfig {
 
   @MissingBean
   static ServiceRegistry serviceRegistry(RegistryProperties properties, Serialization<RpcResponse> serialization) {
-    return HttpServiceRegistry.ofURL(properties.getUrl(), serialization);
+    return HttpServiceRegistry.ofURL(properties.getHttpUrl(), serialization);
   }
 
   @MissingBean
@@ -78,7 +78,7 @@ class HttpServiceProviderConfig {
 
   @Singleton
   HandlerMapping httpServiceHandlerMapping(Serialization<RpcRequest> requestSerialization, LocalServiceHolder serviceHolder) {
-    return new ServiceProviderRegistry(
+    return new HttpServiceProviderEndpointMapping(
             new HttpServiceProviderEndpoint(serviceHolder, requestSerialization));
   }
 
@@ -154,11 +154,11 @@ class HttpServiceProviderConfig {
   }
 
   /** HandlerMapping for rpc */
-  static final class ServiceProviderRegistry implements HandlerMapping, Ordered {
+  static final class HttpServiceProviderEndpointMapping implements HandlerMapping, Ordered {
 
     final HttpServiceProviderEndpoint providerEndpoint;
 
-    ServiceProviderRegistry(HttpServiceProviderEndpoint providerEndpoint) {
+    HttpServiceProviderEndpointMapping(HttpServiceProviderEndpoint providerEndpoint) {
       this.providerEndpoint = providerEndpoint;
     }
 

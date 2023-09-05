@@ -1,9 +1,7 @@
 server:
-  port: 8080
+  port: 5000
 
 registry:
-  url: 'http://localhost:8080/services'
-
   services:
     uri: '/services'
 

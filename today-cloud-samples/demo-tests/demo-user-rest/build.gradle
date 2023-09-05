@@ -3,11 +3,10 @@ description = "Demo Client"
 
 dependencies {
   implementation project(":today-service-client")
-
-  implementation 'cn.taketoday:today-web'
-  implementation 'ch.qos.logback:logback-classic'
-
   implementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
+  implementation 'cn.taketoday:today-starter-web'
+  implementation 'cn.taketoday:today-starter-netty'
+  implementation 'ch.qos.logback:logback-classic'
 
 }

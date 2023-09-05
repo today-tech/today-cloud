@@ -15,38 +15,22 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo.service;
+package cn.taketoday.demo;
 
-import cn.taketoday.demo.model.User;
-import cn.taketoday.stereotype.Service;
+import cn.taketoday.cloud.http.EnableHttpServiceClient;
+import cn.taketoday.framework.Application;
+import cn.taketoday.framework.InfraApplication;
 
 /**
- * @author TODAY 2021/7/3 22:46
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2022/10/18 00:06
  */
-@Service
-public class DefaultUserService implements UserService {
+@InfraApplication
+@EnableHttpServiceClient
+public class ClientApplication {
 
-  @Override
-  public String hello(String text) {
-    return "Hello " + text;
+  public static void main(String[] args) {
+    Application.run(ClientApplication.class, args);
   }
 
-  @Override
-  public User getById(Integer id) {
-    final User user = new User();
-    user.setAge(23);
-    user.setId(id);
-    user.setName("TODAY");
-    return user;
-  }
-
-  @Override
-  public void throwEx() {
-    throw new RuntimeException("throwEx");
-  }
-
-  @Override
-  public void notFound() {
-
-  }
 }

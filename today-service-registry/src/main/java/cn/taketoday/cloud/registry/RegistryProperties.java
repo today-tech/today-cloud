@@ -27,21 +27,21 @@ import cn.taketoday.context.properties.ConfigurationProperties;
 public class RegistryProperties {
 
   /**
-   * Registry address
+   * Service Registry HTTP URL
    */
-  private String url;
+  private String httpUrl;
 
   /**
    * services
    */
   private final Services services = new Services();
 
-  public void setUrl(String url) {
-    this.url = url;
+  public void setHttpUrl(String httpUrl) {
+    this.httpUrl = httpUrl;
   }
 
-  public String getUrl() {
-    return url;
+  public String getHttpUrl() {
+    return httpUrl;
   }
 
   public Services getServices() {

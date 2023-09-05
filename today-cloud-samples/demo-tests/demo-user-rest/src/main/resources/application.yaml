@@ -3,7 +3,8 @@ service:
     uri: '/provider'
 
 registry:
-  url: 'http://localhost:8080/services'
+  http-url: 'http://localhost:5000/services'
 
   services:
     uri: '/services'
+

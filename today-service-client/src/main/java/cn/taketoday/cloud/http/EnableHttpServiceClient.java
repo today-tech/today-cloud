@@ -15,38 +15,22 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo.service;
+package cn.taketoday.cloud.http;
 
-import cn.taketoday.demo.model.User;
-import cn.taketoday.stereotype.Service;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import cn.taketoday.context.annotation.Import;
 
 /**
- * @author TODAY 2021/7/3 22:46
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/9/5 10:03
  */
-@Service
-public class DefaultUserService implements UserService {
+@Import(HttpServiceClientConfig.class)
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE, ElementType.METHOD })
+public @interface EnableHttpServiceClient {
 
-  @Override
-  public String hello(String text) {
-    return "Hello " + text;
-  }
-
-  @Override
-  public User getById(Integer id) {
-    final User user = new User();
-    user.setAge(23);
-    user.setId(id);
-    user.setName("TODAY");
-    return user;
-  }
-
-  @Override
-  public void throwEx() {
-    throw new RuntimeException("throwEx");
-  }
-
-  @Override
-  public void notFound() {
-
-  }
 }

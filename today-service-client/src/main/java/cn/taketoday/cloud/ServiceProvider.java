@@ -17,12 +17,22 @@
 
 package cn.taketoday.cloud;
 
+import cn.taketoday.cloud.registry.ServiceNotFoundException;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/8/14 21:53
  */
 public interface ServiceProvider {
 
+  /**
+   * Lookup a service
+   *
+   * @param serviceInterface service interface type
+   * @param <T> Service type
+   * @return service
+   * @throws ServiceNotFoundException service not found
+   */
   <T> T lookupService(Class<T> serviceInterface);
 
 }

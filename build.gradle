@@ -15,8 +15,12 @@ configure(allprojects) {
   repositories {
     mavenLocal()
     mavenCentral()
+    maven { url "https://repo.spring.io/milestone" }
     if (infraVersion.endsWith("-SNAPSHOT")) {
       maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    }
+    if (version.endsWith('-SNAPSHOT')) {
+      maven { url "https://repo.spring.io/snapshot" }
     }
   }
   configurations.configureEach {
@@ -51,9 +55,6 @@ configure([rootProject] + javaProjects) {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("org.junit.platform:junit-platform-suite-engine")
-    // JSR-305 only used for non-required meta-annotations
-    compileOnly("com.google.code.findbugs:jsr305")
-    testCompileOnly("com.google.code.findbugs:jsr305")
   }
 }
 

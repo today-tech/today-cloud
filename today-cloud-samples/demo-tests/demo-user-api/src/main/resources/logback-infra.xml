@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
   ~ Copyright 2021 - 2023 the original author or authors.
   ~
@@ -15,35 +15,25 @@
   ~ You should have received a copy of the GNU General Public License
   ~ along with this program.  If not, see [http://www.gnu.org/licenses/]
   -->
-
 <configuration>
   <contextName>TODAY Cloud Demos</contextName>
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>
-        %red(%d{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level) - %blue([%16.16t]) %cyan(%-40.40logger{40}) %4.4L - %m%n
-      </pattern>
-      <!-- 	<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p %c{1}:%L [%t:%r] - %m%n</pattern> -->
-    </encoder>
-  </appender>
+  <infra-profile name="dev">
+    <include resource="cn/taketoday/framework/logging/logback/console-appender.xml" />
+    <property name="CONSOLE_LOG_PATTERN"
+        value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){red} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} - %blue([%16.16t]) %cyan(%-40.40logger{40}) %4.4L - %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}" />
 
-  <!--
-    <logger name="cn.taketoday.context.logger" level="TRACE">
-      <appender-ref ref="STDOUT" />
-    </logger>
-  -->
+    <root level="INFO">
+      <appender-ref ref="CONSOLE" />
+    </root>
+  </infra-profile>
 
-  <!--  <root level="TRACE">-->
-  <root level="INFO">
-    <appender-ref ref="STDOUT" />
-  </root>
-  <!--
-
-    <logger name="cn.taketoday.rpc" level="TRACE">
-      <appender-ref ref="STDOUT" />
-    </logger>
-  -->
+  <infra-profile name="prod">
+    <include resource="cn/taketoday/framework/logging/logback/file-appender.xml" />
+    <root level="INFO">
+      <appender-ref ref="FILE" />
+    </root>
+  </infra-profile>
 
 </configuration>
 

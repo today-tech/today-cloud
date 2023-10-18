@@ -19,7 +19,6 @@ dependencies {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      artifactId = 'today-cloud-dependencies'
       from components.javaPlatform
     }
   }

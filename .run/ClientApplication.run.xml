@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ClientApplication" type="InfraApplicationConfigurationType" factoryName="Infra">
+    <option name="ACTIVE_PROFILES" />
+    <option name="MAIN_CLASS_NAME" value="cn.taketoday.demo.ClientApplication" />
+    <module name="today-cloud.today-cloud-samples.demo-tests.demo-user-rest.main" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -8,3 +8,6 @@ registry:
   services:
     uri: '/services'
 
+infra:
+  profiles:
+    active: dev

@@ -8,3 +8,7 @@ registry:
 web:
   resources:
     add-default-mappings: false
+
+infra:
+  profiles:
+    active: dev

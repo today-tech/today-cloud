@@ -20,17 +20,22 @@ package cn.taketoday.demo;
 import cn.taketoday.cloud.ServiceProvider;
 import cn.taketoday.demo.model.User;
 import cn.taketoday.demo.service.UserService;
+import cn.taketoday.http.ProblemDetail;
+import cn.taketoday.web.annotation.ExceptionHandler;
 import cn.taketoday.web.annotation.GET;
 import cn.taketoday.web.annotation.RequestMapping;
 import cn.taketoday.web.annotation.RestController;
+import cn.taketoday.web.annotation.RestControllerAdvice;
+import cn.taketoday.web.handler.ResponseEntityExceptionHandler;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/9/5 10:06
  */
+@RestControllerAdvice
 @RestController
 @RequestMapping("/api/users")
-public class UserController {
+public class UserController extends ResponseEntityExceptionHandler {
 
   private final UserService userService;
 
@@ -41,6 +46,12 @@ public class UserController {
   @GET("/{id}")
   public User get(int id) {
     return userService.getById(id);
+  }
+
+  @ExceptionHandler(Throwable.class)
+  public ProblemDetail errorHandling(Throwable throwable) {
+    return ProblemDetail.forRawStatusCode(500)
+            .withDetail(throwable.getMessage());
   }
 
 }

@@ -6,6 +6,7 @@ dependencies {
   implementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
   implementation 'cn.taketoday:today-starter-web'
+  implementation 'cn.taketoday:today-starter-json'
   implementation 'cn.taketoday:today-starter-netty'
   implementation 'ch.qos.logback:logback-classic'
 

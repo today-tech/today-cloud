@@ -1,5 +1,10 @@
 description = "TODAY Cloud Config Server"
 
 dependencies {
+  implementation "cn.taketoday:today-core"
+  implementation 'cn.taketoday:today-framework'
 
+  testImplementation "cn.taketoday:today-test"
+
+  annotationProcessor 'cn.taketoday:infra-configuration-processor'
 }

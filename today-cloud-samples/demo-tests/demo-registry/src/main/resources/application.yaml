@@ -1,9 +1,9 @@
 server:
   port: 5000
 
-registry:
-  services:
-    uri: '/services'
+#registry:
+#  services:
+#    uri: '/services'
 
 web:
   resources:
@@ -12,3 +12,14 @@ web:
 infra:
   profiles:
     active: dev
+
+config:
+  server:
+    etcd:
+      endpoints: "http://localhost:2379"
+      username: "root"
+      password: "88888888"
+      namespace: ${app.name}/
+
+app:
+  name: demo

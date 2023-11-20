@@ -76,7 +76,7 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
       RpcRequest request = serialization.deserialize(context.getInputStream());
       Object service = serviceHolder.getService(request.getServiceName());
       if (service == null) {
-        return RpcResponse.ofThrowable(new ServiceNotFoundException());
+        return RpcResponse.ofThrowable(new ServiceNotFoundException(request.getServiceName()));
       }
       MethodInvoker invoker = methodMapCache.get(new MethodCacheKey(request), service);
       Object[] args = request.getArguments();

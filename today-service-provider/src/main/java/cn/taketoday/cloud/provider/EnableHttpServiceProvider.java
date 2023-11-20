@@ -29,6 +29,7 @@ import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.protocol.http.HttpServiceRegistry;
+import cn.taketoday.cloud.registry.HttpRegistration;
 import cn.taketoday.cloud.registry.RegistryProperties;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.cloud.registry.ServiceRegistry;
@@ -67,7 +68,7 @@ class HttpServiceProviderConfig {
   private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
 
   @MissingBean
-  static ServiceRegistry serviceRegistry(RegistryProperties properties, Serialization<RpcResponse> serialization) {
+  static ServiceRegistry<HttpRegistration> serviceRegistry(RegistryProperties properties, Serialization<RpcResponse> serialization) {
     return HttpServiceRegistry.ofURL(properties.getHttpUrl(), serialization);
   }
 
@@ -102,17 +103,17 @@ class HttpServiceProviderConfig {
   }
 
   @Component
-  static ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry serviceRegistry, LocalServiceHolder serviceHolder) {
+  static ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry<HttpRegistration> serviceRegistry, LocalServiceHolder serviceHolder) {
     return new ServiceProviderLifecycle(serviceRegistry, serviceHolder);
   }
 
   static class ServiceProviderLifecycle implements SmartLifecycle {
-    final ServiceRegistry serviceRegistry;
+    final ServiceRegistry<HttpRegistration> serviceRegistry;
     final LocalServiceHolder serviceHolder;
 
     private final AtomicBoolean started = new AtomicBoolean();
 
-    ServiceProviderLifecycle(ServiceRegistry serviceRegistry, LocalServiceHolder serviceHolder) {
+    ServiceProviderLifecycle(ServiceRegistry<HttpRegistration> serviceRegistry, LocalServiceHolder serviceHolder) {
       this.serviceRegistry = serviceRegistry;
       this.serviceHolder = serviceHolder;
     }
@@ -121,7 +122,7 @@ class HttpServiceProviderConfig {
     public void start() {
       if (started.compareAndSet(false, true)) {
         log.info("Registering services to registry: [{}]", serviceRegistry);
-        serviceRegistry.register(serviceHolder.getServices()); // register to registry
+        serviceRegistry.register(new HttpRegistration(serviceHolder.getServices())); // register to registry
       }
     }
 
@@ -138,7 +139,8 @@ class HttpServiceProviderConfig {
       if (started.compareAndSet(true, false)) {
         log.info("Un-Registering services: [{}]", serviceRegistry);
         try {
-          serviceRegistry.unregister(serviceHolder.getServices());
+          HttpRegistration registration = new HttpRegistration(serviceHolder.getServices());
+          serviceRegistry.unregister(registration);
         }
         finally {
           callback.run();

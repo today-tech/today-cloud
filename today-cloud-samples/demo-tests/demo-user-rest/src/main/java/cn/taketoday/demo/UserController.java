@@ -17,10 +17,11 @@
 
 package cn.taketoday.demo;
 
-import cn.taketoday.cloud.ServiceProvider;
 import cn.taketoday.demo.model.User;
 import cn.taketoday.demo.service.UserService;
 import cn.taketoday.http.ProblemDetail;
+import cn.taketoday.logging.Logger;
+import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.web.annotation.ExceptionHandler;
 import cn.taketoday.web.annotation.GET;
 import cn.taketoday.web.annotation.RequestMapping;
@@ -32,16 +33,21 @@ import cn.taketoday.web.handler.ResponseEntityExceptionHandler;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/9/5 10:06
  */
-@RestControllerAdvice
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api/users")
 public class UserController extends ResponseEntityExceptionHandler {
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final UserService userService;
 
-  public UserController(ServiceProvider serviceProvider) {
-    this.userService = serviceProvider.lookupService(UserService.class);
+  public UserController(UserService userService) {
+    this.userService = userService;
   }
+
+//  public UserController(ServiceProvider serviceProvider) {
+//    this.userService = serviceProvider.lookupService(UserService.class);
+//  }
 
   @GET("/{id}")
   public User get(int id) {
@@ -50,6 +56,7 @@ public class UserController extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(Throwable.class)
   public ProblemDetail errorHandling(Throwable throwable) {
+    logger.error("errorHandling", throwable);
     return ProblemDetail.forRawStatusCode(500)
             .withDetail(throwable.getMessage());
   }

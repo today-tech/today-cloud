@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,10 +18,12 @@
 package cn.taketoday.demo.service;
 
 import cn.taketoday.demo.model.User;
+import cn.taketoday.stereotype.Service;
 
 /**
  * @author TODAY 2021/7/3 22:45
  */
+@Service
 public interface UserService {
 
   String hello(String text);

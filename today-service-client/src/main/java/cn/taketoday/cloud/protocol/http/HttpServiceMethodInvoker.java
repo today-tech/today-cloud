@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceMethodInvoker;
-import cn.taketoday.cloud.registry.ServiceDefinition;
+import cn.taketoday.cloud.core.ServiceInstance;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -37,10 +37,10 @@ public class HttpServiceMethodInvoker extends ServiceMethodInvoker {
   }
 
   @Override
-  protected RpcResponse invokeInternal(ServiceDefinition selected, Method method, Object[] args) {
+  protected RpcResponse invokeInternal(ServiceInstance selected, Method method, Object[] args) {
     RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
-    rpcRequest.setServiceName(selected.getName());
+    rpcRequest.setServiceName(selected.getServiceId());
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);
 

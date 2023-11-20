@@ -19,7 +19,7 @@ package cn.taketoday.cloud.registry;
 
 import java.io.Serial;
 
-import cn.taketoday.cloud.core.RemotingException;
+import cn.taketoday.cloud.RemotingException;
 import cn.taketoday.lang.Nullable;
 
 /**

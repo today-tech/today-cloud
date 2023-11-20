@@ -17,12 +17,10 @@
 
 package cn.taketoday.cloud;
 
-import cn.taketoday.cloud.registry.ServiceRegistry;
-
 /**
  * @author TODAY 2021/7/4 22:58
  */
 public interface ServiceProxy {
 
-  <T> T getProxy(Class<T> serviceInterface, ServiceRegistry serviceRegistry, ServiceMethodInvoker methodInvoker);
+  <T> T getProxy(Class<T> serviceInterface, DiscoveryClient discoveryClient, ServiceMethodInvoker methodInvoker);
 }

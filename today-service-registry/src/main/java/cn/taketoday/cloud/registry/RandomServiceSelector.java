@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +20,7 @@ package cn.taketoday.cloud.registry;
 import java.util.List;
 import java.util.Random;
 
+import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.lang.Assert;
 
 /**
@@ -36,15 +34,15 @@ public class RandomServiceSelector implements ServiceSelector {
   }
 
   public RandomServiceSelector(Random random) {
-    Assert.notNull(random, "Random must not be null");
+    Assert.notNull(random, "Random is required");
     this.random = random;
   }
 
   @Override
-  public ServiceDefinition select(List<ServiceDefinition> definitions) {
-    final int size = definitions.size();
+  public ServiceInstance select(List<ServiceInstance> instances) {
+    final int size = instances.size();
     final int idx = random.nextInt(size);
-    return definitions.get(idx);
+    return instances.get(idx);
   }
 
 }

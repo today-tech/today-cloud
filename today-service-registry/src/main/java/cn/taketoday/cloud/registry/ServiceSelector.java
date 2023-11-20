@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +19,12 @@ package cn.taketoday.cloud.registry;
 
 import java.util.List;
 
+import cn.taketoday.cloud.core.ServiceInstance;
+
 /**
  * @author TODAY 2021/7/9 23:18
  */
 public interface ServiceSelector {
-  
-  ServiceDefinition select(List<ServiceDefinition> definitions);
+
+  ServiceInstance select(List<ServiceInstance> instances);
 }

@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +17,9 @@
 
 package cn.taketoday.cloud.core.serialize;
 
-import com.esotericsoftware.kryo.kryo5.Kryo;
-import com.esotericsoftware.kryo.kryo5.io.Input;
-import com.esotericsoftware.kryo.kryo5.io.Output;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +40,7 @@ public class KryoSerialization<T> extends Serialization<T> {
   }
 
   public KryoSerialization(Kryo kryo) {
-    Assert.notNull(kryo, "Kryo must not be null");
+    Assert.notNull(kryo, "Kryo is required");
     this.kryo = kryo;
   }
 

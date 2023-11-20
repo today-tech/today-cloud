@@ -20,11 +20,11 @@ package cn.taketoday.cloud;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import cn.taketoday.cloud.registry.ServiceDefinition;
+import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
-import cn.taketoday.cloud.registry.ServiceRegistry;
 
 /**
  * @author TODAY 2021/7/4 22:58
@@ -33,22 +33,21 @@ public class JdkServiceProxy implements ServiceProxy {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T getProxy(Class<T> serviceInterface,
-          ServiceRegistry serviceRegistry, ServiceMethodInvoker rpcInvoker) {
-
+  public <T> T getProxy(Class<T> serviceInterface, DiscoveryClient discoveryClient, ServiceMethodInvoker rpcInvoker) {
     final class ServiceInvocationHandler implements InvocationHandler {
-      final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>();
+      final CopyOnWriteArrayList<ServiceInstance> serviceInstances = new CopyOnWriteArrayList<>();
 
       @Override
       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        final CopyOnWriteArrayList<ServiceDefinition> definitions = this.definitions;
-        if (definitions.isEmpty()) {
-          definitions.addAll(serviceRegistry.lookup(serviceInterface));
-          if (definitions.isEmpty()) {
+        final CopyOnWriteArrayList<ServiceInstance> serviceInstances = this.serviceInstances;
+        if (serviceInstances.isEmpty()) {
+          List<ServiceInstance> instances = discoveryClient.getInstances(serviceInterface.getName());
+          serviceInstances.addAll(instances);
+          if (serviceInstances.isEmpty()) {
             throw new ServiceNotFoundException(serviceInterface);
           }
         }
-        return rpcInvoker.invoke(definitions, method, args);
+        return rpcInvoker.invoke(serviceInstances, method, args);
       }
     }
 

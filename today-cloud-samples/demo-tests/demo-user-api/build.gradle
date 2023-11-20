@@ -1,6 +1,8 @@
 description = "Demo User API"
 
 dependencies {
+  implementation 'cn.taketoday:today-context'
+
   compileOnly("org.projectlombok:lombok")
   annotationProcessor("org.projectlombok:lombok")
 

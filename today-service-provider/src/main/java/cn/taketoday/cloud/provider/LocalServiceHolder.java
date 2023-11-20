@@ -43,7 +43,9 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
   private String localHostName;
 
   private int port;
+
   private final HashMap<String, Object> localServices = new HashMap<>();
+
   private final ArrayList<ServiceDefinition> definitions = new ArrayList<>();
 
   public void setLocalHostName(String localHostName) {
@@ -90,7 +92,6 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
 
       definition.setPort(port);
       definition.setName(interfaceToUse.getName());
-      definition.setServiceInterface(interfaceToUse);
 
       log.info("add service: [{}] to interface: [{}]", service, definition.getName());
       definitions.add(definition);

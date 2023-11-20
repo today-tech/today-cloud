@@ -20,17 +20,20 @@ package cn.taketoday.cloud.protocol.http;
 import java.net.URI;
 import java.util.List;
 
+import cn.taketoday.cloud.DefaultServiceInstance;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
+import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.cloud.core.serialize.Serialization;
-import cn.taketoday.cloud.registry.ServiceDefinition;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.core.ParameterizedTypeReference;
+import cn.taketoday.core.style.ToStringBuilder;
 import cn.taketoday.http.HttpEntity;
 import cn.taketoday.http.HttpMethod;
 import cn.taketoday.http.client.JdkClientHttpRequestFactory;
 import cn.taketoday.web.client.HttpClientErrorException;
 import cn.taketoday.web.client.RestClient;
+import cn.taketoday.web.client.RestClientException;
 import cn.taketoday.web.client.RestTemplate;
 
 /**
@@ -38,7 +41,7 @@ import cn.taketoday.web.client.RestTemplate;
  * @since 1.0 2023/8/14 17:46
  */
 public class HttpOperations {
-  private static final ParameterizedTypeReference<List<ServiceDefinition>> reference = new ParameterizedTypeReference<>() { };
+  private static final ParameterizedTypeReference<List<DefaultServiceInstance>> reference = new ParameterizedTypeReference<>() { };
 
   private final Serialization<RpcResponse> serialization;
   private final RestTemplate restOperations = new RestTemplate();
@@ -53,8 +56,8 @@ public class HttpOperations {
     restOperations.setRequestFactory(new JdkClientHttpRequestFactory());
   }
 
-  public RpcResponse execute(ServiceDefinition selected, RpcRequest rpcRequest) {
-    return execute(selected.getHttpURI(), HttpMethod.POST, rpcRequest);
+  public RpcResponse execute(ServiceInstance selected, RpcRequest rpcRequest) {
+    return execute(selected.getUri(), HttpMethod.POST, rpcRequest);
   }
 
   public RpcResponse execute(URI uri, HttpMethod method, RpcRequest rpcRequest) {
@@ -70,7 +73,8 @@ public class HttpOperations {
             });
   }
 
-  public List<ServiceDefinition> getServiceDefinitions(String name) {
+  @SuppressWarnings("rawtypes")
+  public List getInstances(String name) {
     try {
       return restOperations.exchange(buildGetServiceDefinitionURL(name), HttpMethod.GET, HttpEntity.EMPTY, reference).getBody();
     }
@@ -83,8 +87,11 @@ public class HttpOperations {
     return registryURL + '/' + serviceInterface;
   }
 
-  public <T> T register(Object body, Class<T> targetClass) {
-    return restOperations.postForObject(registryURL, body, targetClass);
+  public void register(Object body) throws RestClientException {
+    restClient.post()
+            .uri(registryURL)
+            .body(body)
+            .execute();
   }
 
   public void delete(Object body) {
@@ -94,4 +101,10 @@ public class HttpOperations {
             .execute();
   }
 
+  @Override
+  public String toString() {
+    return ToStringBuilder.from(this)
+            .append("registryURL", registryURL)
+            .toString();
+  }
 }

@@ -17,32 +17,27 @@
 
 package cn.taketoday.cloud.registry;
 
-import java.util.Collections;
-import java.util.List;
+import cn.taketoday.cloud.Registration;
 
 /**
  * @author TODAY 2021/7/4 23:12
  */
-public interface ServiceRegistry {
-
-  default RegisteredStatus register(ServiceDefinition definition) {
-    return register(Collections.singletonList(definition));
-  }
+public interface ServiceRegistry<R extends Registration> {
 
   /**
-   * @param definitions services
+   * Registers the registration. A registration typically has information about an
+   * instance, such as its hostname and port.
+   *
+   * @param registration registration meta data
    * @throws ServiceRegisterFailedException If register failed
    */
-  RegisteredStatus register(List<ServiceDefinition> definitions);
+  void register(R registration);
 
-  default void unregister(ServiceDefinition definition) {
-    unregister(Collections.singletonList(definition));
-  }
-
-  void unregister(List<ServiceDefinition> definitions);
-
-  List<ServiceDefinition> lookup(String name);
-
-  List<ServiceDefinition> lookup(Class<?> serviceInterface);
+  /**
+   * unregister the registration.
+   *
+   * @param registration registration meta data
+   */
+  void unregister(R registration);
 
 }

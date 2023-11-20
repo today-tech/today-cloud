@@ -17,8 +17,6 @@
 
 package cn.taketoday.cloud.registry;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
@@ -41,9 +39,6 @@ public class ServiceDefinition implements Serializable {
   private String name; // service name
 
   private String version;
-
-  @JsonIgnore
-  private transient Class<?> serviceInterface;
 
   private transient URI httpURI;
 
@@ -79,16 +74,6 @@ public class ServiceDefinition implements Serializable {
     return host;
   }
 
-  @JsonIgnore
-  public Class<?> getServiceInterface() {
-    return serviceInterface;
-  }
-
-  @JsonIgnore
-  public void setServiceInterface(Class<?> serviceInterface) {
-    this.serviceInterface = serviceInterface;
-  }
-
   public URI getHttpURI() {
     URI httpURI = this.httpURI;
     if (httpURI == null) {
@@ -107,13 +92,12 @@ public class ServiceDefinition implements Serializable {
     return port == that.port
             && Objects.equals(host, that.host)
             && Objects.equals(name, that.name)
-            && Objects.equals(version, that.version)
-            && Objects.equals(serviceInterface, that.serviceInterface);
+            && Objects.equals(version, that.version);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(port, host, name, version, serviceInterface);
+    return Objects.hash(port, host, name, version);
   }
 
   @Override
@@ -123,7 +107,6 @@ public class ServiceDefinition implements Serializable {
             .append("host", host)
             .append("name", name)
             .append("version", version)
-            .append("serviceInterface", serviceInterface)
             .toString();
   }
 

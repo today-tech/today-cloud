@@ -17,10 +17,13 @@
 
 package cn.taketoday.cloud.registry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import cn.taketoday.cloud.DefaultServiceInstance;
+import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.http.HttpStatus;
 import cn.taketoday.http.MediaType;
 import cn.taketoday.logging.Logger;
@@ -43,7 +46,8 @@ import cn.taketoday.web.annotation.RestController;
  */
 @RestController
 @RequestMapping("${registry.services.uri}")
-public class HttpServiceRegistryEndpoint implements ServiceRegistry {
+public class HttpServiceRegistryEndpoint implements ServiceRegistry<HttpRegistration> {
+
   private static final Logger log = LoggerFactory.getLogger(HttpServiceRegistryEndpoint.class);
 
   private final MultiValueMap<String, ServiceDefinition>
@@ -54,55 +58,41 @@ public class HttpServiceRegistryEndpoint implements ServiceRegistry {
     return serviceMapping;
   }
 
-//  public ResponseEntity<MultiValueMap<String, ServiceDefinition>> services() {
-//    return ResponseEntity.ok()
-//            .contentType(MediaType.APPLICATION_JSON)
-//            .body(serviceMapping);
-//  }
-
   @GET("/{name}")
-  @Override
-  public List<ServiceDefinition> lookup(@PathVariable String name) {
+  public List<ServiceInstance> lookup(@PathVariable String name) {
     List<ServiceDefinition> serviceDefinitions = serviceMapping.get(name);
     if (CollectionUtils.isEmpty(serviceDefinitions)) {
       throw new ServiceNotFoundException(name);
     }
-    // select one
-    return serviceDefinitions;
-  }
 
-  @Override
-  public List<ServiceDefinition> lookup(Class<?> serviceInterface) {
-    return lookup(serviceInterface.getName());
+    ArrayList<ServiceInstance> instances = new ArrayList<>();
+    for (ServiceDefinition definition : serviceDefinitions) {
+      var instance = new DefaultServiceInstance(definition.getHost() + ":" + definition.getPort(),
+              definition.getName(), definition.getHost(), definition.getPort());
+      instances.add(instance);
+    }
+    return instances;
   }
 
   @POST
   @Override
-  public RegisteredStatus register(@RequestBody List<ServiceDefinition> definitions) {
-    Logger log = HttpServiceRegistryEndpoint.log;
-    MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
-    for (ServiceDefinition definition : definitions) {
+  public void register(@RequestBody HttpRegistration registration) {
+    for (ServiceDefinition definition : registration.getServiceDefinitions()) {
       log.info("Registering service: [{}] ", definition);
       serviceMapping.add(definition.getName(), definition);
     }
-    return RegisteredStatus.ofRegistered(definitions.size());
   }
 
   @DELETE
   @Override
-  public void unregister(@RequestBody List<ServiceDefinition> definitions) {
-    MultiValueMap<String, ServiceDefinition> serviceMapping = getServiceMapping();
-    for (ServiceDefinition definition : definitions) {
+  public void unregister(@RequestBody HttpRegistration registration) {
+    for (ServiceDefinition definition : registration.getServiceDefinitions()) {
       List<ServiceDefinition> serviceDefinitions = serviceMapping.get(definition.getName());
       if (CollectionUtils.isNotEmpty(serviceDefinitions)
               && serviceDefinitions.removeIf(def -> Objects.equals(def, definition))) {
         log.info("un-register service: [{}] ", definition);
       }
     }
-  }
-
-  public MultiValueMap<String, ServiceDefinition> getServiceMapping() {
-    return serviceMapping;
   }
 
   @ResponseStatus(HttpStatus.NOT_FOUND)

@@ -33,6 +33,6 @@ public interface ServiceProvider {
    * @return service
    * @throws ServiceNotFoundException service not found
    */
-  <T> T lookupService(Class<T> serviceInterface);
+  <T> T getService(Class<T> serviceInterface);
 
 }

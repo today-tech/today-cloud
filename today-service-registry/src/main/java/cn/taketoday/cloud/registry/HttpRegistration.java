@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,22 +17,30 @@
 
 package cn.taketoday.cloud.registry;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+
+import cn.taketoday.cloud.Registration;
 
 /**
- * @author TODAY 2021/7/11 16:56
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/11/20 21:59
  */
-public final class RegisteredStatus {
-  public final int registeredCount;
+public class HttpRegistration implements Registration {
 
-  RegisteredStatus(int registeredCount) {
-    this.registeredCount = registeredCount;
+  private List<ServiceDefinition> serviceDefinitions;
+
+  public HttpRegistration() { }
+
+  public HttpRegistration(List<ServiceDefinition> serviceDefinitions) {
+    this.serviceDefinitions = serviceDefinitions;
   }
 
-  @JsonCreator
-  public static RegisteredStatus ofRegistered(@JsonProperty("registeredCount") int registeredCount) {
-    return new RegisteredStatus(registeredCount);
+  public void setServiceDefinitions(List<ServiceDefinition> serviceDefinitions) {
+    this.serviceDefinitions = serviceDefinitions;
+  }
+
+  public List<ServiceDefinition> getServiceDefinitions() {
+    return serviceDefinitions;
   }
 
 }

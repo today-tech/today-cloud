@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +19,7 @@ package cn.taketoday.cloud;
 
 import java.util.List;
 
-import cn.taketoday.cloud.registry.ServiceDefinition;
+import cn.taketoday.cloud.core.ServiceInstance;
 
 /**
  * @author TODAY 2021/7/9 21:55
@@ -30,7 +27,7 @@ import cn.taketoday.cloud.registry.ServiceDefinition;
 public class SimpleRemoteExceptionHandler implements RemoteExceptionHandler {
 
   @Override
-  public RpcResponse handle(List<ServiceDefinition> definition, RpcResponse response) throws Throwable {
+  public RpcResponse handle(List<ServiceInstance> instances, RpcResponse response) throws Throwable {
     throw response.getException();
   }
 

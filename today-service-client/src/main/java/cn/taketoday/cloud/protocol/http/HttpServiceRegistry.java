@@ -17,29 +17,31 @@
 
 package cn.taketoday.cloud.protocol.http;
 
-import java.util.Collections;
 import java.util.List;
 
+import cn.taketoday.cloud.DiscoveryClient;
 import cn.taketoday.cloud.JdkServiceProxy;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceProvider;
 import cn.taketoday.cloud.ServiceProxy;
+import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
-import cn.taketoday.cloud.registry.RegisteredStatus;
-import cn.taketoday.cloud.registry.ServiceDefinition;
+import cn.taketoday.cloud.registry.HttpRegistration;
 import cn.taketoday.cloud.registry.ServiceRegisterFailedException;
 import cn.taketoday.cloud.registry.ServiceRegistry;
 import cn.taketoday.core.style.ToStringBuilder;
+import cn.taketoday.web.client.RestClientException;
 
 /**
  * @author TODAY 2021/7/3 23:48
  */
-public class HttpServiceRegistry implements ServiceRegistry, ServiceProvider {
+public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, ServiceProvider, DiscoveryClient {
 
   private ServiceProxy serviceProxy;
 
   private final HttpOperations httpOperations;
+
   private final HttpServiceMethodInvoker methodInvoker;
 
   public HttpServiceRegistry(String registryURL) {
@@ -68,32 +70,29 @@ public class HttpServiceRegistry implements ServiceRegistry, ServiceProvider {
   }
 
   @Override
-  public RegisteredStatus register(ServiceDefinition definition) {
-    return register(Collections.singletonList(definition));
-  }
-
-  @Override
-  public RegisteredStatus register(List<ServiceDefinition> definitions) {
-    RegisteredStatus status = httpOperations.register(definitions, RegisteredStatus.class);
-    if (status.registeredCount != definitions.size()) {
-      throw new ServiceRegisterFailedException(definitions);
+  public void register(HttpRegistration registration) {
+    try {
+      httpOperations.register(registration);
     }
-    return status;
+    catch (RestClientException e) {
+      throw new ServiceRegisterFailedException(registration.getServiceDefinitions());
+    }
   }
 
   @Override
-  public void unregister(List<ServiceDefinition> definitions) {
-    httpOperations.delete(definitions);
+  public void unregister(HttpRegistration registration) {
+    httpOperations.delete(registration);
   }
 
   @Override
-  public List<ServiceDefinition> lookup(String name) {
-    return httpOperations.getServiceDefinitions(name);
+  public List<String> getServices() {
+    throw new UnsupportedOperationException();
   }
 
   @Override
-  public List<ServiceDefinition> lookup(Class<?> serviceInterface) {
-    return lookup(serviceInterface.getName());
+  @SuppressWarnings("unchecked")
+  public List<ServiceInstance> getInstances(String serviceId) {
+    return httpOperations.getInstances(serviceId);
   }
 
   /**
@@ -104,14 +103,13 @@ public class HttpServiceRegistry implements ServiceRegistry, ServiceProvider {
    * @return target service interface
    */
   @Override
-  public <T> T lookupService(Class<T> serviceInterface) {
+  public <T> T getService(Class<T> serviceInterface) {
     return getServiceProxy().getProxy(serviceInterface, this, methodInvoker);
   }
 
   @Override
   public String toString() {
     return ToStringBuilder.from(this)
-            .append("serviceProxy", serviceProxy)
             .append("httpOperations", httpOperations)
             .toString();
   }

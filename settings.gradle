@@ -51,4 +51,5 @@ include 'today-cloud-samples:demo-tests:demo-user-api'
 include 'today-cloud-samples:demo-tests:demo-user-rest'
 include 'today-cloud-samples:demo-tests:demo-user-service'
 include 'today-cloud-samples:today-petclinic'
+include 'today-service-registry-etcd'
 

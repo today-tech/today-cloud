@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.cloud.registry.RandomServiceSelector;
-import cn.taketoday.cloud.registry.ServiceDefinition;
 import cn.taketoday.cloud.registry.ServiceSelector;
 import cn.taketoday.lang.Assert;
 
@@ -36,44 +36,44 @@ public abstract class ServiceMethodInvoker {
   protected ServiceSelector serviceSelector = new RandomServiceSelector();
   protected RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
 
-  public Object invoke(List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
+  public Object invoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
     // pre
-    preProcess(definitions, method, args);
+    preProcess(instances, method, args);
     // process
-    RpcResponse response = doInvoke(definitions, method, args);
+    RpcResponse response = doInvoke(instances, method, args);
     // post
-    return postProcess(definitions, response)
+    return postProcess(instances, response)
             .getResult();
   }
 
-  protected RpcResponse doInvoke(List<ServiceDefinition> definitions, Method method, Object[] args) throws Throwable {
+  protected RpcResponse doInvoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
     final ServiceSelector serviceSelector = getServiceSelector();
-    final ServiceDefinition selected = serviceSelector.select(definitions);
+    final ServiceInstance selected = serviceSelector.select(instances);
     try {
       return invokeInternal(selected, method, args);
     }
     catch (Throwable e) {
-      return handleInvocationException(e, definitions, selected, method, args);
+      return handleInvocationException(e, instances, selected, method, args);
     }
   }
 
   protected RpcResponse handleInvocationException(
-          Throwable e, List<ServiceDefinition> definitions,
-          ServiceDefinition selected, Method method, Object[] args) throws Throwable {
+          Throwable e, List<ServiceInstance> instances,
+          ServiceInstance selected, Method method, Object[] args) throws Throwable {
     throw e;
   }
 
   protected abstract RpcResponse invokeInternal(
-          ServiceDefinition selected, Method method, Object[] args) throws IOException, ClassNotFoundException;
+          ServiceInstance selected, Method method, Object[] args) throws IOException, ClassNotFoundException;
 
-  protected void preProcess(List<ServiceDefinition> definitions, Method method, Object[] args) {
+  protected void preProcess(List<ServiceInstance> instances, Method method, Object[] args) {
     // no-op
   }
 
-  protected RpcResponse postProcess(List<ServiceDefinition> definitions, RpcResponse response) throws Throwable {
+  protected RpcResponse postProcess(List<ServiceInstance> instances, RpcResponse response) throws Throwable {
     final Throwable serviceException = response.getException();
     if (serviceException != null) {
-      return exceptionHandler.handle(definitions, response);
+      return exceptionHandler.handle(instances, response);
     }
     return response;
   }

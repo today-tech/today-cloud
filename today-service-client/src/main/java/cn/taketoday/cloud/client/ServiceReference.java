@@ -15,29 +15,19 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.registry;
+package cn.taketoday.cloud.client;
 
-import java.io.Serial;
-import java.util.List;
-
-import cn.taketoday.cloud.RemotingException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * @author TODAY 2021/7/11 17:19
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/11/20 23:07
  */
-public class ServiceRegisterFailedException extends RemotingException {
-  @Serial
-  private static final long serialVersionUID = 1L;
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD })
+public @interface ServiceReference {
 
-  private final List<ServiceDefinition> definitions;
-
-  public ServiceRegisterFailedException(List<ServiceDefinition> definitions) {
-    super("Service register failed");
-    this.definitions = definitions;
-  }
-
-  public List<ServiceDefinition> getDefinitions() {
-    return definitions;
-  }
 }
-

@@ -19,6 +19,7 @@ package cn.taketoday.cloud.protocol.http;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import cn.taketoday.cloud.DefaultServiceInstance;
 import cn.taketoday.cloud.RpcRequest;
@@ -30,7 +31,6 @@ import cn.taketoday.core.ParameterizedTypeReference;
 import cn.taketoday.core.style.ToStringBuilder;
 import cn.taketoday.http.HttpEntity;
 import cn.taketoday.http.HttpMethod;
-import cn.taketoday.http.client.JdkClientHttpRequestFactory;
 import cn.taketoday.web.client.HttpClientErrorException;
 import cn.taketoday.web.client.RestClient;
 import cn.taketoday.web.client.RestClientException;
@@ -40,10 +40,11 @@ import cn.taketoday.web.client.RestTemplate;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/8/14 17:46
  */
-public class HttpOperations {
+final class HttpOperations {
   private static final ParameterizedTypeReference<List<DefaultServiceInstance>> reference = new ParameterizedTypeReference<>() { };
 
   private final Serialization<RpcResponse> serialization;
+
   private final RestTemplate restOperations = new RestTemplate();
 
   private final RestClient restClient = RestClient.create(restOperations);
@@ -53,7 +54,6 @@ public class HttpOperations {
   public HttpOperations(String registryURL, Serialization<RpcResponse> serialization) {
     this.registryURL = registryURL;
     this.serialization = serialization;
-    restOperations.setRequestFactory(new JdkClientHttpRequestFactory());
   }
 
   public RpcResponse execute(ServiceInstance selected, RpcRequest rpcRequest) {
@@ -99,6 +99,12 @@ public class HttpOperations {
             .uri(registryURL)
             .body(body)
             .execute();
+  }
+
+  public Map<String, Object> getServices() {
+    return restClient.get()
+            .uri(registryURL)
+            .retrieve().body(new ParameterizedTypeReference<Map<String, Object>>() { });
   }
 
   @Override

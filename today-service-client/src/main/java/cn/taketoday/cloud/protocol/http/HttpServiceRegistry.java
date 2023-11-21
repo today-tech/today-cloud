@@ -17,6 +17,7 @@
 
 package cn.taketoday.cloud.protocol.http;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import cn.taketoday.cloud.DiscoveryClient;
@@ -49,7 +50,7 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
     this.methodInvoker = new HttpServiceMethodInvoker(httpOperations);
   }
 
-  public HttpServiceRegistry(HttpOperations httpOperations) {
+  HttpServiceRegistry(HttpOperations httpOperations) {
     this.httpOperations = httpOperations;
     this.methodInvoker = new HttpServiceMethodInvoker(httpOperations);
   }
@@ -86,7 +87,7 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
 
   @Override
   public List<String> getServices() {
-    throw new UnsupportedOperationException();
+    return new ArrayList<>(httpOperations.getServices().keySet());
   }
 
   @Override

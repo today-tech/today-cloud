@@ -34,6 +34,7 @@ import cn.taketoday.lang.Assert;
 public abstract class ServiceMethodInvoker {
 
   protected ServiceSelector serviceSelector = new RandomServiceSelector();
+
   protected RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
 
   public Object invoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
@@ -47,7 +48,6 @@ public abstract class ServiceMethodInvoker {
   }
 
   protected RpcResponse doInvoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
-    final ServiceSelector serviceSelector = getServiceSelector();
     final ServiceInstance selected = serviceSelector.select(instances);
     try {
       return invokeInternal(selected, method, args);
@@ -79,7 +79,7 @@ public abstract class ServiceMethodInvoker {
   }
 
   public void setExceptionHandler(RemoteExceptionHandler exceptionHandler) {
-    Assert.notNull(exceptionHandler, "exceptionHandler most not be null");
+    Assert.notNull(exceptionHandler, "exceptionHandler is required");
     this.exceptionHandler = exceptionHandler;
   }
 
@@ -88,7 +88,7 @@ public abstract class ServiceMethodInvoker {
   }
 
   public void setServiceSelector(ServiceSelector serviceSelector) {
-    Assert.notNull(serviceSelector, "serviceSelector most not be null");
+    Assert.notNull(serviceSelector, "serviceSelector is required");
     this.serviceSelector = serviceSelector;
   }
 

@@ -34,24 +34,36 @@ public class JdkServiceProxy implements ServiceProxy {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T getProxy(Class<T> serviceInterface, DiscoveryClient discoveryClient, ServiceMethodInvoker rpcInvoker) {
-    final class ServiceInvocationHandler implements InvocationHandler {
-      final CopyOnWriteArrayList<ServiceInstance> serviceInstances = new CopyOnWriteArrayList<>();
+    return (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class[] { serviceInterface },
+            new ServiceInvocationHandler(serviceInterface, discoveryClient, rpcInvoker));
+  }
 
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        final CopyOnWriteArrayList<ServiceInstance> serviceInstances = this.serviceInstances;
-        if (serviceInstances.isEmpty()) {
-          List<ServiceInstance> instances = discoveryClient.getInstances(serviceInterface.getName());
-          serviceInstances.addAll(instances);
-          if (serviceInstances.isEmpty()) {
-            throw new ServiceNotFoundException(serviceInterface);
-          }
-        }
-        return rpcInvoker.invoke(serviceInstances, method, args);
-      }
+  static final class ServiceInvocationHandler implements InvocationHandler {
+    private final CopyOnWriteArrayList<ServiceInstance> serviceInstances = new CopyOnWriteArrayList<>();
+
+    private final Class<?> serviceInterface;
+
+    private final DiscoveryClient discoveryClient;
+
+    private final ServiceMethodInvoker rpcInvoker;
+
+    public ServiceInvocationHandler(Class<?> serviceInterface, DiscoveryClient discoveryClient, ServiceMethodInvoker rpcInvoker) {
+      this.serviceInterface = serviceInterface;
+      this.discoveryClient = discoveryClient;
+      this.rpcInvoker = rpcInvoker;
     }
 
-    return (T) Proxy.newProxyInstance(
-            serviceInterface.getClassLoader(), new Class[] { serviceInterface }, new ServiceInvocationHandler());
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      CopyOnWriteArrayList<ServiceInstance> serviceInstances = this.serviceInstances;
+      if (serviceInstances.isEmpty()) {
+        List<ServiceInstance> instances = discoveryClient.getInstances(serviceInterface.getName());
+        serviceInstances.addAll(instances);
+        if (serviceInstances.isEmpty()) {
+          throw new ServiceNotFoundException(serviceInterface);
+        }
+      }
+      return rpcInvoker.invoke(serviceInstances, method, args);
+    }
   }
 }

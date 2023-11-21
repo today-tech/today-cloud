@@ -28,11 +28,11 @@ import cn.taketoday.cloud.core.ServiceInstance;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 2021/7/4 23:10
  */
-public class HttpServiceMethodInvoker extends ServiceMethodInvoker {
+final class HttpServiceMethodInvoker extends ServiceMethodInvoker {
 
   private final HttpOperations httpOperations;
 
-  public HttpServiceMethodInvoker(HttpOperations httpOperations) {
+  HttpServiceMethodInvoker(HttpOperations httpOperations) {
     this.httpOperations = httpOperations;
   }
 

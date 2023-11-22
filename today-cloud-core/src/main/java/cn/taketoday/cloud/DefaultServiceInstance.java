@@ -20,7 +20,6 @@ package cn.taketoday.cloud;
 import java.net.URI;
 import java.util.Objects;
 
-import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.core.AttributeAccessorSupport;
 import cn.taketoday.core.style.ToStringBuilder;
 
@@ -76,7 +75,7 @@ public class DefaultServiceInstance extends AttributeAccessorSupport implements 
   }
 
   @Override
-  public URI getUri() {
+  public URI getHttpURI() {
     if (uri == null) {
       uri = getUri(this);
     }

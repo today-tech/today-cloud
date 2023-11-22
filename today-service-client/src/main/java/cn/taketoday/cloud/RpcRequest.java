@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +17,7 @@
 
 package cn.taketoday.cloud;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
@@ -28,11 +26,16 @@ import java.util.Objects;
  * @author TODAY 2021/7/4 01:19
  */
 public class RpcRequest implements Serializable {
+
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private String method;
+
   private String serviceName;
+
   private Object[] arguments;
+
   private String[] paramTypes;
 
   public void setArguments(Object[] arguments) {
@@ -71,9 +74,8 @@ public class RpcRequest implements Serializable {
   public boolean equals(Object o) {
     if (this == o)
       return true;
-    if (!(o instanceof RpcRequest))
+    if (!(o instanceof RpcRequest request))
       return false;
-    final RpcRequest request = (RpcRequest) o;
     return Objects.equals(method, request.method)
             && Objects.equals(serviceName, request.serviceName)
             && Arrays.equals(paramTypes, request.paramTypes)

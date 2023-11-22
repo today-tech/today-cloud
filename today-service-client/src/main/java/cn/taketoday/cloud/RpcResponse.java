@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +17,17 @@
 
 package cn.taketoday.cloud;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
  * @author TODAY 2021/7/4 22:31
  */
 public class RpcResponse implements Serializable {
+
+  @Serial
   private static final long serialVersionUID = 1L;
+
   /** service result */
   private Object result;
 

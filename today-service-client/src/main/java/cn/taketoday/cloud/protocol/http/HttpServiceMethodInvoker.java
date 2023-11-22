@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceMethodInvoker;
-import cn.taketoday.cloud.core.ServiceInstance;
+import cn.taketoday.cloud.ServiceInstance;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

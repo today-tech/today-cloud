@@ -25,7 +25,7 @@ import cn.taketoday.cloud.JdkServiceProxy;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceProvider;
 import cn.taketoday.cloud.ServiceProxy;
-import cn.taketoday.cloud.core.ServiceInstance;
+import cn.taketoday.cloud.ServiceInstance;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.HttpRegistration;

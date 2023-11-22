@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cn.taketoday.cloud.DefaultServiceInstance;
-import cn.taketoday.cloud.core.ServiceInstance;
+import cn.taketoday.cloud.ServiceInstance;
 import cn.taketoday.http.HttpStatus;
 import cn.taketoday.http.MediaType;
 import cn.taketoday.logging.Logger;

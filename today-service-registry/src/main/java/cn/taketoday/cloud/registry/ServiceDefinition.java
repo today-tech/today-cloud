@@ -19,12 +19,9 @@ package cn.taketoday.cloud.registry;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.net.URI;
 import java.util.Objects;
 
 import cn.taketoday.core.style.ToStringBuilder;
-import cn.taketoday.lang.Constant;
-import cn.taketoday.web.util.UriComponentsBuilder;
 
 /**
  * @author TODAY 2021/7/4 00:36
@@ -35,12 +32,12 @@ public class ServiceDefinition implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private int port;
+
   private String host;
+
   private String name; // service name
 
   private String version;
-
-  private transient URI httpURI;
 
   public void setVersion(String version) {
     this.version = version;
@@ -72,15 +69,6 @@ public class ServiceDefinition implements Serializable {
 
   public String getHost() {
     return host;
-  }
-
-  public URI getHttpURI() {
-    URI httpURI = this.httpURI;
-    if (httpURI == null) {
-      httpURI = UriComponentsBuilder.newInstance().scheme(Constant.HTTP).host(host).port(port).build().toUri();
-      this.httpURI = httpURI;
-    }
-    return httpURI;
   }
 
   @Override

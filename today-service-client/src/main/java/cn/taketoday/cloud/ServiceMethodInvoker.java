@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.cloud.registry.RandomServiceSelector;
 import cn.taketoday.cloud.registry.ServiceSelector;
 import cn.taketoday.lang.Assert;

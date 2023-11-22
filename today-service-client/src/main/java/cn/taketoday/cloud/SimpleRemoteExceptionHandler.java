@@ -19,8 +19,6 @@ package cn.taketoday.cloud;
 
 import java.util.List;
 
-import cn.taketoday.cloud.core.ServiceInstance;
-
 /**
  * @author TODAY 2021/7/9 21:55
  */

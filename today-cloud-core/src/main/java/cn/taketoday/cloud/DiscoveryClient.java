@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.core.annotation.AnnotationAwareOrderComparator;
 
 /**

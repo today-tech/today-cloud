@@ -23,7 +23,6 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import cn.taketoday.cloud.core.ServiceInstance;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 
 /**

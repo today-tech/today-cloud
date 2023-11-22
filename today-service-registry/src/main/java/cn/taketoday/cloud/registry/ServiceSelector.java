@@ -19,7 +19,7 @@ package cn.taketoday.cloud.registry;
 
 import java.util.List;
 
-import cn.taketoday.cloud.core.ServiceInstance;
+import cn.taketoday.cloud.ServiceInstance;
 
 /**
  * @author TODAY 2021/7/9 23:18

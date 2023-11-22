@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.core;
+package cn.taketoday.cloud;
 
 import java.net.URI;
 
@@ -54,13 +54,6 @@ public interface ServiceInstance extends AttributeAccessor {
   /**
    * @return The service URI address.
    */
-  URI getUri();
-
-  /**
-   * @return The scheme of the service instance.
-   */
-  default String getScheme() {
-    return null;
-  }
+  URI getHttpURI();
 
 }

@@ -20,7 +20,7 @@ package cn.taketoday.cloud.registry;
 import java.util.List;
 import java.util.Random;
 
-import cn.taketoday.cloud.core.ServiceInstance;
+import cn.taketoday.cloud.ServiceInstance;
 import cn.taketoday.lang.Assert;
 
 /**

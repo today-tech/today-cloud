@@ -17,14 +17,13 @@
 
 package cn.taketoday.cloud.protocol.http;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 import cn.taketoday.cloud.DefaultServiceInstance;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
-import cn.taketoday.cloud.core.ServiceInstance;
+import cn.taketoday.cloud.ServiceInstance;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.core.ParameterizedTypeReference;
@@ -57,11 +56,7 @@ final class HttpOperations {
   }
 
   public RpcResponse execute(ServiceInstance selected, RpcRequest rpcRequest) {
-    return execute(selected.getUri(), HttpMethod.POST, rpcRequest);
-  }
-
-  public RpcResponse execute(URI uri, HttpMethod method, RpcRequest rpcRequest) {
-    return restOperations.execute(uri, method,
+    return restOperations.execute(selected.getHttpURI(), HttpMethod.POST,
             request -> serialization.serialize(rpcRequest, request.getBody()),
             response -> {
               try {

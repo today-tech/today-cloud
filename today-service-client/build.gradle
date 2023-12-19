@@ -5,6 +5,10 @@ dependencies {
   api project(":today-cloud-core")
   api project(":today-service-registry")
 
+  optional 'io.netty:netty-transport'
+  optional 'io.netty:netty-codec'
+  optional 'io.netty:netty-handler'
+
   implementation 'cn.taketoday:today-web'
   implementation 'cn.taketoday:today-framework'
 

@@ -11,3 +11,7 @@ registry:
 infra:
   profiles:
     active: dev
+
+logging:
+  level:
+    cn.taketoday.cloud.protocol: debug

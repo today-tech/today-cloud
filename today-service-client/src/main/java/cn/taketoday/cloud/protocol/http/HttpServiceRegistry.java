@@ -23,9 +23,10 @@ import java.util.List;
 import cn.taketoday.cloud.DiscoveryClient;
 import cn.taketoday.cloud.JdkServiceProxy;
 import cn.taketoday.cloud.RpcResponse;
+import cn.taketoday.cloud.ServiceInstance;
+import cn.taketoday.cloud.ServiceMethodInvoker;
 import cn.taketoday.cloud.ServiceProvider;
 import cn.taketoday.cloud.ServiceProxy;
-import cn.taketoday.cloud.ServiceInstance;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.registry.HttpRegistration;
@@ -43,7 +44,7 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
 
   private final HttpOperations httpOperations;
 
-  private final HttpServiceMethodInvoker methodInvoker;
+  private final ServiceMethodInvoker methodInvoker;
 
   public HttpServiceRegistry(String registryURL) {
     this.httpOperations = new HttpOperations(registryURL, new JdkSerialization<>());
@@ -53,6 +54,11 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
   HttpServiceRegistry(HttpOperations httpOperations) {
     this.httpOperations = httpOperations;
     this.methodInvoker = new HttpServiceMethodInvoker(httpOperations);
+  }
+
+  HttpServiceRegistry(HttpOperations httpOperations, ServiceMethodInvoker methodInvoker) {
+    this.httpOperations = httpOperations;
+    this.methodInvoker = methodInvoker;
   }
 
   public void setServiceProxy(ServiceProxy serviceProxy) {
@@ -76,7 +82,7 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
       httpOperations.register(registration);
     }
     catch (RestClientException e) {
-      throw new ServiceRegisterFailedException(registration.getServiceDefinitions());
+      throw new ServiceRegisterFailedException(registration, e);
     }
   }
 
@@ -123,6 +129,10 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
 
   public static HttpServiceRegistry ofURL(String registryURL, Serialization<RpcResponse> serialization) {
     return new HttpServiceRegistry(new HttpOperations(registryURL, serialization));
+  }
+
+  public static HttpServiceRegistry ofURL(String registryURL, Serialization<RpcResponse> serialization, ServiceMethodInvoker methodInvoker) {
+    return new HttpServiceRegistry(new HttpOperations(registryURL, serialization), methodInvoker);
   }
 
 }

@@ -15,31 +15,18 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.registry;
+package cn.taketoday.cloud;
 
-import java.io.Serial;
-
-import cn.taketoday.cloud.Registration;
-import cn.taketoday.cloud.RemotingException;
 import cn.taketoday.lang.Nullable;
 
 /**
- * @author TODAY 2021/7/11 17:19
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/12/19 20:36
  */
-public class ServiceRegisterFailedException extends RemotingException {
+public class ServiceTimeoutException extends RemotingException {
 
-  @Serial
-  private static final long serialVersionUID = 1L;
-
-  private final Registration registration;
-
-  public ServiceRegisterFailedException(Registration registration, @Nullable Throwable cause) {
-    super("Service register failed", cause);
-    this.registration = registration;
-  }
-
-  public Registration getRegistration() {
-    return registration;
+  public ServiceTimeoutException(@Nullable String message, @Nullable Throwable cause) {
+    super(message, cause);
   }
 
 }

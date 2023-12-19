@@ -19,4 +19,4 @@
 #
 #
 cn.taketoday.beans.factory.support.DependencyResolvingStrategy=\
-    cn.taketoday.cloud.protocol.http.HttpServiceDependencyResolvingStrategy
+    cn.taketoday.cloud.protocol.ServiceDependencyResolvingStrategy

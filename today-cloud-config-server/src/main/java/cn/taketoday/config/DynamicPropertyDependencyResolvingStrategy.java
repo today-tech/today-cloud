@@ -15,46 +15,31 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.protocol.http;
+package cn.taketoday.config;
 
 import cn.taketoday.beans.factory.config.DependencyDescriptor;
 import cn.taketoday.beans.factory.support.DependencyResolvingStrategy;
-import cn.taketoday.cloud.ServiceProvider;
-import cn.taketoday.cloud.client.ServiceReference;
-import cn.taketoday.context.ApplicationContext;
+import cn.taketoday.context.BootstrapContext;
 import cn.taketoday.lang.Nullable;
-import cn.taketoday.stereotype.Service;
 
 /**
- * for ServiceProvider
+ * for DynamicProperty
  *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/11/18 23:21
  */
-public class HttpServiceDependencyResolvingStrategy implements DependencyResolvingStrategy {
+public class DynamicPropertyDependencyResolvingStrategy implements DependencyResolvingStrategy {
+  private final BootstrapContext bootstrapContext;
 
-  private ServiceProvider serviceProvider;
-
-  private final ApplicationContext context;
-
-  public HttpServiceDependencyResolvingStrategy(ApplicationContext context) {
-    this.context = context;
+  public DynamicPropertyDependencyResolvingStrategy(BootstrapContext bootstrapContext) {
+    this.bootstrapContext = bootstrapContext;
   }
 
   @Nullable
   @Override
   public Object resolveDependency(DependencyDescriptor descriptor, Context context) {
-    Class<?> dependencyType = descriptor.getDependencyType();
-    if (dependencyType.isInterface()) {
-      if (dependencyType.isAnnotationPresent(Service.class)
-              || descriptor.getAnnotation(ServiceReference.class) != null) {
-        if (serviceProvider == null) {
-          serviceProvider = this.context.getBean(ServiceProvider.class);
-        }
-        if (serviceProvider != null) {
-          return serviceProvider.getService(dependencyType);
-        }
-      }
+    if (descriptor.getDependencyType() == DynamicProperty.class) {
+      return new DynamicProperty();
     }
     return null;
   }

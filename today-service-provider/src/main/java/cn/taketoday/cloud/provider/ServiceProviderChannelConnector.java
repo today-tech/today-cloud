@@ -17,6 +17,7 @@
 
 package cn.taketoday.cloud.provider;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -25,17 +26,17 @@ import java.util.Objects;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.DeserializeFailedException;
-import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.netty.ChannelConnector;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
+import cn.taketoday.context.SmartLifecycle;
 import cn.taketoday.lang.Nullable;
 import cn.taketoday.reflect.MethodInvoker;
 import cn.taketoday.util.ClassUtils;
 import cn.taketoday.util.MapCache;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -45,7 +46,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/11/22 22:35
  */
-public class ServiceProviderChannelConnector extends ChannelConnector {
+public class ServiceProviderChannelConnector extends ChannelConnector implements SmartLifecycle {
 
   private final LocalServiceHolder serviceHolder;
 
@@ -55,13 +56,22 @@ public class ServiceProviderChannelConnector extends ChannelConnector {
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
 
-  public ServiceProviderChannelConnector(LocalServiceHolder serviceHolder) {
-    this(serviceHolder, new JdkSerialization<>());
-  }
+  private volatile boolean running;
 
   public ServiceProviderChannelConnector(LocalServiceHolder serviceHolder, Serialization<RpcRequest> serialization) {
     this.serialization = serialization;
     this.serviceHolder = serviceHolder;
+    setPort(serviceHolder.getPort());
+  }
+
+  @Override
+  protected void onActive(ChannelHandlerContext ctx) throws Exception {
+    logger.debug("Client connected");
+  }
+
+  @Override
+  protected void onInactive(ChannelHandlerContext ctx) throws Exception {
+    logger.debug("Client disconnected");
   }
 
   @Override
@@ -74,9 +84,19 @@ public class ServiceProviderChannelConnector extends ChannelConnector {
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof ByteBuf byteBuf) {
       RpcResponse response = handle(ctx, byteBuf);
-      ByteBuf buffer = ctx.alloc().ioBuffer(128);
-      serialization.serialize(response, new ByteBufOutputStream(buffer));
-      ctx.writeAndFlush(buffer);
+      ByteArrayOutputStream output = new ByteArrayOutputStream(128);
+      serialization.serialize(response, output);
+
+      byte[] writeBuffer = new byte[4];
+      byte[] body = output.toByteArray();
+      int length = body.length;
+
+      writeBuffer[0] = (byte) (length >>> 24);
+      writeBuffer[1] = (byte) (length >>> 16);
+      writeBuffer[2] = (byte) (length >>> 8);
+      writeBuffer[3] = (byte) (length >>> 0);
+
+      ctx.writeAndFlush(Unpooled.wrappedBuffer(writeBuffer, body));
     }
     else {
       ctx.fireChannelRead(msg);
@@ -117,6 +137,23 @@ public class ServiceProviderChannelConnector extends ChannelConnector {
     catch (Throwable e) {
       return RpcResponse.ofThrowable(e);
     }
+  }
+
+  @Override
+  public void start() {
+    bind();
+    running = true;
+  }
+
+  @Override
+  public void stop() {
+    shutdown();
+    running = false;
+  }
+
+  @Override
+  public boolean isRunning() {
+    return running;
   }
 
   private static final class MethodMapCache extends MapCache<MethodCacheKey, MethodInvoker, Object> {

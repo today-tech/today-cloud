@@ -22,9 +22,12 @@ import java.net.InetSocketAddress;
 
 import cn.taketoday.lang.Assert;
 import cn.taketoday.lang.Nullable;
+import cn.taketoday.logging.Logger;
+import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.util.ClassUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -50,8 +53,10 @@ import io.netty.util.concurrent.DefaultThreadFactory;
  */
 public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
 
-  static boolean epollPresent = ClassUtils.isPresent(
+  static final boolean epollPresent = ClassUtils.isPresent(
           "io.netty.channel.epoll.EpollServerSocketChannel", ChannelConnector.class);
+
+  protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   /**
    * the number of threads that will be used by
@@ -257,11 +262,43 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
 
     InetSocketAddress listenAddress = getListenAddress();
     bootstrap.bind(listenAddress).syncUninterruptibly();
+
+    logger.info("Netty started on port: '{}'", getPort());
+  }
+
+  @Override
+  public final void channelActive(ChannelHandlerContext ctx) throws Exception {
+    try {
+      onActive(ctx);
+    }
+    finally {
+      ctx.fireChannelActive();
+    }
+  }
+
+  @Override
+  public final void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    try {
+      onInactive(ctx);
+    }
+    finally {
+      ctx.fireChannelActive();
+    }
+  }
+
+  protected void onActive(ChannelHandlerContext ctx) throws Exception {
+
+  }
+
+  protected void onInactive(ChannelHandlerContext ctx) throws Exception {
+
   }
 
   protected abstract void initChannel(Channel ch, ChannelPipeline pipeline) throws Exception;
 
   public void shutdown() {
+    logger.info("Shutdown netty: [{}] on port: '{}'", this, getPort());
+
     if (acceptorGroup != null) {
       acceptorGroup.shutdownGracefully();
     }
@@ -275,6 +312,11 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
       return new InetSocketAddress(getAddress().getHostAddress(), getPort());
     }
     return new InetSocketAddress(getPort());
+  }
+
+  @Override
+  public boolean isSharable() {
+    return true;
   }
 
   /**

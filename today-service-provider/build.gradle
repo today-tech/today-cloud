@@ -7,7 +7,12 @@ dependencies {
   implementation project(":today-service-client")
   implementation project(":today-service-registry")
 
-  implementation 'cn.taketoday:today-web'
+  optional 'cn.taketoday:today-web'
   implementation 'cn.taketoday:today-framework'
+
+  optional 'io.netty:netty-transport'
+  optional 'io.netty:netty-codec'
+  optional 'io.netty:netty-handler'
+  optional 'io.netty:netty-transport-classes-epoll'
 
 }

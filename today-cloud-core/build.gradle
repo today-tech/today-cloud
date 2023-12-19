@@ -6,4 +6,7 @@ dependencies {
 
   optional 'com.esotericsoftware:kryo:5.5.0'
 
+  optional 'io.netty:netty-codec-http'
+  optional 'io.netty:netty-transport-classes-epoll'
+
 }

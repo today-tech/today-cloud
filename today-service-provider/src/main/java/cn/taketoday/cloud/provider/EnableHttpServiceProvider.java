@@ -21,9 +21,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import cn.taketoday.beans.factory.annotation.Value;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
@@ -33,16 +31,12 @@ import cn.taketoday.cloud.registry.HttpRegistration;
 import cn.taketoday.cloud.registry.RegistryProperties;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.cloud.registry.ServiceRegistry;
-import cn.taketoday.context.SmartLifecycle;
 import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.context.annotation.Import;
 import cn.taketoday.context.annotation.MissingBean;
 import cn.taketoday.context.properties.EnableConfigurationProperties;
 import cn.taketoday.core.Ordered;
 import cn.taketoday.framework.web.server.ServerProperties;
-import cn.taketoday.logging.Logger;
-import cn.taketoday.logging.LoggerFactory;
-import cn.taketoday.stereotype.Component;
 import cn.taketoday.stereotype.Singleton;
 import cn.taketoday.web.HandlerExceptionHandler;
 import cn.taketoday.web.HandlerMapping;
@@ -62,10 +56,10 @@ public @interface EnableHttpServiceProvider {
 
 }
 
+@Import(ServicePublishConfig.class)
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ ServerProperties.class, RegistryProperties.class })
 class HttpServiceProviderConfig {
-  private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
 
   @MissingBean
   static ServiceRegistry<HttpRegistration> serviceRegistry(RegistryProperties properties, Serialization<RpcResponse> serialization) {
@@ -93,66 +87,6 @@ class HttpServiceProviderConfig {
   @Singleton
   static RpcHandlerExceptionHandler rpcHttpExceptionHandler() {
     return new RpcHandlerExceptionHandler();
-  }
-
-  @Singleton
-  static LocalServiceHolder localServiceHolder(@Value("${server.port}") int port) {
-    LocalServiceHolder holder = new LocalServiceHolder();
-    holder.setPort(port);
-    return holder;
-  }
-
-  @Component
-  static ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry<HttpRegistration> serviceRegistry, LocalServiceHolder serviceHolder) {
-    return new ServiceProviderLifecycle(serviceRegistry, serviceHolder);
-  }
-
-  static class ServiceProviderLifecycle implements SmartLifecycle {
-    final ServiceRegistry<HttpRegistration> serviceRegistry;
-    final LocalServiceHolder serviceHolder;
-
-    private final AtomicBoolean started = new AtomicBoolean();
-
-    ServiceProviderLifecycle(ServiceRegistry<HttpRegistration> serviceRegistry, LocalServiceHolder serviceHolder) {
-      this.serviceRegistry = serviceRegistry;
-      this.serviceHolder = serviceHolder;
-    }
-
-    @Override
-    public void start() {
-      if (started.compareAndSet(false, true)) {
-        log.info("Registering services to registry: [{}]", serviceRegistry);
-        serviceRegistry.register(new HttpRegistration(serviceHolder.getServices())); // register to registry
-      }
-    }
-
-    @Override
-    public void stop() {
-      throw new UnsupportedOperationException("Stop must not be invoked directly");
-    }
-
-    /**
-     * Go offline to delete the service registered on the machine
-     */
-    @Override
-    public void stop(Runnable callback) {
-      if (started.compareAndSet(true, false)) {
-        log.info("Un-Registering services: [{}]", serviceRegistry);
-        try {
-          HttpRegistration registration = new HttpRegistration(serviceHolder.getServices());
-          serviceRegistry.unregister(registration);
-        }
-        finally {
-          callback.run();
-        }
-      }
-    }
-
-    @Override
-    public boolean isRunning() {
-      return started.get();
-    }
-
   }
 
   /** HandlerMapping for rpc */

@@ -10,6 +10,12 @@ registry:
 web:
   resources:
     add-default-mappings: false
+
 infra:
   profiles:
     active: dev
+
+logging:
+  level:
+    root: info
+    cn.taketoday.cloud.provider: debug

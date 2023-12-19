@@ -17,7 +17,7 @@
 
 package cn.taketoday.demo.service;
 
-import cn.taketoday.cloud.provider.EnableHttpServiceProvider;
+import cn.taketoday.cloud.provider.EnableServiceProvider;
 import cn.taketoday.framework.Application;
 import cn.taketoday.framework.InfraApplication;
 
@@ -26,7 +26,8 @@ import cn.taketoday.framework.InfraApplication;
  * @since 1.0 2022/10/18 00:04
  */
 @InfraApplication
-@EnableHttpServiceProvider
+//@EnableHttpServiceProvider
+@EnableServiceProvider
 public class UserServiceApplication {
 
   public static void main(String[] args) {

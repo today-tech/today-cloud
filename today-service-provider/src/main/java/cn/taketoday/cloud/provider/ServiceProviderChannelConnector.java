@@ -17,6 +17,7 @@
 
 package cn.taketoday.cloud.provider;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,6 +29,7 @@ import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.DeserializeFailedException;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.netty.ChannelConnector;
+import cn.taketoday.cloud.protocol.ProtocolPayload;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.context.SmartLifecycle;
 import cn.taketoday.lang.Nullable;
@@ -35,7 +37,6 @@ import cn.taketoday.reflect.MethodInvoker;
 import cn.taketoday.util.ClassUtils;
 import cn.taketoday.util.MapCache;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -81,30 +82,35 @@ public class ServiceProviderChannelConnector extends ChannelConnector implements
   }
 
   @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    cause.printStackTrace();
+  }
+
+  @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof ByteBuf byteBuf) {
-      RpcResponse response = handle(ctx, byteBuf);
+      ProtocolPayload payload = ProtocolPayload.decode(byteBuf);
+
+      RpcResponse response = handle(ctx, payload);
       ByteArrayOutputStream output = new ByteArrayOutputStream(128);
       serialization.serialize(response, output);
 
-      byte[] writeBuffer = new byte[4];
       byte[] body = output.toByteArray();
-      int length = body.length;
 
-      writeBuffer[0] = (byte) (length >>> 24);
-      writeBuffer[1] = (byte) (length >>> 16);
-      writeBuffer[2] = (byte) (length >>> 8);
-      writeBuffer[3] = (byte) (length >>> 0);
+      ByteBuf buffer = Unpooled.buffer(4 + body.length + ProtocolPayload.HEADER_LENGTH);
+      buffer.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
+      payload.header.serialize(buffer);
+      buffer.writeBytes(body);
 
-      ctx.writeAndFlush(Unpooled.wrappedBuffer(writeBuffer, body));
+      ctx.writeAndFlush(buffer);
     }
     else {
       ctx.fireChannelRead(msg);
     }
   }
 
-  protected RpcResponse handle(ChannelHandlerContext ctx, ByteBuf byteBuf) throws IOException {
-    try (ByteBufInputStream inputStream = new ByteBufInputStream(byteBuf)) {
+  protected RpcResponse handle(ChannelHandlerContext ctx, ProtocolPayload payload) throws IOException {
+    try (ByteArrayInputStream inputStream = new ByteArrayInputStream(payload.body)) {
       try {
         RpcRequest request = serialization.deserialize(inputStream);
         Object service = serviceHolder.getService(request.getServiceName());

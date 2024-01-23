@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,23 +15,31 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo.service;
-
-import cn.taketoday.demo.model.User;
-import cn.taketoday.stereotype.Service;
+package cn.taketoday.cloud.protocol;
 
 /**
- * @author TODAY 2021/7/3 22:45
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/12/22 22:24
  */
-@Service
-public interface UserService {
+public enum ProtocolVersion {
 
-  String hello(String text);
+  CURRENT(0);
 
-  User getById(Integer id);
+  private final byte version;
 
-  void throwEx();
+  ProtocolVersion(int version) {
+    this.version = (byte) version;
+  }
 
-  void notFound();
+  public byte asByte() {
+    return version;
+  }
+
+  public static ProtocolVersion valueOf(byte version) {
+    return switch (version) {
+      case 0 -> CURRENT;
+      default -> throw new UnsupportedOperationException("Protocol version: '" + version + "' not supported");
+    };
+  }
 
 }

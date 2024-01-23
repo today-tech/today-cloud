@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,14 @@ package cn.taketoday.cloud;
 import java.io.Serial;
 import java.io.Serializable;
 
+import cn.taketoday.lang.Nullable;
+
 /**
  * @author TODAY 2021/7/4 22:31
  */
 public class RpcResponse implements Serializable {
+
+  public static final RpcResponse empty = new RpcResponse();
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -31,6 +35,7 @@ public class RpcResponse implements Serializable {
   /** service result */
   private Object result;
 
+  @Nullable
   private Throwable exception;
 
   public RpcResponse() { }
@@ -47,17 +52,18 @@ public class RpcResponse implements Serializable {
     return result;
   }
 
+  @Nullable
   public Throwable getException() {
     return exception;
   }
 
-  public void setException(Throwable exception) {
+  public void setException(@Nullable Throwable exception) {
     this.exception = exception;
   }
 
   // static
 
-  public static RpcResponse ofThrowable(Throwable throwable) {
+  public static RpcResponse ofThrowable(@Nullable Throwable throwable) {
     final RpcResponse rpcResponse = new RpcResponse();
     rpcResponse.setException(throwable);
     return rpcResponse;

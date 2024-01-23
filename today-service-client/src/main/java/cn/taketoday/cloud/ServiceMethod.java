@@ -15,23 +15,20 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo.service;
+package cn.taketoday.cloud;
 
-import cn.taketoday.demo.model.User;
-import cn.taketoday.stereotype.Service;
+import java.lang.reflect.Method;
 
 /**
- * @author TODAY 2021/7/3 22:45
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2024/1/7 21:03
  */
-@Service
-public interface UserService {
+public class ServiceMethod {
 
-  String hello(String text);
+  public final Method method;
 
-  User getById(Integer id);
-
-  void throwEx();
-
-  void notFound();
+  public ServiceMethod(Method method) {
+    this.method = method;
+  }
 
 }

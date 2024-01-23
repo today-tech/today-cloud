@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,9 @@
 package cn.taketoday.demo;
 
 import cn.taketoday.cloud.http.EnableHttpServiceClient;
-import cn.taketoday.framework.Application;
+import cn.taketoday.framework.ApplicationType;
 import cn.taketoday.framework.InfraApplication;
+import cn.taketoday.framework.builder.ApplicationBuilder;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -30,7 +31,9 @@ import cn.taketoday.framework.InfraApplication;
 public class ClientApplication {
 
   public static void main(String[] args) {
-    Application.run(ClientApplication.class, args);
+    ApplicationBuilder.from(ClientApplication.class)
+            .type(ApplicationType.NETTY_WEB)
+            .run(args);
   }
 
 }

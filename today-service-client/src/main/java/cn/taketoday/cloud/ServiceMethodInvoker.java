@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,16 @@
 
 package cn.taketoday.cloud;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import cn.taketoday.cloud.registry.RandomServiceSelector;
 import cn.taketoday.cloud.registry.ServiceSelector;
 import cn.taketoday.lang.Assert;
+import cn.taketoday.util.concurrent.ListenableFuture;
+import reactor.core.publisher.Mono;
 
 /**
  * Service Method Invoker
@@ -36,46 +39,42 @@ public abstract class ServiceMethodInvoker {
 
   protected RemoteExceptionHandler exceptionHandler = new SimpleRemoteExceptionHandler();
 
-  public Object invoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
-    // pre
-    preProcess(instances, method, args);
-    // process
-    RpcResponse response = doInvoke(instances, method, args);
-    // post
-    return postProcess(instances, response)
-            .getResult();
+  private final ArrayList<ReturnValueResolver> resolvers = new ArrayList<>();
+
+  public ServiceMethodInvoker() {
+    resolvers.add(new ListenableFutureReturnValueResolver());
+    resolvers.add(new MonoFutureReturnValueResolver());
+    resolvers.add(new BlockFutureReturnValueResolver());
   }
 
-  protected RpcResponse doInvoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
-    final ServiceInstance selected = serviceSelector.select(instances);
+  public Object invoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
+    ServiceInstance selected = serviceSelector.select(instances);
     try {
-      return invokeInternal(selected, method, args);
+      ListenableFuture<Object> response = invokeInternal(selected, method, args);
+      return resolveReturnValue(response, method);
     }
     catch (Throwable e) {
-      return handleInvocationException(e, instances, selected, method, args);
+      return handleException(e, instances, selected, method, args);
     }
   }
 
-  protected RpcResponse handleInvocationException(
-          Throwable e, List<ServiceInstance> instances,
+  private Object resolveReturnValue(ListenableFuture<Object> response, Method method) throws Throwable {
+    for (ReturnValueResolver resolver : resolvers) {
+      if (resolver.supports(method)) {
+        return resolver.resolve(response, method);
+      }
+    }
+    return null;
+  }
+
+  protected RpcResponse handleException(Throwable e, List<ServiceInstance> instances,
           ServiceInstance selected, Method method, Object[] args) throws Throwable {
+
     throw e;
   }
 
-  protected abstract RpcResponse invokeInternal(
-          ServiceInstance selected, Method method, Object[] args) throws IOException, ClassNotFoundException;
-
-  protected void preProcess(List<ServiceInstance> instances, Method method, Object[] args) {
-    // no-op
-  }
-
-  protected RpcResponse postProcess(List<ServiceInstance> instances, RpcResponse response) throws Throwable {
-    final Throwable serviceException = response.getException();
-    if (serviceException != null) {
-      return exceptionHandler.handle(instances, response);
-    }
-    return response;
-  }
+  protected abstract ListenableFuture<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args)
+          throws Throwable;
 
   public void setExceptionHandler(RemoteExceptionHandler exceptionHandler) {
     Assert.notNull(exceptionHandler, "exceptionHandler is required");
@@ -94,4 +93,59 @@ public abstract class ServiceMethodInvoker {
   public ServiceSelector getServiceSelector() {
     return serviceSelector;
   }
+
+  interface ReturnValueResolver {
+
+    boolean supports(Method method);
+
+    Object resolve(ListenableFuture<Object> response, Method method) throws Throwable;
+
+  }
+
+  static class ListenableFutureReturnValueResolver implements ReturnValueResolver {
+
+    @Override
+    public boolean supports(Method method) {
+      return method.getReturnType() == ListenableFuture.class;
+    }
+
+    @Override
+    public Object resolve(ListenableFuture<Object> response, Method method) {
+      return response;
+    }
+
+  }
+
+  static class BlockFutureReturnValueResolver implements ReturnValueResolver {
+
+    @Override
+    public boolean supports(Method method) {
+      return true;
+    }
+
+    @Override
+    public Object resolve(ListenableFuture<Object> response, Method method) throws Throwable {
+      try {
+        return response.get();
+      }
+      catch (ExecutionException e) {
+        throw e.getCause();
+      }
+    }
+  }
+
+  static class MonoFutureReturnValueResolver implements ReturnValueResolver {
+
+    @Override
+    public boolean supports(Method method) {
+      return method.getReturnType() == Mono.class;
+    }
+
+    @Override
+    public Object resolve(ListenableFuture<Object> response, Method method) throws Exception {
+      return Mono.fromFuture(response.completable());
+    }
+
+  }
+
 }

@@ -11,5 +11,8 @@ dependencies {
 
   implementation 'cn.taketoday:today-web'
   implementation 'cn.taketoday:today-framework'
+  implementation 'io.projectreactor:reactor-core' // :3.6.1
+
+  implementation 'org.apache.commons:commons-pool2:2.12.0'
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,10 @@ import java.lang.reflect.Method;
 
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
-import cn.taketoday.cloud.ServiceMethodInvoker;
 import cn.taketoday.cloud.ServiceInstance;
+import cn.taketoday.cloud.ServiceMethodInvoker;
+import cn.taketoday.scheduling.annotation.AsyncResult;
+import cn.taketoday.util.concurrent.ListenableFuture;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -37,14 +39,18 @@ final class HttpServiceMethodInvoker extends ServiceMethodInvoker {
   }
 
   @Override
-  protected RpcResponse invokeInternal(ServiceInstance selected, Method method, Object[] args) {
+  protected ListenableFuture<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) throws Throwable {
     RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(selected.getServiceId());
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);
-
-    return httpOperations.execute(selected, rpcRequest);
+    RpcResponse execute = httpOperations.execute(selected, rpcRequest);
+    Throwable exception = execute.getException();
+    if (exception != null) {
+      return AsyncResult.forExecutionException(exception);
+    }
+    return AsyncResult.forValue(execute.getResult());
   }
 
 }

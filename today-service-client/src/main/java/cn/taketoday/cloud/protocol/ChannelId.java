@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2023 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,23 +15,18 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo.service;
-
-import cn.taketoday.demo.model.User;
-import cn.taketoday.stereotype.Service;
+package cn.taketoday.cloud.protocol;
 
 /**
- * @author TODAY 2021/7/3 22:45
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 1.0 2023/12/22 22:26
  */
-@Service
-public interface UserService {
+public class ChannelId {
 
-  String hello(String text);
+  public final int value;
 
-  User getById(Integer id);
-
-  void throwEx();
-
-  void notFound();
+  ChannelId(int value) {
+    this.value = value;
+  }
 
 }

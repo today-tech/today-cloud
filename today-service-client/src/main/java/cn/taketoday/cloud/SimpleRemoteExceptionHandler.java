@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@
 
 package cn.taketoday.cloud;
 
-import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import cn.taketoday.util.concurrent.ListenableFuture;
 
 /**
  * @author TODAY 2021/7/9 21:55
@@ -25,8 +27,34 @@ import java.util.List;
 public class SimpleRemoteExceptionHandler implements RemoteExceptionHandler {
 
   @Override
-  public RpcResponse handle(List<ServiceInstance> instances, RpcResponse response) throws Throwable {
-    throw response.getException();
+  public Object handle(ListenableFuture<Object> response) throws Throwable {
+    throw exceptionNow(response);
+  }
+
+  Throwable exceptionNow(ListenableFuture<Object> response) {
+    if (!response.isDone())
+      throw new IllegalStateException("Task has not completed");
+    if (response.isCancelled())
+      throw new IllegalStateException("Task was cancelled");
+    boolean interrupted = false;
+    try {
+      while (true) {
+        try {
+          response.get();
+          throw new IllegalStateException("Task completed with a result");
+        }
+        catch (InterruptedException e) {
+          interrupted = true;
+        }
+        catch (ExecutionException e) {
+          return e.getCause();
+        }
+      }
+    }
+    finally {
+      if (interrupted)
+        Thread.currentThread().interrupt();
+    }
   }
 
 }

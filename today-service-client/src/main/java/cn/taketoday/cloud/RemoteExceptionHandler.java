@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +17,12 @@
 
 package cn.taketoday.cloud;
 
-import java.util.List;
+import cn.taketoday.util.concurrent.ListenableFuture;
 
 /**
  * @author TODAY 2021/7/9 21:54
  */
 public interface RemoteExceptionHandler {
 
-  RpcResponse handle(List<ServiceInstance> definition, RpcResponse throwable) throws Throwable;
+  Object handle(ListenableFuture<Object> throwable) throws Throwable;
 }

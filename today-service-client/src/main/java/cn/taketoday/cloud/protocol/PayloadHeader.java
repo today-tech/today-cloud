@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,38 +28,54 @@ import io.netty.buffer.ByteBuf;
  * @since 1.0 2023/12/22 22:23
  */
 public class PayloadHeader {
+  // 0     4          5            9           11
+  // reserve -> version -> requestId -> eventType -> metadata
+
   static final Random random = new Random();
 
-  public final byte[] reserve;
+  public final int reserve;
 
   public final ProtocolVersion version;
 
   public final int requestId;
 
-  @Nullable
-  public final Map<String, String> metadata;
+  public final RemoteEventType eventType;
 
-  public PayloadHeader(byte[] reserve, ProtocolVersion version, int requestId) {
+  @Nullable
+  public final Map<String, String> metadata; // TODO metadata
+
+  public PayloadHeader(int reserve, ProtocolVersion version, int requestId, RemoteEventType eventType) {
     this.reserve = reserve;
     this.version = version;
     this.requestId = requestId;
+    this.eventType = eventType;
     this.metadata = null;
   }
 
+  @Nullable
+  public Map<String, String> getMetadata() {
+    return metadata;
+  }
+
+  @Nullable
+  public String getMetadata(String key) {
+    return metadata != null ? metadata.get(key) : null;
+  }
+
   public void serialize(ByteBuf header) {
-    serialize(header, version, requestId);
-  }
-
-  public static void serialize(ByteBuf header, int requestId) {
-    serialize(header, ProtocolVersion.CURRENT, requestId);
-  }
-
-  public static void serialize(ByteBuf header, ProtocolVersion version, int requestId) {
-    byte[] reserve = new byte[4];
-    random.nextBytes(reserve);
-    header.writeBytes(reserve);
+    int reserve = random.nextInt();
+    header.writeInt(reserve);
     header.writeByte(version.asByte());
     header.writeInt(requestId);
+    header.writeShort(eventType.value);
+  }
+
+  public static void serialize(ByteBuf header, int requestId, RemoteEventType eventType) {
+    int reserve = random.nextInt();
+    header.writeInt(reserve);
+    header.writeByte(ProtocolVersion.CURRENT.asByte());
+    header.writeInt(requestId);
+    header.writeShort(eventType.value);
   }
 
 }

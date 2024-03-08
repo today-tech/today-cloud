@@ -17,29 +17,20 @@
 
 package cn.taketoday.cloud.protocol;
 
+import cn.taketoday.lang.Nullable;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/12/22 22:24
+ * @since 4.0 2024/3/8 22:06
  */
-public enum ProtocolVersion {
+public class ProtocolVersionException extends ProtocolParsingException {
 
-  CURRENT(0);
-
-  private final byte version;
-
-  ProtocolVersion(int version) {
-    this.version = (byte) version;
+  public ProtocolVersionException(@Nullable String s) {
+    super(s);
   }
 
-  public byte asByte() {
-    return version;
-  }
-
-  public static ProtocolVersion valueOf(byte version) {
-    return switch (version) {
-      case 0 -> CURRENT;
-      default -> throw new ProtocolVersionException("Protocol version: '%s' not supported".formatted(version));
-    };
+  public ProtocolVersionException(@Nullable String message, @Nullable Throwable cause) {
+    super(message, cause);
   }
 
 }

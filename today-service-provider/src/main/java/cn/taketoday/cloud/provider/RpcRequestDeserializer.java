@@ -15,32 +15,28 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.cloud.core.serialize;
+package cn.taketoday.cloud.provider;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
+import cn.taketoday.cloud.RpcRequest;
+import cn.taketoday.cloud.core.serialize.ProtostuffUtils;
+import io.netty.buffer.ByteBuf;
 
 /**
- * A strategy interface for streaming an object to an OutputStream.
- *
- * @author Gary Russell
- * @author Mark Fisher
- * @author TODAY 2021/7/8 22:52
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 4.0 2024/3/8 23:15
  */
-@Deprecated
-@FunctionalInterface
-public interface Serializer {
+public class RpcRequestDeserializer {
 
-  /**
-   * Write an object of type T to the given OutputStream.
-   * <p>Note: Implementations should not close the given OutputStream
-   * (or any decorators of that OutputStream) but rather leave this up
-   * to the caller.
-   *
-   * @param object the object to serialize
-   * @param output the output stream
-   * @throws IOException in case of errors writing to the stream
-   */
-  void serialize(Object object, OutputStream output) throws IOException;
+  public RpcRequest deserialize(ByteBuf body) throws IOException {
+    RpcRequest request = ProtostuffUtils.deserialize(body.nioBuffer(), RpcRequest.class);
+    int length = body.readInt();
+    CharSequence charSequence = body.readCharSequence(length, StandardCharsets.UTF_8);
 
+    // TODO
+
+    return request;
+  }
 }

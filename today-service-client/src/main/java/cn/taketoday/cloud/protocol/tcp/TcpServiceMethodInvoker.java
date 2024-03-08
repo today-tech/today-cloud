@@ -59,6 +59,7 @@ public class TcpServiceMethodInvoker extends ServiceMethodInvoker {
     return client.write(selected, rpcRequest, requestTimeout);
   }
 
+  @Deprecated(forRemoval = true)
   protected ListenableFuture<Object> invokeInternal0(ServiceInstance selected, Method method, Object[] args) throws IOException {
     RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
@@ -83,7 +84,7 @@ public class TcpServiceMethodInvoker extends ServiceMethodInvoker {
       throw new ServiceTimeoutException("Remoting invoke timeout", null);
     }
 
-    Throwable cause = responsePromise.cause();
+    Throwable cause = responsePromise.getCause();
     throw new ServiceTimeoutException("Remoting invoke failed", cause);
   }
 

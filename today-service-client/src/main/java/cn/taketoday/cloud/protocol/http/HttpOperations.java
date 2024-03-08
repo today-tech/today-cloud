@@ -17,13 +17,8 @@
 
 package cn.taketoday.cloud.protocol.http;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
-import java.util.function.Consumer;
 
 import cn.taketoday.cloud.DefaultServiceInstance;
 import cn.taketoday.cloud.RpcRequest;
@@ -35,16 +30,10 @@ import cn.taketoday.core.ParameterizedTypeReference;
 import cn.taketoday.core.style.ToStringBuilder;
 import cn.taketoday.http.HttpEntity;
 import cn.taketoday.http.HttpMethod;
-import cn.taketoday.util.ExceptionUtils;
-import cn.taketoday.util.concurrent.CompletableToListenableFutureAdapter;
-import cn.taketoday.util.concurrent.ListenableFuture;
 import cn.taketoday.web.client.HttpClientErrorException;
 import cn.taketoday.web.client.RestClient;
 import cn.taketoday.web.client.RestClientException;
 import cn.taketoday.web.client.RestTemplate;
-import cn.taketoday.web.reactive.function.BodyInserters;
-import cn.taketoday.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -59,11 +48,7 @@ final class HttpOperations {
 
   private final RestClient restClient = RestClient.create(restOperations);
 
-  private final WebClient webClient = WebClient.create();
-
   private final String registryURL;
-
-  private final Executor executor = ForkJoinPool.commonPool();
 
   public HttpOperations(String registryURL, Serialization<RpcResponse> serialization) {
     this.registryURL = registryURL;
@@ -81,45 +66,6 @@ final class HttpOperations {
                 throw new ServiceNotFoundException(e);
               }
             });
-  }
-
-  public ListenableFuture<Object> executeFuture(ServiceInstance selected, RpcRequest rpcRequest) {
-    Mono<Object> rpcResponseMono = webClient.post()
-            .uri(selected.getHttpURI())
-            .body(BodyInserters.fromOutputStream(requestBody(rpcRequest), executor))
-            .exchangeToMono(clientResponse -> clientResponse.body((inputMessage, context) -> {
-              return inputMessage.getBody().next().handle((body, sink) -> {
-                try {
-                  RpcResponse response = serialization.deserialize(body.asInputStream());
-                  Throwable exception = response.getException();
-                  if (exception != null) {
-                    sink.error(exception);
-                  }
-                  else {
-                    sink.next(response.getResult());
-                  }
-                }
-                catch (ClassNotFoundException e) {
-                  sink.error(new ServiceNotFoundException(e));
-                }
-                catch (IOException e) {
-                  sink.error(e);
-                }
-              });
-            }));
-
-    return new CompletableToListenableFutureAdapter<>(rpcResponseMono.toFuture());
-  }
-
-  private Consumer<OutputStream> requestBody(RpcRequest rpcRequest) {
-    return body -> {
-      try {
-        serialization.serialize(rpcRequest, body);
-      }
-      catch (IOException e) {
-        throw ExceptionUtils.sneakyThrow(e);
-      }
-    };
   }
 
   @SuppressWarnings("rawtypes")

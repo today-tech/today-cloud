@@ -17,17 +17,15 @@
 
 package cn.taketoday.cloud.protocol.tcp;
 
-import cn.taketoday.util.concurrent.FutureListener;
+import cn.taketoday.util.concurrent.DefaultFuture;
 import cn.taketoday.util.concurrent.ListenableFuture;
-import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Promise;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/12/22 23:57
  */
-public class ResponsePromise extends DefaultPromise<Object> implements Promise<Object>, ListenableFuture<Object> {
+public class ResponsePromise extends DefaultFuture<Object> implements ListenableFuture<Object> {
 
   private final int requestId;
 
@@ -38,22 +36,6 @@ public class ResponsePromise extends DefaultPromise<Object> implements Promise<O
 
   public int getRequestId() {
     return requestId;
-  }
-
-  @Override
-  public void addListener(FutureListener<? super Object> listener) {
-    addListener(future -> {
-      if (future.isSuccess()) {
-        Object now = future.getNow();
-        listener.onSuccess(now);
-      }
-      else {
-        Throwable cause = future.cause();
-        if (cause != null) {
-          listener.onFailure(cause);
-        }
-      }
-    });
   }
 
 }

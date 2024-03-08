@@ -21,10 +21,8 @@ import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-
 import cn.taketoday.cloud.RpcResponse;
+import cn.taketoday.cloud.core.serialize.ProtostuffUtils;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.protocol.ProtocolPayload;
 import cn.taketoday.logging.Logger;
@@ -99,7 +97,7 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
     p.getObject().channel.close();
   }
 
-  class ResponseHandler extends ChannelInboundHandlerAdapter {
+  static class ResponseHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -116,12 +114,13 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
       if (msg instanceof ByteBuf byteBuf) {
-        ProtocolPayload payload = ProtocolPayload.decode(byteBuf);
+        ProtocolPayload payload = ProtocolPayload.parse(byteBuf);
         Connection connection = Connection.obtain(ctx);
         ResponsePromise responsePromise = connection.getAndRemovePromise(payload.getRequestId());
         try {
           if (payload.body != null) {
-            RpcResponse response = serialization.deserialize(new ByteArrayInputStream(payload.body));
+            var response = ProtostuffUtils.deserialize(payload.body.nioBuffer(), RpcResponse.class);
+//            RpcResponse response = serialization.deserialize(new ByteArrayInputStream(payload.body));
             Throwable exception = response.getException();
             if (exception != null) {
               responsePromise.setFailure(exception);
@@ -134,7 +133,7 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
             responsePromise.setSuccess(null);
           }
         }
-        catch (IOException e) {
+        catch (Exception e) {
           responsePromise.setFailure(e);
         }
       }

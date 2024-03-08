@@ -20,8 +20,6 @@ package cn.taketoday.cloud.protocol.tcp;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +27,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceInstance;
+import cn.taketoday.cloud.core.serialize.ProtostuffUtils;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.protocol.PayloadHeader;
 import cn.taketoday.cloud.protocol.ProtocolPayload;
+import cn.taketoday.cloud.protocol.RemoteEventType;
 import cn.taketoday.util.ExceptionUtils;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufAllocator;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -56,7 +56,7 @@ class NettyClient {
     this.ioThreadCount = ioThreadCount;
   }
 
-  public ResponsePromise write(ServiceInstance selected, RpcRequest rpcRequest, Duration requestTimeout) throws IOException {
+  public ResponsePromise write(ServiceInstance selected, RpcRequest rpcRequest, Duration requestTimeout) {
     HostKey hostKey = new HostKey(selected);
     GenericObjectPool<Connection> connectionPool = channelMap.get(hostKey);
     if (connectionPool == null) {
@@ -71,18 +71,10 @@ class NettyClient {
       connection = connectionPool.borrowObject(requestTimeout);
       ResponsePromise responsePromise = connection.newPromise();
 
-      ByteArrayOutputStream output = new ByteArrayOutputStream(100);
-      serialization.serialize(rpcRequest, output);
-      byte[] body = output.toByteArray();
-
-      ByteBuf payload = Unpooled.buffer(4 + ProtocolPayload.HEADER_LENGTH + body.length);
-      payload.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
-      PayloadHeader.serialize(payload, responsePromise.getRequestId());
-      payload.writeBytes(body);
+      ByteBuf payload = createPayload(rpcRequest, connection, responsePromise);
       connection.writeAndFlush(payload);
 
       return responsePromise;
-
     }
     catch (Exception e) {
       throw ExceptionUtils.sneakyThrow(e);
@@ -92,6 +84,19 @@ class NettyClient {
         connectionPool.returnObject(connection);
       }
     }
+  }
+
+  private ByteBuf createPayload(RpcRequest rpcRequest, Connection connection, ResponsePromise responsePromise) {
+    byte[] body = ProtostuffUtils.serialize(rpcRequest);
+
+    ByteBufAllocator allocator = connection.channel.alloc();
+    ByteBuf payload = allocator.buffer(4 + ProtocolPayload.HEADER_LENGTH + body.length);
+    payload.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
+
+    PayloadHeader.serialize(payload, responsePromise.getRequestId(), RemoteEventType.RPC_INVOCATION);
+
+    payload.writeBytes(body);
+    return payload;
   }
 
   protected GenericObjectPoolConfig<Connection> createPoolConfig() {

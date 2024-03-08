@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,14 +29,14 @@ import io.netty.buffer.ByteBuf;
  * @since 1.0 2023/12/22 22:29
  */
 public class ProtocolPayload {
-  public static final int HEADER_LENGTH = 4 + 1 + 4;
+  public static final int HEADER_LENGTH = 4 + 1 + 4 + 2;
 
   public final PayloadHeader header;
 
   @Nullable
-  public final byte[] body;
+  public final ByteBuf body;
 
-  ProtocolPayload(PayloadHeader header, @Nullable byte[] body) {
+  ProtocolPayload(PayloadHeader header, @Nullable ByteBuf body) {
     this.header = header;
     this.body = body;
   }
@@ -49,23 +49,32 @@ public class ProtocolPayload {
     return header.version;
   }
 
+  public RemoteEventType getEventType() {
+    return header.eventType;
+  }
+
   @Nullable
   public Map<String, String> getMetadata() {
     return header.metadata;
   }
 
-  public static ProtocolPayload decode(ByteBuf payload) {
-    byte[] reserve = new byte[4];
-    payload.readBytes(reserve);
-    ProtocolVersion version = ProtocolVersion.valueOf(payload.readByte());
+  /**
+   * parsing given buffer into {@link ProtocolPayload}
+   *
+   * @param payload buffer
+   * @throws ProtocolParsingException protocol parsing errors
+   */
+  public static ProtocolPayload parse(ByteBuf payload) throws ProtocolParsingException {
+    int reserve = payload.readInt();
+    var version = ProtocolVersion.valueOf(payload.readByte());
     int requestId = payload.readInt();
-    PayloadHeader payloadHeader = new PayloadHeader(reserve, version, requestId);
+    short eventType = payload.readShort();
+    PayloadHeader payloadHeader = new PayloadHeader(reserve,
+            version, requestId, RemoteEventType.forValue(eventType));
 
     int bodyLength = payload.readableBytes();
     if (bodyLength != 0) {
-      byte[] body = new byte[bodyLength];
-      payload.readBytes(body);
-      return new ProtocolPayload(payloadHeader, body);
+      return new ProtocolPayload(payloadHeader, payload);
     }
     return new ProtocolPayload(payloadHeader, null);
   }

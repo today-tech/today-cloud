@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,72 +21,79 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 
 import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.DeserializeFailedException;
-import cn.taketoday.cloud.core.serialize.JdkSerialization;
-import cn.taketoday.cloud.core.serialize.Serialization;
+import cn.taketoday.cloud.core.serialize.ProtostuffUtils;
+import cn.taketoday.cloud.protocol.EventHandler;
+import cn.taketoday.cloud.protocol.ProtocolPayload;
+import cn.taketoday.cloud.protocol.RemoteEventType;
 import cn.taketoday.cloud.registry.ServiceNotFoundException;
 import cn.taketoday.lang.Nullable;
 import cn.taketoday.reflect.MethodInvoker;
 import cn.taketoday.util.ClassUtils;
 import cn.taketoday.util.MapCache;
-import cn.taketoday.web.HttpRequestHandler;
-import cn.taketoday.web.RequestContext;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 
 /**
- * Http service-provider handler
- *
- * @author TODAY 2021/7/4 01:14
+ * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
+ * @since 4.0 2024/3/8 22:51
  */
-public class HttpServiceProviderEndpoint implements HttpRequestHandler {
-
-  /** for serialize and deserialize */
-  private final Serialization<RpcRequest> serialization;
+public class RpcEventHandler implements EventHandler {
 
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
 
   private final LocalServiceHolder serviceHolder;
 
-  public HttpServiceProviderEndpoint(LocalServiceHolder serviceHolder) {
-    this(serviceHolder, new JdkSerialization<>());
-  }
+  private final RpcRequestDeserializer deserializer = new RpcRequestDeserializer();
 
-  public HttpServiceProviderEndpoint(LocalServiceHolder serviceHolder, Serialization<RpcRequest> serialization) {
-    this.serialization = serialization;
+  RpcEventHandler(LocalServiceHolder serviceHolder) {
     this.serviceHolder = serviceHolder;
   }
 
   @Override
-  public Object handleRequest(RequestContext request) throws Throwable {
-    RpcResponse response = getResponse(request, serialization);
-    serialization.serialize(response, request.getOutputStream());
-    return NONE_RETURN_VALUE;
+  public Set<RemoteEventType> getSupportedEvents() {
+    return Set.of(RemoteEventType.RPC_INVOCATION);
   }
 
-  /**
-   * @param context http request context
-   * @param serialization serialize strategy
-   * @return returns a {@link RpcResponse}
-   */
-  private RpcResponse getResponse(RequestContext context, Serialization<RpcRequest> serialization) {
+  @Override
+  public void handleEvent(Channel channel, ProtocolPayload payload) throws Exception {
+    RpcResponse response = handle0(channel, payload);
+    byte[] body = serialize(response);
+
+    ByteBuf buffer = channel.alloc().buffer(4 + body.length + ProtocolPayload.HEADER_LENGTH);
+    buffer.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
+    payload.header.serialize(buffer);
+    buffer.writeBytes(body);
+
+    channel.writeAndFlush(buffer);
+  }
+
+  private byte[] serialize(RpcResponse response) throws IOException {
+    return ProtostuffUtils.serialize(response);
+  }
+
+  protected RpcResponse handle0(Channel ctx, ProtocolPayload payload) throws IOException {
+    ByteBuf body = payload.body;
     try {
-      RpcRequest request = serialization.deserialize(context.getInputStream());
-      Object service = serviceHolder.getService(request.getServiceName());
-      if (service == null) {
-        return RpcResponse.ofThrowable(new ServiceNotFoundException(request.getServiceName()));
+      if (body != null) {
+        RpcRequest request = deserializer.deserialize(body);
+        Object service = serviceHolder.getService(request.getServiceName());
+        if (service == null) {
+          return RpcResponse.ofThrowable(new ServiceNotFoundException(request.getServiceName()));
+        }
+        MethodInvoker invoker = methodMapCache.get(new MethodCacheKey(request), service);
+        Object[] args = request.getArguments();
+        return createResponse(service, args, invoker);
       }
-      MethodInvoker invoker = methodMapCache.get(new MethodCacheKey(request), service);
-      Object[] args = request.getArguments();
-      return createResponse(service, args, invoker);
+      return RpcResponse.empty;
     }
     catch (IOException io) {
       return RpcResponse.ofThrowable(new DeserializeFailedException(io));
-    }
-    catch (ClassNotFoundException e) {
-      return RpcResponse.ofThrowable(new ServiceNotFoundException(e));
     }
     catch (Throwable e) {
       return RpcResponse.ofThrowable(e);
@@ -145,6 +152,7 @@ public class HttpServiceProviderEndpoint implements HttpRequestHandler {
 
   private static class MethodCacheKey {
     public final String method;
+
     public final String[] paramTypes;
 
     MethodCacheKey(RpcRequest request) {

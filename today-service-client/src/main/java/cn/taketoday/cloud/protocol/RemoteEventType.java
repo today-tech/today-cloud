@@ -19,26 +19,22 @@ package cn.taketoday.cloud.protocol;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/12/22 22:24
+ * @since 4.0 2024/3/8 22:30
  */
-public enum ProtocolVersion {
+public enum RemoteEventType {
 
-  CURRENT(0);
+  RPC_INVOCATION(1);
 
-  private final byte version;
+  public final int value;
 
-  ProtocolVersion(int version) {
-    this.version = (byte) version;
+  RemoteEventType(int value) {
+    this.value = value;
   }
 
-  public byte asByte() {
-    return version;
-  }
-
-  public static ProtocolVersion valueOf(byte version) {
-    return switch (version) {
-      case 0 -> CURRENT;
-      default -> throw new ProtocolVersionException("Protocol version: '%s' not supported".formatted(version));
+  public static RemoteEventType forValue(short eventType) {
+    return switch (eventType) {
+      case 1 -> RPC_INVOCATION;
+      default -> throw new ProtocolParsingException("Event type: [%s] not supported".formatted(eventType));
     };
   }
 

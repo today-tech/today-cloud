@@ -35,7 +35,7 @@ import cn.taketoday.stereotype.Singleton;
 @Configuration(proxyBeanMethods = false)
 class ServicePublishConfig {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServiceProviderConfig.class);
+  private static final Logger log = LoggerFactory.getLogger(ServicePublishConfig.class);
 
   @Singleton
   static LocalServiceHolder localServiceHolder() {

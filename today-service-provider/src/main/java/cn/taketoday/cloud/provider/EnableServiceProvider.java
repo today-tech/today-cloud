@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
+import java.util.concurrent.Executor;
 
-import cn.taketoday.cloud.RpcRequest;
+import cn.taketoday.beans.factory.annotation.Qualifier;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.JdkSerialization;
 import cn.taketoday.cloud.core.serialize.Serialization;
+import cn.taketoday.cloud.protocol.EventHandler;
 import cn.taketoday.cloud.protocol.http.HttpServiceRegistry;
 import cn.taketoday.cloud.registry.HttpRegistration;
 import cn.taketoday.cloud.registry.RegistryProperties;
@@ -35,6 +38,7 @@ import cn.taketoday.context.annotation.Import;
 import cn.taketoday.context.annotation.MissingBean;
 import cn.taketoday.context.properties.EnableConfigurationProperties;
 import cn.taketoday.framework.web.server.ServerProperties;
+import cn.taketoday.stereotype.Component;
 import cn.taketoday.stereotype.Singleton;
 
 /**
@@ -63,9 +67,18 @@ class TcpServiceProviderConfig {
     return new JdkSerialization<>();
   }
 
+  @Component
+  static RpcEventHandler eventHandler(LocalServiceHolder serviceHolder) {
+    return new RpcEventHandler(serviceHolder);
+  }
+
   @Singleton
-  static ServiceProviderChannelConnector httpServiceHandlerMapping(Serialization<RpcRequest> requestSerialization, LocalServiceHolder serviceHolder) {
-    return new ServiceProviderChannelConnector(serviceHolder, requestSerialization);
+  static ServiceProviderChannelConnector httpServiceHandlerMapping(
+          @Qualifier("applicationTaskExecutor") Executor eventAsyncExecutor, // TODO eventAsyncExecutor
+          LocalServiceHolder serviceHolder, List<EventHandler> handlers) {
+    ServiceProviderChannelConnector connector = new ServiceProviderChannelConnector(eventAsyncExecutor, handlers);
+    connector.setPort(serviceHolder.getPort());
+    return connector;
   }
 
 }

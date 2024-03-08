@@ -17,29 +17,21 @@
 
 package cn.taketoday.cloud.protocol;
 
+import java.util.Set;
+
+import io.netty.channel.Channel;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/12/22 22:24
+ * @since 4.0 2024/3/8 22:45
  */
-public enum ProtocolVersion {
+public interface EventHandler {
 
-  CURRENT(0);
+  Set<RemoteEventType> getSupportedEvents();
 
-  private final byte version;
+  void handleEvent(Channel channel, ProtocolPayload payload) throws Exception;
 
-  ProtocolVersion(int version) {
-    this.version = (byte) version;
+  default boolean supportsAsync() {
+    return true;
   }
-
-  public byte asByte() {
-    return version;
-  }
-
-  public static ProtocolVersion valueOf(byte version) {
-    return switch (version) {
-      case 0 -> CURRENT;
-      default -> throw new ProtocolVersionException("Protocol version: '%s' not supported".formatted(version));
-    };
-  }
-
 }

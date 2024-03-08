@@ -37,6 +37,7 @@ import cn.taketoday.web.handler.ResponseEntityExceptionHandler;
 @RestControllerAdvice
 @RequestMapping("/api/users")
 public class UserController extends ResponseEntityExceptionHandler {
+
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final UserService userService;
@@ -52,6 +53,11 @@ public class UserController extends ResponseEntityExceptionHandler {
   @GET("/{id}")
   public User get(int id) {
     return userService.getById(id);
+  }
+
+  @GET("/throwEx")
+  public void throwEx() {
+    userService.throwEx();
   }
 
   @ExceptionHandler(Throwable.class)

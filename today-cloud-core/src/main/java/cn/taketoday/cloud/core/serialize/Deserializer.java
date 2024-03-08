@@ -1,8 +1,5 @@
 /*
- * Original Author -> 杨海健 (taketoday@foxmail.com) https://taketoday.cn
- * Copyright © TODAY & 2021 All Rights Reserved.
- *
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +27,7 @@ import java.io.InputStream;
  * @author Gary Russell
  * @author Mark Fisher
  */
+@Deprecated
 @FunctionalInterface
 public interface Deserializer {
 
@@ -39,13 +37,9 @@ public interface Deserializer {
    * (or any decorators of that InputStream) but rather leave this up
    * to the caller.
    *
-   * @param inputStream
-   *         the input stream
-   *
+   * @param inputStream the input stream
    * @return the deserialized object
-   *
-   * @throws IOException
-   *         in case of errors reading from the stream
+   * @throws IOException in case of errors reading from the stream
    */
   Object deserialize(InputStream inputStream) throws IOException, ClassNotFoundException;
 

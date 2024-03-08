@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ import cn.taketoday.http.MediaType;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.util.CollectionUtils;
-import cn.taketoday.util.DefaultMultiValueMap;
 import cn.taketoday.util.MultiValueMap;
 import cn.taketoday.web.annotation.DELETE;
 import cn.taketoday.web.annotation.ExceptionHandler;
@@ -50,8 +49,8 @@ public class HttpServiceRegistryEndpoint implements ServiceRegistry<HttpRegistra
 
   private static final Logger log = LoggerFactory.getLogger(HttpServiceRegistryEndpoint.class);
 
-  private final MultiValueMap<String, ServiceDefinition>
-          serviceMapping = new DefaultMultiValueMap<>(new ConcurrentHashMap<>());
+  private final MultiValueMap<String, ServiceDefinition> serviceMapping
+          = MultiValueMap.forAdaption(new ConcurrentHashMap<>());
 
   @GET(produces = MediaType.APPLICATION_JSON_VALUE)
   public MultiValueMap<String, ServiceDefinition> services() {

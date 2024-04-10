@@ -23,8 +23,7 @@ import cn.taketoday.cloud.RpcRequest;
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.ServiceInstance;
 import cn.taketoday.cloud.ServiceMethodInvoker;
-import cn.taketoday.scheduling.annotation.AsyncResult;
-import cn.taketoday.util.concurrent.ListenableFuture;
+import cn.taketoday.util.concurrent.Future;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -39,7 +38,7 @@ final class HttpServiceMethodInvoker extends ServiceMethodInvoker {
   }
 
   @Override
-  protected ListenableFuture<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) throws Throwable {
+  protected Future<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) {
     RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(selected.getServiceId());
@@ -48,9 +47,9 @@ final class HttpServiceMethodInvoker extends ServiceMethodInvoker {
     RpcResponse execute = httpOperations.execute(selected, rpcRequest);
     Throwable exception = execute.getException();
     if (exception != null) {
-      return AsyncResult.forExecutionException(exception);
+      return Future.failed(exception);
     }
-    return AsyncResult.forValue(execute.getResult());
+    return Future.ok(execute.getResult());
   }
 
 }

@@ -19,7 +19,7 @@ package cn.taketoday.cloud;
 
 import java.util.concurrent.ExecutionException;
 
-import cn.taketoday.util.concurrent.ListenableFuture;
+import cn.taketoday.util.concurrent.Future;
 
 /**
  * @author TODAY 2021/7/9 21:55
@@ -27,11 +27,11 @@ import cn.taketoday.util.concurrent.ListenableFuture;
 public class SimpleRemoteExceptionHandler implements RemoteExceptionHandler {
 
   @Override
-  public Object handle(ListenableFuture<Object> response) throws Throwable {
+  public Object handle(Future<Object> response) throws Throwable {
     throw exceptionNow(response);
   }
 
-  Throwable exceptionNow(ListenableFuture<Object> response) {
+  Throwable exceptionNow(Future<Object> response) {
     if (!response.isDone())
       throw new IllegalStateException("Task has not completed");
     if (response.isCancelled())

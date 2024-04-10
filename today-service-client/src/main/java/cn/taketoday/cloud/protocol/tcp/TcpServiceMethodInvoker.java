@@ -28,7 +28,7 @@ import cn.taketoday.cloud.ServiceMethodInvoker;
 import cn.taketoday.cloud.ServiceTimeoutException;
 import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.util.ExceptionUtils;
-import cn.taketoday.util.concurrent.ListenableFuture;
+import cn.taketoday.util.concurrent.Future;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -49,7 +49,7 @@ public class TcpServiceMethodInvoker extends ServiceMethodInvoker {
   }
 
   @Override
-  protected ListenableFuture<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) throws IOException {
+  protected Future<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) throws IOException {
     RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(selected.getServiceId());
@@ -60,7 +60,7 @@ public class TcpServiceMethodInvoker extends ServiceMethodInvoker {
   }
 
   @Deprecated(forRemoval = true)
-  protected ListenableFuture<Object> invokeInternal0(ServiceInstance selected, Method method, Object[] args) throws IOException {
+  protected Future<Object> invokeInternal0(ServiceInstance selected, Method method, Object[] args) throws IOException {
     RpcRequest rpcRequest = new RpcRequest();
     rpcRequest.setMethod(method.getName());
     rpcRequest.setServiceName(selected.getServiceId());

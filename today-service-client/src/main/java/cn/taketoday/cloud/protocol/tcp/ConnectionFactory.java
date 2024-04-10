@@ -23,7 +23,6 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 
 import cn.taketoday.cloud.RpcResponse;
 import cn.taketoday.cloud.core.serialize.ProtostuffUtils;
-import cn.taketoday.cloud.core.serialize.Serialization;
 import cn.taketoday.cloud.protocol.ProtocolPayload;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
@@ -49,14 +48,11 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
 
   private final int port;
 
-  private final Serialization<RpcResponse> serialization;
-
   private final Bootstrap bootstrap = new Bootstrap();
 
-  public ConnectionFactory(String host, int port, int ioThreadCount, Serialization<RpcResponse> serialization) {
+  public ConnectionFactory(String host, int port, int ioThreadCount) {
     this.host = host;
     this.port = port;
-    this.serialization = serialization;
     bootstrap.group(new NioEventLoopGroup(ioThreadCount, new DefaultThreadFactory("client")))
             .channel(NioSocketChannel.class)
             .handler(new ChannelInitializer<>() {
@@ -123,18 +119,18 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
 //            RpcResponse response = serialization.deserialize(new ByteArrayInputStream(payload.body));
             Throwable exception = response.getException();
             if (exception != null) {
-              responsePromise.setFailure(exception);
+              responsePromise.tryFailure(exception);
             }
             else {
-              responsePromise.setSuccess(response.getResult());
+              responsePromise.trySuccess(response.getResult());
             }
           }
           else {
-            responsePromise.setSuccess(null);
+            responsePromise.trySuccess(null);
           }
         }
         catch (Exception e) {
-          responsePromise.setFailure(e);
+          responsePromise.tryFailure(e);
         }
       }
       else {

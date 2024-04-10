@@ -120,7 +120,7 @@ public class RpcEventHandler implements EventHandler {
       if (methodToUse == null) {
         return null;
       }
-      return MethodInvoker.fromMethod(methodToUse);
+      return MethodInvoker.forMethod(methodToUse);
     }
 
     private static Method getMethod(MethodCacheKey key, Object service) {

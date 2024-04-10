@@ -60,7 +60,7 @@ class NettyClient {
     HostKey hostKey = new HostKey(selected);
     GenericObjectPool<Connection> connectionPool = channelMap.get(hostKey);
     if (connectionPool == null) {
-      var factory = new ConnectionFactory(hostKey.host, hostKey.port, ioThreadCount, serialization);
+      var factory = new ConnectionFactory(hostKey.host, hostKey.port, ioThreadCount);
       var config = createPoolConfig();
       connectionPool = new GenericObjectPool<>(factory, config);
       channelMap.put(hostKey, connectionPool);

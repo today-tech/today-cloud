@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 import cn.taketoday.cloud.registry.RandomServiceSelector;
 import cn.taketoday.cloud.registry.ServiceSelector;
 import cn.taketoday.lang.Assert;
-import cn.taketoday.util.concurrent.ListenableFuture;
+import cn.taketoday.util.concurrent.Future;
 import reactor.core.publisher.Mono;
 
 /**
@@ -50,7 +50,7 @@ public abstract class ServiceMethodInvoker {
   public Object invoke(List<ServiceInstance> instances, Method method, Object[] args) throws Throwable {
     ServiceInstance selected = serviceSelector.select(instances);
     try {
-      ListenableFuture<Object> response = invokeInternal(selected, method, args);
+      Future<Object> response = invokeInternal(selected, method, args);
       return resolveReturnValue(response, method);
     }
     catch (Throwable e) {
@@ -58,7 +58,7 @@ public abstract class ServiceMethodInvoker {
     }
   }
 
-  private Object resolveReturnValue(ListenableFuture<Object> response, Method method) throws Throwable {
+  private Object resolveReturnValue(Future<Object> response, Method method) throws Throwable {
     for (ReturnValueResolver resolver : resolvers) {
       if (resolver.supports(method)) {
         return resolver.resolve(response, method);
@@ -73,7 +73,7 @@ public abstract class ServiceMethodInvoker {
     throw e;
   }
 
-  protected abstract ListenableFuture<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args)
+  protected abstract Future<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args)
           throws Throwable;
 
   public void setExceptionHandler(RemoteExceptionHandler exceptionHandler) {
@@ -98,7 +98,7 @@ public abstract class ServiceMethodInvoker {
 
     boolean supports(Method method);
 
-    Object resolve(ListenableFuture<Object> response, Method method) throws Throwable;
+    Object resolve(Future<Object> response, Method method) throws Throwable;
 
   }
 
@@ -106,11 +106,11 @@ public abstract class ServiceMethodInvoker {
 
     @Override
     public boolean supports(Method method) {
-      return method.getReturnType() == ListenableFuture.class;
+      return method.getReturnType() == Future.class;
     }
 
     @Override
-    public Object resolve(ListenableFuture<Object> response, Method method) {
+    public Object resolve(Future<Object> response, Method method) {
       return response;
     }
 
@@ -124,7 +124,7 @@ public abstract class ServiceMethodInvoker {
     }
 
     @Override
-    public Object resolve(ListenableFuture<Object> response, Method method) throws Throwable {
+    public Object resolve(Future<Object> response, Method method) throws Throwable {
       try {
         return response.get();
       }
@@ -142,7 +142,7 @@ public abstract class ServiceMethodInvoker {
     }
 
     @Override
-    public Object resolve(ListenableFuture<Object> response, Method method) throws Exception {
+    public Object resolve(Future<Object> response, Method method) throws Exception {
       return Mono.fromFuture(response.completable());
     }
 

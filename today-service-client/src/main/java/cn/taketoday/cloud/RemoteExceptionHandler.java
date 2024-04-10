@@ -17,12 +17,12 @@
 
 package cn.taketoday.cloud;
 
-import cn.taketoday.util.concurrent.ListenableFuture;
+import cn.taketoday.util.concurrent.Future;
 
 /**
  * @author TODAY 2021/7/9 21:54
  */
 public interface RemoteExceptionHandler {
 
-  Object handle(ListenableFuture<Object> throwable) throws Throwable;
+  Object handle(Future<Object> throwable) throws Throwable;
 }

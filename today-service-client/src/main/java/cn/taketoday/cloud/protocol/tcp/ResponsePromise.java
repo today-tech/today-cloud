@@ -17,15 +17,14 @@
 
 package cn.taketoday.cloud.protocol.tcp;
 
-import cn.taketoday.util.concurrent.DefaultFuture;
-import cn.taketoday.util.concurrent.ListenableFuture;
+import cn.taketoday.util.concurrent.AbstractFuture;
 import io.netty.util.concurrent.EventExecutor;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/12/22 23:57
  */
-public class ResponsePromise extends DefaultFuture<Object> implements ListenableFuture<Object> {
+public class ResponsePromise extends AbstractFuture<Object> {
 
   private final int requestId;
 

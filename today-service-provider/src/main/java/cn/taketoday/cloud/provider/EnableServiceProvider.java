@@ -37,9 +37,9 @@ import cn.taketoday.context.annotation.Configuration;
 import cn.taketoday.context.annotation.Import;
 import cn.taketoday.context.annotation.MissingBean;
 import cn.taketoday.context.properties.EnableConfigurationProperties;
-import cn.taketoday.framework.web.server.ServerProperties;
 import cn.taketoday.stereotype.Component;
 import cn.taketoday.stereotype.Singleton;
+import cn.taketoday.web.server.ServerProperties;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

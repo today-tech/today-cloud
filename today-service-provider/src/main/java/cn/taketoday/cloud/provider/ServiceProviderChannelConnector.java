@@ -17,6 +17,7 @@
 
 package cn.taketoday.cloud.provider;
 
+import java.util.EnumMap;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -45,8 +46,8 @@ public class ServiceProviderChannelConnector extends ChannelConnector implements
   private final MultiValueMap<RemoteEventType, EventHandler> eventHandlers;
 
   ServiceProviderChannelConnector(Executor eventAsyncExecutor, List<EventHandler> handlers) {
+    this.eventHandlers = MultiValueMap.forSmartListAdaption(new EnumMap<>(RemoteEventType.class));
     this.eventAsyncExecutor = eventAsyncExecutor;
-    this.eventHandlers = MultiValueMap.forSmartListAdaption();
     for (EventHandler handler : handlers) {
       for (RemoteEventType eventType : handler.getSupportedEvents()) {
         eventHandlers.add(eventType, handler);
@@ -92,7 +93,7 @@ public class ServiceProviderChannelConnector extends ChannelConnector implements
     }
   }
 
-  private void handleEvent(ChannelHandlerContext ctx, ProtocolPayload payload) throws Exception {
+  private void handleEvent(ChannelHandlerContext ctx, ProtocolPayload payload) {
     RemoteEventType eventType = payload.getEventType();
     List<EventHandler> handlers = eventHandlers.get(eventType);
     if (handlers != null) {

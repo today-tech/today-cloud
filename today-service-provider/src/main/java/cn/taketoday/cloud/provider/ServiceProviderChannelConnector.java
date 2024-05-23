@@ -129,8 +129,16 @@ public class ServiceProviderChannelConnector extends ChannelConnector implements
 
   @Override
   public void stop() {
-    shutdown();
+    shutdown().awaitUninterruptibly();
     running = false;
+  }
+
+  @Override
+  public void stop(Runnable callback) {
+    shutdown().onCompleted(completed -> {
+      callback.run();
+      running = false;
+    });
   }
 
   @Override

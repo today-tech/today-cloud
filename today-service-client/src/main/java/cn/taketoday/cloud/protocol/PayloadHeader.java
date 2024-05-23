@@ -24,6 +24,8 @@ import cn.taketoday.lang.Nullable;
 import io.netty.buffer.ByteBuf;
 
 /**
+ * Payload header
+ *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/12/22 22:23
  */

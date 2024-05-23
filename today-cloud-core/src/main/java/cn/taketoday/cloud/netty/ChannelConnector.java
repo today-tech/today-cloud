@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,14 +19,17 @@ package cn.taketoday.cloud.netty;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 import cn.taketoday.lang.Assert;
 import cn.taketoday.lang.Nullable;
 import cn.taketoday.logging.Logger;
 import cn.taketoday.logging.LoggerFactory;
 import cn.taketoday.util.ClassUtils;
+import cn.taketoday.util.concurrent.Future;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -44,6 +47,8 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.NetUtil;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.DefaultThreadFactory;
+
+import static cn.taketoday.cloud.netty.SettableFutureAdapter.adapt;
 
 /**
  * Netty channel connector
@@ -99,9 +104,12 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
   private LogLevel loggingLevel;
 
   @Nullable
-  private InetAddress address;
+  private InetAddress listenAddress;
 
   private int port;
+
+  @Nullable
+  protected Channel channel;
 
   /**
    * EventLoopGroup for acceptor
@@ -184,20 +192,6 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
   }
 
   /**
-   * Return the address that the web server binds to.
-   *
-   * @return the address
-   */
-  @Nullable
-  public InetAddress getAddress() {
-    return this.address;
-  }
-
-  public void setAddress(@Nullable InetAddress address) {
-    this.address = address;
-  }
-
-  /**
    * The port that the web server listens on.
    *
    * @return the port
@@ -224,7 +218,7 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
     this.loggingLevel = loggingLevel;
   }
 
-  public void bind() {
+  public ChannelFuture bind() {
     ServerBootstrap bootstrap = new ServerBootstrap();
     preBootstrap(bootstrap);
 
@@ -260,10 +254,17 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
 
     postBootstrap(bootstrap);
 
-    InetSocketAddress listenAddress = getListenAddress();
-    bootstrap.bind(listenAddress).syncUninterruptibly();
-
-    logger.info("Netty started on port: '{}'", getPort());
+    InetSocketAddress listenAddress = getListenAddress(port);
+    ChannelFuture channelFuture = bootstrap.bind(listenAddress);
+    this.channel = channelFuture.channel();
+    return channelFuture.addListener(future -> {
+      if (future.isSuccess()) {
+        logger.info("Netty started on port: '{}'", getPort());
+      }
+      else {
+        logger.error("{} failed to start", this, future.cause());
+      }
+    });
   }
 
   @Override
@@ -296,22 +297,25 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
 
   protected abstract void initChannel(Channel ch, ChannelPipeline pipeline) throws Exception;
 
-  public void shutdown() {
+  public Future<Void> shutdown() {
     logger.info("Shutdown netty: [{}] on port: '{}'", this, getPort());
-
-    if (acceptorGroup != null) {
-      acceptorGroup.shutdownGracefully();
-    }
-    if (workerGroup != null) {
-      workerGroup.shutdownGracefully();
-    }
+    return Future.whenAllComplete(channel == null ? Future.ok() : adapt(channel.close()))
+            .with(shutdownEventLoop(acceptorGroup), shutdownEventLoop(workerGroup))
+            .combine();
   }
 
-  private InetSocketAddress getListenAddress() {
-    if (getAddress() != null) {
-      return new InetSocketAddress(getAddress().getHostAddress(), getPort());
+  private Future<?> shutdownEventLoop(@Nullable EventLoopGroup group) {
+    if (group == null) {
+      return Future.ok();
     }
-    return new InetSocketAddress(getPort());
+    return adapt(group.shutdownGracefully(1, 10, TimeUnit.SECONDS));
+  }
+
+  private InetSocketAddress getListenAddress(int port) {
+    if (listenAddress != null) {
+      return new InetSocketAddress(listenAddress.getHostAddress(), port);
+    }
+    return new InetSocketAddress(port);
   }
 
   @Override

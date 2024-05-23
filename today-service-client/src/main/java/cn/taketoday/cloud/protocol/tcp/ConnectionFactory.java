@@ -103,7 +103,7 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      cause.printStackTrace();
+      log.error("exception caught", cause);
       ctx.close();
     }
 

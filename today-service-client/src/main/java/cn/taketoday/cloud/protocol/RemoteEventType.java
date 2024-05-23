@@ -18,8 +18,10 @@
 package cn.taketoday.cloud.protocol;
 
 /**
+ * Remote event type
+ *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 4.0 2024/3/8 22:30
+ * @since 1.0 2024/3/8 22:30
  */
 public enum RemoteEventType {
 

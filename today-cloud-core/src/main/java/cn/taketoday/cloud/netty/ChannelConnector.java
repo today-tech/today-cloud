@@ -48,7 +48,7 @@ import io.netty.util.NetUtil;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
-import static cn.taketoday.cloud.netty.SettableFutureAdapter.adapt;
+import static cn.taketoday.cloud.netty.PromiseAdapter.adapt;
 
 /**
  * Netty channel connector
@@ -204,6 +204,10 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
     this.port = port;
   }
 
+  public void setListenAddress(@Nullable InetAddress listenAddress) {
+    this.listenAddress = listenAddress;
+  }
+
   /**
    * Set {@link LoggingHandler} logging Level
    * <p>
@@ -218,7 +222,7 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
     this.loggingLevel = loggingLevel;
   }
 
-  public ChannelFuture bind() {
+  public Future<Void> bind() {
     ServerBootstrap bootstrap = new ServerBootstrap();
     preBootstrap(bootstrap);
 
@@ -257,12 +261,12 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
     InetSocketAddress listenAddress = getListenAddress(port);
     ChannelFuture channelFuture = bootstrap.bind(listenAddress);
     this.channel = channelFuture.channel();
-    return channelFuture.addListener(future -> {
+    return adapt(channelFuture).onCompleted(future -> {
       if (future.isSuccess()) {
         logger.info("Netty started on port: '{}'", getPort());
       }
       else {
-        logger.error("{} failed to start", this, future.cause());
+        logger.error("{} failed to start", this, future.getCause());
       }
     });
   }
@@ -351,7 +355,9 @@ public abstract class ChannelConnector extends ChannelInboundHandlerAdapter {
   static class ChannelConnectorInitializer extends ChannelInitializer<Channel> {
     final ChannelConnector connector;
 
-    ChannelConnectorInitializer(ChannelConnector connector) { this.connector = connector; }
+    ChannelConnectorInitializer(ChannelConnector connector) {
+      this.connector = connector;
+    }
 
     @Override
     protected void initChannel(Channel ch) throws Exception {

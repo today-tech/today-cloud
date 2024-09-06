@@ -18,18 +18,18 @@
 package cn.taketoday.cloud.netty;
 
 import cn.taketoday.util.concurrent.Future;
-import cn.taketoday.util.concurrent.SettableFuture;
+import cn.taketoday.util.concurrent.Promise;
 import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2024/5/23 22:34
  */
-public class SettableFutureAdapter<V> implements GenericFutureListener<io.netty.util.concurrent.Future<V>> {
+public class PromiseAdapter<V> implements GenericFutureListener<io.netty.util.concurrent.Future<V>> {
 
-  private final SettableFuture<V> settable;
+  private final Promise<V> settable;
 
-  SettableFutureAdapter(SettableFuture<V> settable) {
+  PromiseAdapter(Promise<V> settable) {
     this.settable = settable;
   }
 
@@ -45,11 +45,11 @@ public class SettableFutureAdapter<V> implements GenericFutureListener<io.netty.
   }
 
   public static <T> Future<T> adapt(io.netty.util.concurrent.Future<T> future) {
-    return adapt(future, Future.forSettable());
+    return adapt(future, Future.forPromise());
   }
 
-  public static <T> Future<T> adapt(io.netty.util.concurrent.Future<T> future, SettableFuture<T> settable) {
-    future.addListener(new SettableFutureAdapter<>(settable));
+  public static <T> Future<T> adapt(io.netty.util.concurrent.Future<T> future, Promise<T> settable) {
+    future.addListener(new PromiseAdapter<>(settable));
     return settable;
   }
 }

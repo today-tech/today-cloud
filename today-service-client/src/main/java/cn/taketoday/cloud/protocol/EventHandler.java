@@ -34,4 +34,5 @@ public interface EventHandler {
   default boolean supportsAsync() {
     return true;
   }
+
 }

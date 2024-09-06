@@ -20,7 +20,6 @@ package cn.taketoday.cloud;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import cn.taketoday.cloud.registry.RandomServiceSelector;
 import cn.taketoday.cloud.registry.ServiceSelector;
@@ -125,12 +124,7 @@ public abstract class ServiceMethodInvoker {
 
     @Override
     public Object resolve(Future<Object> response, Method method) throws Throwable {
-      try {
-        return response.get();
-      }
-      catch (ExecutionException e) {
-        throw e.getCause();
-      }
+      return response.syncUninterruptibly();
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@ package cn.taketoday.config.etcd;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import cn.taketoday.core.env.PropertySource;
-import cn.taketoday.lang.Nullable;
-import cn.taketoday.logging.Logger;
-import cn.taketoday.logging.LoggerFactory;
-import cn.taketoday.util.CollectionUtils;
-import cn.taketoday.util.ExceptionUtils;
+import infra.core.env.PropertySource;
+import infra.lang.Nullable;
+import infra.logging.Logger;
+import infra.logging.LoggerFactory;
+import infra.util.CollectionUtils;
+import infra.util.ExceptionUtils;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.KV;
 import io.etcd.jetcd.KeyValue;

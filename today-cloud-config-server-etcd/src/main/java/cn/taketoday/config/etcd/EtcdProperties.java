@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 
 package cn.taketoday.config.etcd;
 
-import cn.taketoday.beans.factory.annotation.Value;
-import cn.taketoday.context.properties.ConfigurationProperties;
-import cn.taketoday.lang.Nullable;
+import infra.beans.factory.annotation.Value;
+import infra.context.properties.ConfigurationProperties;
+import infra.lang.Nullable;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

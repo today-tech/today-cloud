@@ -18,7 +18,7 @@
 package cn.taketoday.demo.service;
 
 import cn.taketoday.demo.model.User;
-import cn.taketoday.stereotype.Service;
+import infra.stereotype.Service;
 
 /**
  * @author TODAY 2021/7/3 22:45

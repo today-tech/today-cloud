@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 
 package cn.taketoday.demo;
 
-import cn.taketoday.cloud.registry.EnableHttpRegistry;
-import cn.taketoday.framework.Application;
-import cn.taketoday.framework.InfraApplication;
+import infra.cloud.registry.EnableHttpRegistry;
+import infra.app.Application;
+import infra.app.InfraApplication;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

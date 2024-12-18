@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 
 package cn.taketoday.config;
 
-import cn.taketoday.beans.factory.config.DependencyDescriptor;
-import cn.taketoday.beans.factory.support.DependencyResolvingStrategy;
-import cn.taketoday.context.BootstrapContext;
-import cn.taketoday.lang.Nullable;
+import infra.beans.factory.config.DependencyDescriptor;
+import infra.beans.factory.support.DependencyResolvingStrategy;
+import infra.context.BootstrapContext;
+import infra.lang.Nullable;
 
 /**
  * for DynamicProperty

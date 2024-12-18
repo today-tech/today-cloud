@@ -17,10 +17,10 @@
 
 package cn.taketoday.demo;
 
-import cn.taketoday.cloud.http.EnableHttpServiceClient;
-import cn.taketoday.framework.ApplicationType;
-import cn.taketoday.framework.InfraApplication;
-import cn.taketoday.framework.builder.ApplicationBuilder;
+import infra.cloud.http.EnableHttpServiceClient;
+import infra.app.ApplicationType;
+import infra.app.InfraApplication;
+import infra.app.builder.ApplicationBuilder;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

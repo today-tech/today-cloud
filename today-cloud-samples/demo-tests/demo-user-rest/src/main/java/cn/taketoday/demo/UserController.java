@@ -19,15 +19,15 @@ package cn.taketoday.demo;
 
 import cn.taketoday.demo.model.User;
 import cn.taketoday.demo.service.UserService;
-import cn.taketoday.http.ProblemDetail;
-import cn.taketoday.logging.Logger;
-import cn.taketoday.logging.LoggerFactory;
-import cn.taketoday.web.annotation.ExceptionHandler;
-import cn.taketoday.web.annotation.GET;
-import cn.taketoday.web.annotation.RequestMapping;
-import cn.taketoday.web.annotation.RestController;
-import cn.taketoday.web.annotation.RestControllerAdvice;
-import cn.taketoday.web.handler.ResponseEntityExceptionHandler;
+import infra.http.ProblemDetail;
+import infra.logging.Logger;
+import infra.logging.LoggerFactory;
+import infra.web.annotation.ExceptionHandler;
+import infra.web.annotation.GET;
+import infra.web.annotation.RequestMapping;
+import infra.web.annotation.RestController;
+import infra.web.annotation.RestControllerAdvice;
+import infra.web.handler.ResponseEntityExceptionHandler;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

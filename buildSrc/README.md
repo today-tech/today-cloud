@@ -5,7 +5,7 @@ They are declared in the `build.gradle` file in this folder.
 
 ## Build Conventions
 
-The `cn.taketoday.cloud.conventions` plugin applies all conventions to the Framework build:
+The `infra.cloud.conventions` plugin applies all conventions to the Framework build:
 
 * Configuring the Java compiler, see `JavaConventions`
 * Configuring testing in the build with `TestConventions` 
@@ -15,7 +15,7 @@ The `cn.taketoday.cloud.conventions` plugin applies all conventions to the Frame
 
 ### Optional dependencies
 
-The `cn.taketoday.cloud.optional-dependencies` plugin creates a new `optional`
+The `infra.cloud.optional-dependencies` plugin creates a new `optional`
 Gradle configuration - it adds the dependencies to the project's compile and runtime classpath
 but doesn't affect the classpath of dependent projects.
 This plugin does not provide a `provided` configuration, as the native `compileOnly` and `testCompileOnly`
@@ -36,7 +36,7 @@ The `RuntimeHintsAgentExtension` allows to customize this using a DSL:
 ```groovy
 // this applies the `RuntimeHintsAgentPlugin` to the project
 plugins {
-  id 'cn.taketoday.cloud.runtimehints-agent'
+  id 'infra.cloud.runtimehints-agent'
 }
 
 // You can configure the agent to include and exclude packages from the instrumentation process.

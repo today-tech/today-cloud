@@ -14,7 +14,7 @@ infra:
 
 logging:
   level:
-    cn.taketoday.cloud.protocol: debug
+    infra.cloud.protocol: debug
 
 server:
   netty:

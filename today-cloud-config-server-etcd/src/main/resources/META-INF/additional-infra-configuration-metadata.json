@@ -2,7 +2,7 @@
   "groups": [
     {
       "name": "logging",
-      "type": "cn.taketoday.framework.context.logging.LoggingApplicationListener"
+      "type": "infra.app.context.logging.LoggingApplicationListener"
     }
   ],
   "properties": [
@@ -10,27 +10,27 @@
       "name": "config.server.etcd.endpoints",
       "type": "java.lang.String[]",
       "description": "Etcd server endpoints.",
-      "sourceType": "cn.taketoday.config.etcd.EtcdProperties",
+      "sourceType": "infra.config.etcd.EtcdProperties",
       "defaultValue": []
     },
     {
       "name": "config.server.etcd.username",
       "type": "java.lang.String",
       "description": "Etcd server user name.",
-      "sourceType": "cn.taketoday.config.etcd.EtcdProperties",
+      "sourceType": "infra.config.etcd.EtcdProperties",
       "defaultValue": "root"
     },
     {
       "name": "config.server.etcd.password",
       "type": "java.lang.String",
       "description": "Etcd server user password.",
-      "sourceType": "cn.taketoday.config.etcd.EtcdProperties"
+      "sourceType": "infra.config.etcd.EtcdProperties"
     },
     {
       "name": "config.server.etcd.namespace",
       "type": "java.lang.String",
       "description": "Etcd server key namespace.",
-      "sourceType": "cn.taketoday.config.etcd.EtcdProperties"
+      "sourceType": "infra.config.etcd.EtcdProperties"
     }
   ],
   "hints": [

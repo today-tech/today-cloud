@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.config.etcd;
+package infra.config.etcd;
 
 import infra.beans.factory.annotation.Value;
 import infra.context.properties.ConfigurationProperties;

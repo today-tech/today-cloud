@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2023 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,27 +15,26 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.config.etcd;
+package infra.config.etcd;
 
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import infra.util.CollectionUtils;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.KV;
-import io.etcd.jetcd.Watch;
-import io.etcd.jetcd.options.WatchOption;
-import io.etcd.jetcd.watch.WatchResponse;
+import io.etcd.jetcd.kv.GetResponse;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/10/6 22:20
+ * @since 1.0 2023/10/6 20:40
  */
-class EtcdPropertySourceTests {
+class EtcdTests {
 
   @Test
-  void test() throws InterruptedException {
+  void test() throws Exception {
     Client client = Client.builder()
             .endpoints("http://localhost:2379")
             .user(ByteSequence.from("root", StandardCharsets.UTF_8))
@@ -43,32 +42,14 @@ class EtcdPropertySourceTests {
             .build();
 
     KV kvClient = client.getKVClient();
-    EtcdPropertySource source = new EtcdPropertySource(kvClient);
 
-    Object property = source.getProperty("key");
-    System.out.println(property);
+    ByteSequence key = ByteSequence.from("key", StandardCharsets.UTF_8);
+    kvClient.put(key, ByteSequence.from("value", StandardCharsets.UTF_8));
 
-    Watch watchClient = client.getWatchClient();
-    watchClient.watch(ByteSequence.from("cn.taketoday.blog.BlogApplication", StandardCharsets.UTF_8),
-            WatchOption.newBuilder().isPrefix(true).build(), new Watch.Listener() {
+    GetResponse response = kvClient.get(key).get();
 
-              @Override
-              public void onNext(WatchResponse response) {
-                System.out.println(response);
-              }
+    System.out.println(CollectionUtils.firstElement(response.getKvs()).getValue());
 
-              @Override
-              public void onError(Throwable throwable) {
-                throwable.printStackTrace();
-              }
-
-              @Override
-              public void onCompleted() {
-                System.out.println("onCompleted");
-              }
-            });
-
-    Thread.currentThread().join();
   }
 
 }

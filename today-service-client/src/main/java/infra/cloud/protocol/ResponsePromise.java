@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.protocol.tcp;
+package infra.cloud.protocol;
 
 import infra.util.concurrent.Promise;
 import io.netty.util.concurrent.EventExecutor;

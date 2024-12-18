@@ -17,49 +17,41 @@
 
 package infra.cloud.protocol.tcp;
 
-import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.Set;
 
 import infra.cloud.RpcResponse;
 import infra.cloud.core.serialize.ProtostuffUtils;
+import infra.cloud.protocol.Connection;
 import infra.cloud.protocol.EventHandler;
-import infra.cloud.protocol.EventHandlers;
 import infra.cloud.protocol.ProtocolPayload;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
+import infra.cloud.protocol.RemoteEventType;
+import infra.cloud.protocol.ResponsePromise;
+import infra.logging.Logger;
+import infra.logging.LoggerFactory;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2024/9/11 22:10
  */
-public final class ClientResponseHandler extends EventHandlers {
+public class ClientResponseHandler implements EventHandler {
 
-  public ClientResponseHandler(Executor eventAsyncExecutor, List<EventHandler> handlers) {
-    super(eventAsyncExecutor, handlers);
+  private static final Logger logger = LoggerFactory.getLogger(ClientResponseHandler.class);
+
+  @Override
+  public Set<RemoteEventType> getSupportedEvents() {
+    return Set.of(RemoteEventType.RPC_INVOCATION);
   }
 
   @Override
-  public void channelActive(ChannelHandlerContext ctx) {
+  public void channelActive(Connection connection) {
     logger.debug("connected");
-    ctx.fireChannelActive();
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    logger.error("exception caught", cause);
-    ctx.close();
-  }
-
-  @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) {
-    if (msg instanceof ByteBuf byteBuf) {
-      ProtocolPayload payload = ProtocolPayload.parse(byteBuf);
-      Connection connection = Connection.obtain(ctx);
-      ResponsePromise responsePromise = connection.getAndRemovePromise(payload.getRequestId());
-
+  public void handleEvent(Connection connection, ProtocolPayload payload) {
+    ResponsePromise responsePromise = connection.getAndRemovePromise(payload.getRequestId());
+    if (responsePromise != null) {
       try {
-        handleEvent(connection.channel, payload);
-
         if (payload.body != null) {
           var response = ProtostuffUtils.deserialize(payload.body.nioBuffer(), RpcResponse.class);
 //            RpcResponse response = serialization.deserialize(new ByteArrayInputStream(payload.body));
@@ -80,7 +72,7 @@ public final class ClientResponseHandler extends EventHandlers {
       }
     }
     else {
-      ctx.fireChannelRead(msg);
+      logger.debug("RequestId not found: {}", payload.getRequestId());
     }
   }
 

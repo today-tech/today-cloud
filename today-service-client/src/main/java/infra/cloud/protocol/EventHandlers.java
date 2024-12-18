@@ -25,7 +25,6 @@ import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.util.MultiValueMap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -52,26 +51,46 @@ public class EventHandlers extends ChannelInboundHandlerAdapter {
   }
 
   @Override
+  public void channelInactive(ChannelHandlerContext ctx) {
+    Connection connection = Connection.find(ctx);
+    if (connection != null) {
+      connection.channelInactive();
+    }
+  }
+
+  @Override
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    Connection connection = Connection.obtain(ctx);
+    for (List<EventHandler> handlers : eventHandlers.values()) {
+      for (EventHandler handler : handlers) {
+        handler.channelActive(connection);
+      }
+    }
+  }
+
+  @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
     if (msg instanceof ByteBuf byteBuf) {
+      Connection connection = Connection.obtain(ctx);
       ProtocolPayload payload = ProtocolPayload.parse(byteBuf);
-      handleEvent(ctx.channel(), payload);
+      handleEvent(connection, payload);
+      payload.release();
     }
     else {
       ctx.fireChannelRead(msg);
     }
   }
 
-  protected final void handleEvent(Channel channel, ProtocolPayload payload) {
+  protected final void handleEvent(Connection connection, ProtocolPayload payload) {
     RemoteEventType eventType = payload.getEventType();
     List<EventHandler> handlers = eventHandlers.get(eventType);
     if (handlers != null) {
       for (EventHandler handler : handlers) {
-        if (handler.supportsAsync()) {
-          eventAsyncExecutor.execute(() -> invokeHandler(handler, channel, payload));
+        if (handler.supportsAsync(eventType)) {
+          eventAsyncExecutor.execute(() -> invokeHandler(handler, connection, payload));
         }
         else {
-          invokeHandler(handler, channel, payload);
+          invokeHandler(handler, connection, payload);
         }
       }
     }
@@ -80,16 +99,18 @@ public class EventHandlers extends ChannelInboundHandlerAdapter {
     }
   }
 
-  private void invokeHandler(EventHandler handler, Channel channel, ProtocolPayload payload) {
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+
+  }
+
+  private void invokeHandler(EventHandler handler, Connection connection, ProtocolPayload payload) {
     try {
-      handler.handleEvent(channel, payload);
+      handler.handleEvent(connection, payload.retainedDuplicate());
     }
     catch (Exception e) {
       // TODO exception handling
       throw new RuntimeException(e);
-    }
-    finally {
-      payload.release();
     }
   }
 

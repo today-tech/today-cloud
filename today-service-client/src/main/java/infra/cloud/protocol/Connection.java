@@ -15,13 +15,17 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.protocol.tcp;
+package infra.cloud.protocol;
 
+import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import infra.core.AttributeAccessorSupport;
 import infra.lang.Assert;
 import infra.lang.Nullable;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.AttributeKey;
@@ -31,30 +35,67 @@ import io.netty.util.AttributeMap;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/12/22 23:37
  */
-public class Connection {
+public class Connection extends AttributeAccessorSupport {
+
   static final AttributeKey<Connection> KEY = AttributeKey.valueOf(Connection.class, "Connection");
 
   private final AtomicInteger requestIdAddr = new AtomicInteger(0);
 
-  final Channel channel;
-
   private final ConcurrentHashMap<Integer, ResponsePromise> promiseMap = new ConcurrentHashMap<>();
+
+  private final Channel channel;
 
   Connection(Channel channel) {
     this.channel = channel;
     channel.attr(KEY).set(this);
   }
 
+  @Nullable
   public ResponsePromise getPromise(int requestId) {
     return promiseMap.get(requestId);
   }
 
+  @Nullable
   public ResponsePromise getAndRemovePromise(int requestId) {
     return promiseMap.remove(requestId);
   }
 
   public ChannelFuture writeAndFlush(Object msg) {
     return channel.writeAndFlush(msg);
+  }
+
+  public ResponsePromise newPromise() {
+    int requestId = requestIdAddr.getAndIncrement();
+    ResponsePromise responsePromise = new ResponsePromise(requestId, channel.eventLoop());
+    promiseMap.put(requestId, responsePromise);
+    return responsePromise;
+  }
+
+  public ByteBufAllocator alloc() {
+    return channel.alloc();
+  }
+
+  public boolean isActive() {
+    return channel.isActive();
+  }
+
+  public void disconnect() {
+    channel.disconnect();
+    for (ResponsePromise promise : promiseMap.values()) {
+      promise.tryFailure(new ClosedChannelException());
+    }
+  }
+
+  @Nullable
+  public InetSocketAddress remoteAddress() {
+    return (InetSocketAddress) channel.remoteAddress();
+  }
+
+  void channelInactive() {
+    // todo 外部或许可以注册监听器，断开连接后回调
+    for (ResponsePromise promise : promiseMap.values()) {
+      promise.tryFailure(new ClosedChannelException());
+    }
   }
 
   @Nullable
@@ -66,13 +107,6 @@ public class Connection {
     Connection connection = find(map);
     Assert.state(connection != null, "Connection not set");
     return connection;
-  }
-
-  public ResponsePromise newPromise() {
-    int requestId = requestIdAddr.getAndIncrement();
-    ResponsePromise responsePromise = new ResponsePromise(requestId, channel.eventLoop());
-    promiseMap.put(requestId, responsePromise);
-    return responsePromise;
   }
 
 }

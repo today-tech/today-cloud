@@ -29,13 +29,16 @@ import infra.cloud.RpcResponse;
 import infra.cloud.ServiceInstance;
 import infra.cloud.core.serialize.ProtostuffUtils;
 import infra.cloud.core.serialize.Serialization;
-import infra.cloud.protocol.EventHandlers;
+import infra.cloud.protocol.Connection;
+import infra.cloud.protocol.ConnectionFactory;
 import infra.cloud.protocol.PayloadHeader;
 import infra.cloud.protocol.ProtocolPayload;
 import infra.cloud.protocol.RemoteEventType;
+import infra.cloud.protocol.ResponsePromise;
 import infra.util.ExceptionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandler;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -49,11 +52,11 @@ class NettyClient {
 
   private int ioThreadCount = 4;
 
-  private final EventHandlers eventHandlers;
+  private final ChannelHandler channelHandler;
 
-  public NettyClient(Serialization<RpcResponse> serialization, EventHandlers eventHandlers) {
+  public NettyClient(Serialization<RpcResponse> serialization, ChannelHandler channelHandler) {
     this.serialization = serialization;
-    this.eventHandlers = eventHandlers;
+    this.channelHandler = channelHandler;
   }
 
   public void setIoThreadCount(int ioThreadCount) {
@@ -64,7 +67,7 @@ class NettyClient {
     HostKey hostKey = new HostKey(selected);
     GenericObjectPool<Connection> connectionPool = channelMap.get(hostKey);
     if (connectionPool == null) {
-      var factory = new ConnectionFactory(hostKey.host, hostKey.port, ioThreadCount, eventHandlers);
+      var factory = new ConnectionFactory(hostKey.host, hostKey.port, ioThreadCount, channelHandler);
       var config = createPoolConfig();
       connectionPool = new GenericObjectPool<>(factory, config);
       channelMap.put(hostKey, connectionPool);
@@ -93,7 +96,7 @@ class NettyClient {
   private ByteBuf createPayload(RpcRequest rpcRequest, Connection connection, ResponsePromise responsePromise) {
     byte[] body = ProtostuffUtils.serialize(rpcRequest);
 
-    ByteBufAllocator allocator = connection.channel.alloc();
+    ByteBufAllocator allocator = connection.alloc();
     ByteBuf payload = allocator.buffer(4 + ProtocolPayload.HEADER_LENGTH + body.length);
     payload.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
 

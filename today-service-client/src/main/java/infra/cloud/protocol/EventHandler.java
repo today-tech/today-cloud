@@ -19,8 +19,6 @@ package infra.cloud.protocol;
 
 import java.util.Set;
 
-import io.netty.channel.Channel;
-
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 4.0 2024/3/8 22:45
@@ -29,9 +27,11 @@ public interface EventHandler {
 
   Set<RemoteEventType> getSupportedEvents();
 
-  void handleEvent(Channel channel, ProtocolPayload payload) throws Exception;
+  void channelActive(Connection connection);
 
-  default boolean supportsAsync() {
+  void handleEvent(Connection connection, ProtocolPayload payload) throws Exception;
+
+  default boolean supportsAsync(RemoteEventType eventType) {
     return true;
   }
 

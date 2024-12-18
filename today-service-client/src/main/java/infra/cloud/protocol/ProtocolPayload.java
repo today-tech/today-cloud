@@ -64,6 +64,33 @@ public class ProtocolPayload {
     }
   }
 
+  public ProtocolPayload retain() {
+    if (body != null) {
+      body.retain();
+    }
+    return this;
+  }
+
+  /**
+   * @see ByteBuf#duplicate()
+   */
+  public ProtocolPayload duplicate() {
+    if (body != null) {
+      return new ProtocolPayload(header, body.duplicate());
+    }
+    return this;
+  }
+
+  /**
+   * @see ByteBuf#retainedDuplicate()
+   */
+  public ProtocolPayload retainedDuplicate() {
+    if (body != null) {
+      return new ProtocolPayload(header, body.retainedDuplicate());
+    }
+    return this;
+  }
+
   /**
    * parsing given buffer into {@link ProtocolPayload}
    *

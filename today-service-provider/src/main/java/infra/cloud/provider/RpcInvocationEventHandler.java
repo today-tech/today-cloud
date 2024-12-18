@@ -27,6 +27,7 @@ import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
 import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.cloud.core.serialize.ProtostuffUtils;
+import infra.cloud.protocol.Connection;
 import infra.cloud.protocol.EventHandler;
 import infra.cloud.protocol.ProtocolPayload;
 import infra.cloud.protocol.RemoteEventType;
@@ -36,7 +37,6 @@ import infra.reflect.MethodInvoker;
 import infra.util.ClassUtils;
 import infra.util.MapCache;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -61,23 +61,23 @@ public class RpcInvocationEventHandler implements EventHandler {
   }
 
   @Override
-  public void handleEvent(Channel channel, ProtocolPayload payload) {
-    RpcResponse response = handle0(channel, payload);
+  public void handleEvent(Connection connection, ProtocolPayload payload) {
+    RpcResponse response = handle0(connection, payload);
     byte[] body = serialize(response);
 
-    ByteBuf buffer = channel.alloc().buffer(4 + body.length + ProtocolPayload.HEADER_LENGTH);
+    ByteBuf buffer = connection.alloc().buffer(4 + body.length + ProtocolPayload.HEADER_LENGTH);
     buffer.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
     payload.header.serialize(buffer);
     buffer.writeBytes(body);
 
-    channel.writeAndFlush(buffer);
+    connection.writeAndFlush(buffer);
   }
 
   private byte[] serialize(RpcResponse response) {
     return ProtostuffUtils.serialize(response);
   }
 
-  protected RpcResponse handle0(Channel ctx, ProtocolPayload payload) {
+  protected RpcResponse handle0(Connection connection, ProtocolPayload payload) {
     ByteBuf body = payload.body;
     try {
       if (body != null) {

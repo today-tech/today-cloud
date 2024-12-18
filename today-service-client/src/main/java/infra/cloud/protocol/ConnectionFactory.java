@@ -15,15 +15,15 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.protocol.tcp;
+package infra.cloud.protocol;
 
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 
-import infra.cloud.protocol.EventHandlers;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -35,7 +35,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2024/1/7 16:56
  */
-class ConnectionFactory extends BasePooledObjectFactory<Connection> {
+public class ConnectionFactory extends BasePooledObjectFactory<Connection> {
 
   private final String host;
 
@@ -43,7 +43,7 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
 
   private final Bootstrap bootstrap = new Bootstrap();
 
-  public ConnectionFactory(String host, int port, int ioThreadCount, EventHandlers eventHandlers) {
+  public ConnectionFactory(String host, int port, int ioThreadCount, ChannelHandler channelHandler) {
     this.host = host;
     this.port = port;
     bootstrap.group(new NioEventLoopGroup(ioThreadCount, new DefaultThreadFactory("client")))
@@ -54,7 +54,7 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
               protected void initChannel(Channel ch) {
                 ch.pipeline().addLast("frame-handler", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                                 0, 4, 0, 4))
-                        .addLast("channel-handler", eventHandlers);
+                        .addLast("channel-handler", channelHandler);
               }
             });
   }
@@ -79,12 +79,12 @@ class ConnectionFactory extends BasePooledObjectFactory<Connection> {
    */
   @Override
   public boolean validateObject(PooledObject<Connection> p) {
-    return p.getObject().channel.isActive();
+    return p.getObject().isActive();
   }
 
   @Override
   public void destroyObject(PooledObject<Connection> p) throws Exception {
-    p.getObject().channel.close();
+    p.getObject().disconnect();
   }
 
 }

@@ -54,7 +54,12 @@ public class HttpServiceClientConfig {
   static EventHandlers eventHandlers(
           @Qualifier("applicationTaskExecutor") Executor eventAsyncExecutor, List<EventHandler> handlers) {
     // TODO eventAsyncExecutor
-    return new ClientResponseHandler(eventAsyncExecutor, handlers);
+    return new EventHandlers(eventAsyncExecutor, handlers);
+  }
+
+  @Component
+  static ClientResponseHandler clientResponseHandler() {
+    return new ClientResponseHandler();
   }
 
   @MissingBean

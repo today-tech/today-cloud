@@ -20,24 +20,22 @@ package infra.cloud.protocol.tcp;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import infra.cloud.RpcRequest;
-import infra.cloud.RpcResponse;
 import infra.cloud.ServiceInstance;
-import infra.cloud.core.serialize.ProtostuffUtils;
-import infra.cloud.core.serialize.Serialization;
+import infra.cloud.protocol.ByteBufOutput;
 import infra.cloud.protocol.Connection;
 import infra.cloud.protocol.ConnectionFactory;
 import infra.cloud.protocol.PayloadHeader;
 import infra.cloud.protocol.ProtocolPayload;
 import infra.cloud.protocol.RemoteEventType;
 import infra.cloud.protocol.ResponsePromise;
-import infra.util.ExceptionUtils;
+import infra.cloud.serialize.RpcRequestSerialization;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
 
 /**
@@ -46,24 +44,27 @@ import io.netty.channel.ChannelHandler;
  */
 class NettyClient {
 
-  private final Serialization<RpcResponse> serialization;
-
   private final ConcurrentHashMap<HostKey, GenericObjectPool<Connection>> channelMap = new ConcurrentHashMap<>();
 
   private int ioThreadCount = 4;
 
   private final ChannelHandler channelHandler;
 
-  public NettyClient(Serialization<RpcResponse> serialization, ChannelHandler channelHandler) {
-    this.serialization = serialization;
+  // todo configurable
+  private int initialCapacity = 64;
+
+  private final RpcRequestSerialization rpcRequestSerialization;
+
+  public NettyClient(ChannelHandler channelHandler, RpcRequestSerialization rpcRequestSerialization) {
     this.channelHandler = channelHandler;
+    this.rpcRequestSerialization = rpcRequestSerialization;
   }
 
   public void setIoThreadCount(int ioThreadCount) {
     this.ioThreadCount = ioThreadCount;
   }
 
-  public ResponsePromise write(ServiceInstance selected, RpcRequest rpcRequest, Duration requestTimeout) {
+  public ResponsePromise write(ServiceInstance selected, RpcRequest rpcRequest, Duration requestTimeout) throws Exception {
     HostKey hostKey = new HostKey(selected);
     GenericObjectPool<Connection> connectionPool = channelMap.get(hostKey);
     if (connectionPool == null) {
@@ -78,13 +79,9 @@ class NettyClient {
       connection = connectionPool.borrowObject(requestTimeout);
       ResponsePromise responsePromise = connection.newPromise();
 
-      ByteBuf payload = createPayload(rpcRequest, connection, responsePromise);
+      ProtocolPayload payload = createPayload(rpcRequest, connection, responsePromise);
       connection.writeAndFlush(payload);
-
       return responsePromise;
-    }
-    catch (Exception e) {
-      throw ExceptionUtils.sneakyThrow(e);
     }
     finally {
       if (connection != null) {
@@ -93,17 +90,12 @@ class NettyClient {
     }
   }
 
-  private ByteBuf createPayload(RpcRequest rpcRequest, Connection connection, ResponsePromise responsePromise) {
-    byte[] body = ProtostuffUtils.serialize(rpcRequest);
+  private ProtocolPayload createPayload(RpcRequest rpcRequest, Connection connection, ResponsePromise promise) throws IOException {
+    ByteBuf body = connection.alloc().buffer(initialCapacity);
+    PayloadHeader payloadHeader = PayloadHeader.forHeader(promise.getRequestId(), RemoteEventType.RPC_REQUEST);
 
-    ByteBufAllocator allocator = connection.alloc();
-    ByteBuf payload = allocator.buffer(4 + ProtocolPayload.HEADER_LENGTH + body.length);
-    payload.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
-
-    PayloadHeader.serialize(payload, responsePromise.getRequestId(), RemoteEventType.RPC_INVOCATION);
-
-    payload.writeBytes(body);
-    return payload;
+    rpcRequestSerialization.serialize(rpcRequest, body, new ByteBufOutput(body));
+    return new ProtocolPayload(payloadHeader, body);
   }
 
   protected GenericObjectPoolConfig<Connection> createPoolConfig() {

@@ -19,13 +19,14 @@ package infra.cloud.protocol.tcp;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 
+import infra.cloud.RpcMethod;
 import infra.cloud.RpcRequest;
-import infra.cloud.RpcResponse;
 import infra.cloud.ServiceInstance;
 import infra.cloud.ServiceMethodInvoker;
-import infra.cloud.core.serialize.Serialization;
 import infra.cloud.protocol.EventHandlers;
+import infra.cloud.serialize.RpcRequestSerialization;
 import infra.util.concurrent.Future;
 
 /**
@@ -38,8 +39,10 @@ public class TcpServiceMethodInvoker extends ServiceMethodInvoker {
 
   private Duration requestTimeout = Duration.ofSeconds(10);
 
-  public TcpServiceMethodInvoker(Serialization<RpcResponse> serialization, EventHandlers eventHandlers) {
-    this.client = new NettyClient(serialization, eventHandlers);
+  private final ConcurrentHashMap<Method, RpcMethod> methods = new ConcurrentHashMap<>(128);
+
+  public TcpServiceMethodInvoker(RpcRequestSerialization serialization, EventHandlers eventHandlers) {
+    this.client = new NettyClient(eventHandlers, serialization);
   }
 
   public void setRequestTimeout(Duration requestTimeout) {
@@ -47,9 +50,12 @@ public class TcpServiceMethodInvoker extends ServiceMethodInvoker {
   }
 
   @Override
-  protected Future<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) {
+  protected Future<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) throws Exception {
+    RpcMethod rpcMethod = methods.computeIfAbsent(method, RpcMethod::new);
+
     RpcRequest rpcRequest = new RpcRequest();
-    rpcRequest.setMethod(method.getName());
+    rpcRequest.setRpcMethod(rpcMethod);
+    rpcRequest.setMethodName(method.getName());
     rpcRequest.setServiceName(selected.getServiceId());
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);

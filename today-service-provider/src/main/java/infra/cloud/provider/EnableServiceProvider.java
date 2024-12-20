@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import infra.beans.factory.ObjectProvider;
 import infra.beans.factory.annotation.Qualifier;
 import infra.cloud.RpcResponse;
 import infra.cloud.core.serialize.JdkSerialization;
@@ -34,10 +35,14 @@ import infra.cloud.protocol.http.HttpServiceRegistry;
 import infra.cloud.registry.HttpRegistration;
 import infra.cloud.registry.RegistryProperties;
 import infra.cloud.registry.ServiceRegistry;
+import infra.cloud.serialize.RpcArgumentSerialization;
+import infra.cloud.serialize.RpcRequestSerialization;
+import infra.cloud.serialize.RpcResponseSerialization;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.Import;
 import infra.context.annotation.MissingBean;
 import infra.context.properties.EnableConfigurationProperties;
+import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
 import infra.stereotype.Singleton;
 import infra.web.server.ServerProperties;
@@ -69,8 +74,22 @@ class TcpServiceProviderConfig {
   }
 
   @Component
-  static RpcInvocationEventHandler rpcInvocationEventHandler(LocalServiceHolder serviceHolder) {
-    return new RpcInvocationEventHandler(serviceHolder);
+  @SuppressWarnings({ "rawtypes" })
+  static RpcRequestSerialization rpcRequestSerialization(ObjectProvider<RpcArgumentSerialization> serializations) {
+    List<RpcArgumentSerialization> list = TodayStrategies.find(RpcArgumentSerialization.class);
+    serializations.addOrderedTo(list);
+    return new RpcRequestSerialization(list);
+  }
+
+  @Component
+  static RpcResponseSerialization responseSerialization() {
+    return new RpcResponseSerialization();
+  }
+
+  @Component
+  static RpcRequestEventHandler rpcInvocationEventHandler(RpcRequestSerialization serialization,
+          RpcResponseSerialization responseSerialization, LocalServiceHolder serviceHolder) {
+    return new RpcRequestEventHandler(serviceHolder, serialization, responseSerialization);
   }
 
   @Component

@@ -22,6 +22,7 @@ import java.util.Random;
 
 import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 
 /**
  * Payload header
@@ -30,6 +31,8 @@ import io.netty.buffer.ByteBuf;
  * @since 1.0 2023/12/22 22:23
  */
 public class PayloadHeader {
+  public static final int LENGTH = 4 + 1 + 4 + 2;
+
   // 0     4          5            9           11
   // reserve -> version -> requestId -> eventType -> metadata
 
@@ -64,6 +67,17 @@ public class PayloadHeader {
     return metadata != null ? metadata.get(key) : null;
   }
 
+  public int getLength() {
+    // todo metadata
+    return LENGTH;
+  }
+
+  public ByteBuf serialize(ByteBufAllocator alloc) {
+    ByteBuf buffer = alloc.buffer(getLength());
+    serialize(buffer);
+    return buffer;
+  }
+
   public void serialize(ByteBuf header) {
     int reserve = random.nextInt();
     header.writeInt(reserve);
@@ -78,6 +92,11 @@ public class PayloadHeader {
     header.writeByte(ProtocolVersion.CURRENT.asByte());
     header.writeInt(requestId);
     header.writeShort(eventType.value);
+  }
+
+  public static PayloadHeader forHeader(int requestId, RemoteEventType eventType) {
+    int reserve = random.nextInt();
+    return new PayloadHeader(reserve, ProtocolVersion.CURRENT, requestId, eventType);
   }
 
 }

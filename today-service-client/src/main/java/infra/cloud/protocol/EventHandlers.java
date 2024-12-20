@@ -25,14 +25,16 @@ import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.util.MultiValueMap;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.concurrent.PromiseCombiner;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2024/9/13 21:00
  */
-public class EventHandlers extends ChannelInboundHandlerAdapter {
+public class EventHandlers extends ChannelDuplexHandler {
 
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -59,7 +61,7 @@ public class EventHandlers extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+  public void channelActive(ChannelHandlerContext ctx) {
     Connection connection = Connection.obtain(ctx);
     for (List<EventHandler> handlers : eventHandlers.values()) {
       for (EventHandler handler : handlers) {
@@ -100,8 +102,8 @@ public class EventHandlers extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    logger.error("Unexpected exception", cause);
   }
 
   private void invokeHandler(EventHandler handler, Connection connection, ProtocolPayload payload) {
@@ -111,6 +113,26 @@ public class EventHandlers extends ChannelInboundHandlerAdapter {
     catch (Exception e) {
       // TODO exception handling
       throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+    if (msg instanceof ProtocolPayload payload) {
+      PromiseCombiner combiner = new PromiseCombiner(ctx.executor());
+
+      ByteBuf length = ctx.alloc().buffer(4).writeInt(payload.getLength());
+      ByteBuf header = payload.header.serialize(ctx.alloc());
+
+      combiner.add(ctx.write(length));
+      combiner.add(ctx.write(header));
+      if (payload.body != null) {
+        combiner.add(ctx.write(payload.body));
+      }
+      combiner.finish(promise);
+    }
+    else {
+      ctx.write(msg, promise);
     }
   }
 

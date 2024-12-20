@@ -16,3 +16,7 @@
 #
 infra.beans.factory.support.DependencyResolvingStrategy=\
     infra.cloud.protocol.ServiceDependencyResolvingStrategy
+
+
+infra.cloud.serialize.RpcArgumentSerialization=\
+  infra.cloud.serialize.ProtobufArgumentSerialization

@@ -25,14 +25,17 @@ import java.util.Set;
 
 import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
-import infra.cloud.core.serialize.DeserializeFailedException;
-import infra.cloud.core.serialize.ProtostuffUtils;
+import infra.cloud.protocol.ByteBufOutput;
 import infra.cloud.protocol.Connection;
 import infra.cloud.protocol.EventHandler;
 import infra.cloud.protocol.ProtocolPayload;
 import infra.cloud.protocol.RemoteEventType;
 import infra.cloud.registry.ServiceNotFoundException;
+import infra.cloud.serialize.RpcRequestSerialization;
+import infra.cloud.serialize.RpcResponseSerialization;
 import infra.lang.Nullable;
+import infra.logging.Logger;
+import infra.logging.LoggerFactory;
 import infra.reflect.MethodInvoker;
 import infra.util.ClassUtils;
 import infra.util.MapCache;
@@ -42,85 +45,83 @@ import io.netty.buffer.ByteBuf;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 4.0 2024/3/8 22:51
  */
-public class RpcInvocationEventHandler implements EventHandler {
+public class RpcRequestEventHandler implements EventHandler {
+
+  private static final Logger logger = LoggerFactory.getLogger(RpcRequestEventHandler.class);
 
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
 
   private final LocalServiceHolder serviceHolder;
 
-  private final RpcRequestDeserializer deserializer = new RpcRequestDeserializer();
+  private final RpcRequestSerialization requestSerialization;
 
-  RpcInvocationEventHandler(LocalServiceHolder serviceHolder) {
+  private final RpcResponseSerialization responseSerialization;
+
+  // todo configurable
+  private final int initialCapacity = 64;
+
+  RpcRequestEventHandler(LocalServiceHolder serviceHolder, RpcRequestSerialization requestSerialization,
+          RpcResponseSerialization responseSerialization) {
     this.serviceHolder = serviceHolder;
+    this.requestSerialization = requestSerialization;
+    this.responseSerialization = responseSerialization;
   }
 
   @Override
   public Set<RemoteEventType> getSupportedEvents() {
-    return Set.of(RemoteEventType.RPC_INVOCATION);
+    return Set.of(RemoteEventType.RPC_REQUEST);
   }
 
   @Override
-  public void handleEvent(Connection connection, ProtocolPayload payload) {
-    RpcResponse response = handle0(connection, payload);
-    byte[] body = serialize(response);
-
-    ByteBuf buffer = connection.alloc().buffer(4 + body.length + ProtocolPayload.HEADER_LENGTH);
-    buffer.writeInt(body.length + ProtocolPayload.HEADER_LENGTH);
-    payload.header.serialize(buffer);
-    buffer.writeBytes(body);
-
-    connection.writeAndFlush(buffer);
+  public void channelActive(Connection connection) {
+    logger.debug("Client connected: [{}]", connection);
   }
 
-  private byte[] serialize(RpcResponse response) {
-    return ProtostuffUtils.serialize(response);
+  @Override
+  public void handleEvent(Connection connection, ProtocolPayload payload) throws IOException {
+    RpcResponse response = rpcInvoke(connection, payload);
+
+    ByteBuf body = connection.alloc().buffer(initialCapacity);
+    responseSerialization.serialize(response, body, new ByteBufOutput(body));
+
+    connection.writeAndFlush(new ProtocolPayload(payload.header, body));
   }
 
-  protected RpcResponse handle0(Connection connection, ProtocolPayload payload) {
+  protected RpcResponse rpcInvoke(Connection connection, ProtocolPayload payload) {
     ByteBuf body = payload.body;
-    try {
-      if (body != null) {
-        RpcRequest request = deserializer.deserialize(body);
-        Object service = serviceHolder.getService(request.getServiceName());
-        if (service == null) {
-          return RpcResponse.ofThrowable(new ServiceNotFoundException(request.getServiceName()));
-        }
-        MethodInvoker invoker = methodMapCache.get(new MethodCacheKey(request), service);
-        Object[] args = request.getArguments();
-        return createResponse(service, args, invoker);
+    if (body != null) {
+      RpcRequest request = requestSerialization.deserialize(body);
+      Object service = serviceHolder.getService(request.getServiceName());
+      if (service == null) {
+        return RpcResponse.ofThrowable(new ServiceNotFoundException(request.getServiceName()));
       }
-      return RpcResponse.empty;
+
+      InvocableRpcMethod rpcMethod = methodMapCache.get(new MethodCacheKey(request), null);
+      if (rpcMethod == null) {
+        return RpcResponse.ofThrowable(new ServiceNotFoundException());
+      }
+      try {
+        return new RpcResponse(rpcMethod.invokeAndHandle(service, request.getArguments()));
+      }
+      catch (Throwable e) {
+        return RpcResponse.ofThrowable(e);
+      }
     }
-    catch (IOException io) {
-      return RpcResponse.ofThrowable(new DeserializeFailedException(io));
-    }
-    catch (Throwable e) {
-      return RpcResponse.ofThrowable(e);
-    }
+    return RpcResponse.empty;
   }
 
-  private RpcResponse createResponse(Object service, Object[] args, MethodInvoker invoker) {
-    if (invoker == null) {
-      return RpcResponse.ofThrowable(new ServiceNotFoundException());
-    }
-    try {
-      return new RpcResponse(invoker.invoke(service, args));
-    }
-    catch (Throwable e) {
-      return RpcResponse.ofThrowable(e);
-    }
-  }
+  private static final class MethodMapCache extends MapCache<MethodCacheKey, InvocableRpcMethod, Object> {
 
-  private static final class MethodMapCache extends MapCache<MethodCacheKey, MethodInvoker, Object> {
-
+    @Nullable
     @Override
-    protected MethodInvoker createValue(MethodCacheKey key, @Nullable Object service) {
+    protected InvocableRpcMethod createValue(MethodCacheKey key, @Nullable Object service) {
       Method methodToUse = getMethod(key, service);
       if (methodToUse == null) {
         return null;
       }
-      return MethodInvoker.forMethod(methodToUse);
+      MethodInvoker methodInvoker = MethodInvoker.forMethod(methodToUse);
+      return new InvocableRpcMethod(methodToUse, methodInvoker);
     }
 
     private static Method getMethod(MethodCacheKey key, Object service) {
@@ -156,7 +157,7 @@ public class RpcInvocationEventHandler implements EventHandler {
     public final String[] paramTypes;
 
     MethodCacheKey(RpcRequest request) {
-      this.method = request.getMethod();
+      this.method = request.getMethodName();
       this.paramTypes = request.getParamTypes();
     }
 

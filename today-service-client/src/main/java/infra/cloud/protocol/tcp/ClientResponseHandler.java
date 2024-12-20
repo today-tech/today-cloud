@@ -20,12 +20,12 @@ package infra.cloud.protocol.tcp;
 import java.util.Set;
 
 import infra.cloud.RpcResponse;
-import infra.cloud.core.serialize.ProtostuffUtils;
 import infra.cloud.protocol.Connection;
 import infra.cloud.protocol.EventHandler;
 import infra.cloud.protocol.ProtocolPayload;
 import infra.cloud.protocol.RemoteEventType;
 import infra.cloud.protocol.ResponsePromise;
+import infra.cloud.serialize.RpcResponseSerialization;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 
@@ -37,9 +37,15 @@ public class ClientResponseHandler implements EventHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(ClientResponseHandler.class);
 
+  private final RpcResponseSerialization responseSerialization;
+
+  public ClientResponseHandler(RpcResponseSerialization responseSerialization) {
+    this.responseSerialization = responseSerialization;
+  }
+
   @Override
   public Set<RemoteEventType> getSupportedEvents() {
-    return Set.of(RemoteEventType.RPC_INVOCATION);
+    return Set.of(RemoteEventType.RPC_RESPONSE);
   }
 
   @Override
@@ -53,8 +59,7 @@ public class ClientResponseHandler implements EventHandler {
     if (responsePromise != null) {
       try {
         if (payload.body != null) {
-          var response = ProtostuffUtils.deserialize(payload.body.nioBuffer(), RpcResponse.class);
-//            RpcResponse response = serialization.deserialize(new ByteArrayInputStream(payload.body));
+          RpcResponse response = responseSerialization.deserialize(payload.body);
           Throwable exception = response.getException();
           if (exception != null) {
             responsePromise.tryFailure(exception);

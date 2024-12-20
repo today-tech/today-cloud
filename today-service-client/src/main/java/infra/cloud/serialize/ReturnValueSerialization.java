@@ -15,28 +15,32 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.provider;
+package infra.cloud.serialize;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
-import infra.cloud.RpcRequest;
-import infra.cloud.core.serialize.ProtostuffUtils;
+import infra.cloud.RpcMethod;
+import infra.cloud.core.serialize.DeserializeFailedException;
 import io.netty.buffer.ByteBuf;
+import io.protostuff.Input;
+import io.protostuff.Output;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 4.0 2024/3/8 23:15
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2024/12/20 21:42
  */
-public class RpcRequestDeserializer {
+public interface ReturnValueSerialization<T> {
 
-  public RpcRequest deserialize(ByteBuf body) throws IOException {
-    RpcRequest request = ProtostuffUtils.deserialize(body.nioBuffer(), RpcRequest.class);
-    int length = body.readInt();
-    CharSequence charSequence = body.readCharSequence(length, StandardCharsets.UTF_8);
+  /**
+   * Whether the given parameter is supported by this resolver.
+   * <p>
+   * static match
+   * </p>
+   */
+  boolean supportsArgument(RpcMethod method);
 
-    // TODO
+  void serialize(RpcMethod method, T value, ByteBuf payload, Output output) throws IOException;
 
-    return request;
-  }
+  T deserialize(RpcMethod method, ByteBuf payload, Input input) throws DeserializeFailedException;
+
 }

@@ -20,8 +20,8 @@ package infra.cloud.http;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import infra.beans.factory.ObjectProvider;
 import infra.beans.factory.annotation.Qualifier;
-import infra.cloud.RpcResponse;
 import infra.cloud.core.serialize.JdkSerialization;
 import infra.cloud.core.serialize.Serialization;
 import infra.cloud.protocol.EventHandler;
@@ -30,9 +30,13 @@ import infra.cloud.protocol.http.HttpServiceRegistry;
 import infra.cloud.protocol.tcp.ClientResponseHandler;
 import infra.cloud.protocol.tcp.TcpServiceMethodInvoker;
 import infra.cloud.registry.RegistryProperties;
+import infra.cloud.serialize.RpcArgumentSerialization;
+import infra.cloud.serialize.RpcRequestSerialization;
+import infra.cloud.serialize.RpcResponseSerialization;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.MissingBean;
 import infra.context.properties.EnableConfigurationProperties;
+import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
 
 /**
@@ -45,9 +49,22 @@ public class HttpServiceClientConfig {
 
   @MissingBean
   static HttpServiceRegistry httpServiceRegistry(RegistryProperties properties,
-          Serialization<RpcResponse> serialization, EventHandlers eventHandlers) {
-    return HttpServiceRegistry.ofURL(properties.getHttpUrl(), serialization,
+          RpcRequestSerialization serialization, EventHandlers eventHandlers, Serialization requestSerialization) {
+    return HttpServiceRegistry.ofURL(properties.getHttpUrl(), requestSerialization,
             new TcpServiceMethodInvoker(serialization, eventHandlers));
+  }
+
+  @Component
+  @SuppressWarnings({ "rawtypes" })
+  static RpcRequestSerialization rpcRequestSerialization(ObjectProvider<RpcArgumentSerialization> serializations) {
+    List<RpcArgumentSerialization> list = TodayStrategies.find(RpcArgumentSerialization.class);
+    serializations.addOrderedTo(list);
+    return new RpcRequestSerialization(list);
+  }
+
+  @Component
+  static RpcResponseSerialization responseSerialization() {
+    return new RpcResponseSerialization();
   }
 
   @Component
@@ -58,8 +75,8 @@ public class HttpServiceClientConfig {
   }
 
   @Component
-  static ClientResponseHandler clientResponseHandler() {
-    return new ClientResponseHandler();
+  static ClientResponseHandler clientResponseHandler(RpcResponseSerialization responseSerialization) {
+    return new ClientResponseHandler(responseSerialization);
   }
 
   @MissingBean

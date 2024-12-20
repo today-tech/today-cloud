@@ -25,7 +25,17 @@ package infra.cloud.protocol;
  */
 public enum RemoteEventType {
 
-  RPC_INVOCATION(1);
+  RPC_REQUEST(1),
+
+  RPC_RESPONSE(2),
+
+  NOTIFY(3),
+
+  PING(4),
+
+  PONG(5)
+
+  ;
 
   public final int value;
 
@@ -35,7 +45,11 @@ public enum RemoteEventType {
 
   public static RemoteEventType forValue(short eventType) {
     return switch (eventType) {
-      case 1 -> RPC_INVOCATION;
+      case 1 -> RPC_REQUEST;
+      case 2 -> RPC_RESPONSE;
+      case 3 -> NOTIFY;
+      case 4 -> PING;
+      case 5 -> PONG;
       default -> throw new ProtocolParsingException("Event type: [%s] not supported".formatted(eventType));
     };
   }

@@ -29,14 +29,14 @@ import io.netty.buffer.ByteBuf;
  * @since 1.0 2023/12/22 22:29
  */
 public class ProtocolPayload {
-  public static final int HEADER_LENGTH = 4 + 1 + 4 + 2;
+  public static final int HEADER_LENGTH = PayloadHeader.LENGTH;
 
   public final PayloadHeader header;
 
   @Nullable
   public final ByteBuf body;
 
-  ProtocolPayload(PayloadHeader header, @Nullable ByteBuf body) {
+  public ProtocolPayload(PayloadHeader header, @Nullable ByteBuf body) {
     this.header = header;
     this.body = body;
   }
@@ -56,6 +56,13 @@ public class ProtocolPayload {
   @Nullable
   public Map<String, String> getMetadata() {
     return header.metadata;
+  }
+
+  public int getLength() {
+    if (body != null) {
+      return header.getLength() + body.readableBytes();
+    }
+    return header.getLength();
   }
 
   public void release() {

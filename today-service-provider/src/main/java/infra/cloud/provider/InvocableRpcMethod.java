@@ -15,26 +15,28 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-description = "TODAY Service Client"
+package infra.cloud.provider;
 
+import java.lang.reflect.Method;
 
-dependencies {
-  api project(":today-cloud-core")
-  api project(":today-service-registry")
+import infra.cloud.RpcMethod;
+import infra.reflect.MethodInvoker;
 
-  optional 'io.netty:netty-transport'
-  optional 'io.netty:netty-codec'
-  optional 'io.netty:netty-handler'
+/**
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2024/12/20 21:49
+ */
+public class InvocableRpcMethod extends RpcMethod {
 
-  implementation 'cn.taketoday:today-web'
-  implementation 'cn.taketoday:today-framework'
-  implementation 'io.projectreactor:reactor-core' // :3.6.1
+  private final MethodInvoker invoker;
 
-  implementation 'org.apache.commons:commons-pool2:2.12.0'
+  public InvocableRpcMethod(Method method, MethodInvoker invoker) {
+    super(method);
+    this.invoker = invoker;
+  }
 
-  implementation 'io.protostuff:protostuff-core:1.7.4'
-  implementation 'io.protostuff:protostuff-runtime:1.7.4'
-
-  optional "com.google.protobuf:protobuf-java"
+  public Object invokeAndHandle(Object serviceInstance, Object[] args) throws Throwable {
+    return invoker.invoke(serviceInstance, args);
+  }
 
 }

@@ -19,10 +19,12 @@ package infra.cloud.protocol;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import infra.core.AttributeAccessorSupport;
+import infra.core.style.ToStringBuilder;
 import infra.lang.Assert;
 import infra.lang.Nullable;
 import io.netty.buffer.ByteBufAllocator;
@@ -96,6 +98,29 @@ public class Connection extends AttributeAccessorSupport {
     for (ResponsePromise promise : promiseMap.values()) {
       promise.tryFailure(new ClosedChannelException());
     }
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.forInstance(this)
+            .append("channel", channel)
+            .toString();
+  }
+
+  @Override
+  public boolean equals(Object param) {
+    if (this == param)
+      return true;
+    if (!(param instanceof Connection that))
+      return false;
+    if (!super.equals(param))
+      return false;
+    return Objects.equals(channel, that.channel);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(channel);
   }
 
   @Nullable

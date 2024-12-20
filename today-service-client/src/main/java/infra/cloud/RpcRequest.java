@@ -30,13 +30,15 @@ public class RpcRequest implements Serializable {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private String method;
+  private String methodName;
 
   private String serviceName;
 
   private Object[] arguments;
 
   private String[] paramTypes;
+
+  private RpcMethod rpcMethod;
 
   public void setArguments(Object[] arguments) {
     this.arguments = arguments;
@@ -54,12 +56,20 @@ public class RpcRequest implements Serializable {
     return paramTypes;
   }
 
-  public void setMethod(String method) {
-    this.method = method;
+  public void setMethodName(String method) {
+    this.methodName = method;
   }
 
-  public String getMethod() {
-    return method;
+  public String getMethodName() {
+    return methodName;
+  }
+
+  public void setRpcMethod(RpcMethod rpcMethod) {
+    this.rpcMethod = rpcMethod;
+  }
+
+  public RpcMethod getRpcMethod() {
+    return rpcMethod;
   }
 
   public void setServiceName(String serviceName) {
@@ -76,7 +86,7 @@ public class RpcRequest implements Serializable {
       return true;
     if (!(o instanceof RpcRequest request))
       return false;
-    return Objects.equals(method, request.method)
+    return Objects.equals(methodName, request.methodName)
             && Objects.equals(serviceName, request.serviceName)
             && Arrays.equals(paramTypes, request.paramTypes)
             && Arrays.equals(arguments, request.arguments);
@@ -84,7 +94,7 @@ public class RpcRequest implements Serializable {
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(method, serviceName);
+    int result = Objects.hash(methodName, serviceName);
     result = 31 * result + Arrays.hashCode(paramTypes);
     result = 31 * result + Arrays.hashCode(arguments);
     return result;
@@ -93,7 +103,7 @@ public class RpcRequest implements Serializable {
   @Override
   public String toString() {
     return "RpcRequest{" +
-            "method='" + method + '\'' +
+            "method='" + methodName + '\'' +
             ", serviceName='" + serviceName + '\'' +
             ", paramTypes=" + Arrays.toString(paramTypes) +
             ", arguments=" + Arrays.toString(arguments) +

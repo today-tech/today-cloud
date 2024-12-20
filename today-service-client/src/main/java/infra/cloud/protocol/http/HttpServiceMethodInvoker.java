@@ -40,7 +40,7 @@ final class HttpServiceMethodInvoker extends ServiceMethodInvoker {
   @Override
   protected Future<Object> invokeInternal(ServiceInstance selected, Method method, Object[] args) {
     RpcRequest rpcRequest = new RpcRequest();
-    rpcRequest.setMethod(method.getName());
+    rpcRequest.setMethodName(method.getName());
     rpcRequest.setServiceName(selected.getServiceId());
     rpcRequest.setParameterTypes(method.getParameterTypes());
     rpcRequest.setArguments(args);

@@ -38,10 +38,23 @@ public class RpcResponse implements Serializable {
   @Nullable
   private Throwable exception;
 
+  @Nullable
+  private RpcMethod rpcMethod;
+
   public RpcResponse() { }
 
-  public RpcResponse(Object result) {
+  public RpcResponse(@Nullable RpcMethod rpcMethod, Object result) {
+    this.rpcMethod = rpcMethod;
     this.result = result;
+  }
+
+  public void setRpcMethod(@Nullable RpcMethod rpcMethod) {
+    this.rpcMethod = rpcMethod;
+  }
+
+  @Nullable
+  public RpcMethod getRpcMethod() {
+    return rpcMethod;
   }
 
   public void setResult(Object result) {
@@ -66,6 +79,13 @@ public class RpcResponse implements Serializable {
   public static RpcResponse ofThrowable(@Nullable Throwable throwable) {
     final RpcResponse rpcResponse = new RpcResponse();
     rpcResponse.setException(throwable);
+    return rpcResponse;
+  }
+
+  public static RpcResponse ofThrowable(RpcMethod rpcMethod, @Nullable Throwable throwable) {
+    final RpcResponse rpcResponse = new RpcResponse();
+    rpcResponse.setException(throwable);
+    rpcResponse.setRpcMethod(rpcMethod);
     return rpcResponse;
   }
 

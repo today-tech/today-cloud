@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import infra.cloud.RpcRequest;
 import infra.core.AttributeAccessorSupport;
 import infra.core.style.ToStringBuilder;
 import infra.lang.Assert;
@@ -66,9 +67,9 @@ public class Connection extends AttributeAccessorSupport {
     return channel.writeAndFlush(msg);
   }
 
-  public ResponsePromise newPromise() {
+  public ResponsePromise newPromise(RpcRequest rpcRequest) {
     int requestId = requestIdAddr.getAndIncrement();
-    ResponsePromise responsePromise = new ResponsePromise(requestId, channel.eventLoop());
+    ResponsePromise responsePromise = new ResponsePromise(requestId, channel.eventLoop(), rpcRequest);
     promiseMap.put(requestId, responsePromise);
     return responsePromise;
   }

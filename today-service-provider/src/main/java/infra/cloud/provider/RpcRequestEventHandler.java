@@ -83,7 +83,7 @@ public class RpcRequestEventHandler implements EventHandler {
     RpcResponse response = rpcInvoke(connection, payload);
 
     ByteBuf body = connection.alloc().buffer(initialCapacity);
-    responseSerialization.serialize(response, body, new ByteBufOutput(body));
+    responseSerialization.serialize(response, body);
 
     connection.writeAndFlush(new ProtocolPayload(payload.header, body));
   }
@@ -102,10 +102,10 @@ public class RpcRequestEventHandler implements EventHandler {
         return RpcResponse.ofThrowable(new ServiceNotFoundException());
       }
       try {
-        return new RpcResponse(rpcMethod.invokeAndHandle(service, request.getArguments()));
+        return new RpcResponse(rpcMethod, rpcMethod.invokeAndHandle(service, request.getArguments()));
       }
       catch (Throwable e) {
-        return RpcResponse.ofThrowable(e);
+        return RpcResponse.ofThrowable(rpcMethod, e);
       }
     }
     return RpcResponse.empty;

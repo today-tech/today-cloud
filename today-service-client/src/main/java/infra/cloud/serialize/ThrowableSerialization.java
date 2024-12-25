@@ -15,34 +15,25 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.protocol;
+package infra.cloud.serialize;
 
-import infra.cloud.RpcRequest;
-import infra.util.concurrent.Promise;
-import io.netty.util.concurrent.EventExecutor;
+import java.io.IOException;
+
+import infra.cloud.core.serialize.DeserializeFailedException;
+import io.netty.buffer.ByteBuf;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/12/22 23:57
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2024/12/25 17:36
  */
-public class ResponsePromise extends Promise<Object> {
+public class ThrowableSerialization {
 
-  private final int requestId;
+  public void serialize(Throwable throwable, ByteBuf payload) throws IOException {
 
-  private final RpcRequest rpcRequest;
-
-  public ResponsePromise(int requestId, EventExecutor executor, RpcRequest rpcRequest) {
-    super(executor);
-    this.requestId = requestId;
-    this.rpcRequest = rpcRequest;
   }
 
-  public int getRequestId() {
-    return requestId;
-  }
-
-  public RpcRequest getRpcRequest() {
-    return rpcRequest;
+  public Throwable deserialize(ByteBuf body) throws DeserializeFailedException {
+    return null;
   }
 
 }

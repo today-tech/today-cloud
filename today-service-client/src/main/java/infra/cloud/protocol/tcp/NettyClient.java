@@ -77,7 +77,7 @@ class NettyClient {
     Connection connection = null;
     try {
       connection = connectionPool.borrowObject(requestTimeout);
-      ResponsePromise responsePromise = connection.newPromise();
+      ResponsePromise responsePromise = connection.newPromise(rpcRequest);
 
       ProtocolPayload payload = createPayload(rpcRequest, connection, responsePromise);
       connection.writeAndFlush(payload);
@@ -94,7 +94,7 @@ class NettyClient {
     ByteBuf body = connection.alloc().buffer(initialCapacity);
     PayloadHeader payloadHeader = PayloadHeader.forHeader(promise.getRequestId(), RemoteEventType.RPC_REQUEST);
 
-    rpcRequestSerialization.serialize(rpcRequest, body, new ByteBufOutput(body));
+    rpcRequestSerialization.serialize(rpcRequest, body);
     return new ProtocolPayload(payloadHeader, body);
   }
 

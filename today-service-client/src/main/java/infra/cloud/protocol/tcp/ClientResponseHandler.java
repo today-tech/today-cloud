@@ -19,6 +19,7 @@ package infra.cloud.protocol.tcp;
 
 import java.util.Set;
 
+import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
 import infra.cloud.protocol.Connection;
 import infra.cloud.protocol.EventHandler;
@@ -59,7 +60,8 @@ public class ClientResponseHandler implements EventHandler {
     if (responsePromise != null) {
       try {
         if (payload.body != null) {
-          RpcResponse response = responseSerialization.deserialize(payload.body);
+          RpcRequest request = responsePromise.getRpcRequest();
+          RpcResponse response = responseSerialization.deserialize(request, payload.body);
           Throwable exception = response.getException();
           if (exception != null) {
             responsePromise.tryFailure(exception);

@@ -20,6 +20,7 @@ package infra.cloud;
 import java.lang.reflect.Method;
 
 import infra.core.MethodParameter;
+import infra.core.style.ToStringBuilder;
 import infra.lang.Nullable;
 
 /**
@@ -64,6 +65,14 @@ public class RpcMethod {
       this.returnTypeParameter = returnType;
     }
     return returnType;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.forInstance(this)
+            .append("parameters", parameters)
+            .append("method", method)
+            .toString();
   }
 
 }

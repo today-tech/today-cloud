@@ -18,14 +18,15 @@
 package infra.cloud.serialize;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import infra.cloud.RpcMethod;
 import infra.cloud.RpcRequest;
 import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.cloud.protocol.ByteBufInput;
+import infra.cloud.protocol.ByteBufOutput;
 import infra.core.MethodParameter;
-import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
 import io.protostuff.Output;
 
@@ -43,33 +44,34 @@ public class RpcRequestSerialization {
   }
 
   @SuppressWarnings("unchecked")
-  public void serialize(RpcRequest request, ByteBuf payload, Output output) throws IOException {
-    output.writeString(1, request.getMethodName(), true);
-    output.writeString(2, request.getServiceName(), true);
+  public void serialize(RpcRequest request, ByteBuf payload) throws IOException {
+//    output.writeString(1, request.getMethodName(), true);
+//    output.writeString(2, request.getServiceName(), true);
+
+    payload.writeCharSequence(request.getMethodName(), StandardCharsets.UTF_8);
+    payload.writeCharSequence(request.getServiceName(), StandardCharsets.UTF_8);
 
     RpcMethod rpcMethod = request.getRpcMethod();
 
     int idx = 0;
     Object[] arguments = request.getArguments();
+
+    Output output = new ByteBufOutput(payload);
     beforeSerializeArguments(output, arguments);
     for (MethodParameter parameter : rpcMethod.getParameters()) {
       var serialization = findArgumentSerialization(parameter);
-      if (serialization == null) {
-        throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
-      }
       serialization.serialize(parameter, arguments[idx++], payload, output);
     }
     afterSerializeArguments(output, arguments);
   }
 
-  @Nullable
   private RpcArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
     for (var argumentSerialization : argumentSerializations) {
       if (argumentSerialization.supportsArgument(parameter)) {
         return argumentSerialization;
       }
     }
-    return null;
+    throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
   }
 
   protected void afterSerializeArguments(Output output, Object[] arguments) {
@@ -80,9 +82,9 @@ public class RpcRequestSerialization {
 
   }
 
-  public RpcRequest deserialize(ByteBuf body) throws DeserializeFailedException {
+  public RpcRequest deserialize(ByteBuf payload) throws DeserializeFailedException {
     RpcRequest rpcRequest = new RpcRequest();
-    ByteBufInput input = new ByteBufInput(body);
+    ByteBufInput input = new ByteBufInput(payload);
 
 //    body.readInt();
 //    body.readCharSequence();

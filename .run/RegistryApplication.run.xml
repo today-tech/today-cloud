@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="RegistryApplication" type="InfraApplicationConfigurationType" factoryName="Infra">
+    <option name="ACTIVE_PROFILES" />
+    <option name="MAIN_CLASS_NAME" value="cn.taketoday.demo.RegistryApplication" />
+    <module name="today-cloud.today-cloud-samples.demo-tests.demo-registry.main" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

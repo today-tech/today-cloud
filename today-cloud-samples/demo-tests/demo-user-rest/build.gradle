@@ -10,4 +10,6 @@ dependencies {
   implementation 'cn.taketoday:today-starter-netty'
   implementation 'ch.qos.logback:logback-classic'
 
+  implementation "com.google.protobuf:protobuf-java"
+
 }

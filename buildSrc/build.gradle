@@ -21,17 +21,16 @@ plugins {
 
 repositories {
   mavenLocal()
-  maven { url "https://maven.aliyun.com/repository/public" }
   mavenCentral()
+  maven { url = "https://central.sonatype.com/repository/maven-snapshots/" }
   gradlePluginPortal()
 }
 
-ext {
-
-}
 
 dependencies {
-  implementation "me.champeau.gradle:japicmp-gradle-plugin:0.4.1"
+  implementation(platform("cn.taketoday:infra-bom:$infraVersion"))
+  implementation "cn.taketoday:today-core"
+  implementation "cn.taketoday:infra-gradle-plugin"
   implementation "org.gradle:test-retry-gradle-plugin:1.4.1"
   implementation "org.apache.maven:maven-artifact:3.6.3"
 }

@@ -27,15 +27,12 @@ ext {
 }
 
 configure(allprojects) {
-  group = "cn.taketoday"
+  group = "cn.taketoday.cloud"
 
   repositories {
     mavenLocal()
     mavenCentral()
     maven { url "https://repo.spring.io/milestone" }
-    if (infraVersion.endsWith("-SNAPSHOT")) {
-      maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
-    }
     if (version.endsWith('-SNAPSHOT')) {
       maven { url "https://repo.spring.io/snapshot" }
     }
@@ -50,12 +47,15 @@ configure(allprojects) {
 
 configure([rootProject] + javaProjects) {
   apply plugin: "java"
-  apply plugin: 'jacoco'
+  apply plugin: 'infra.application'
   apply plugin: 'infra.cloud.conventions'
   apply from: "${rootDir}/gradle/toolchains.gradle"
 
-  jacocoTestReport {
-    enabled = false
+  if (it.hasProperty("code-coverage")) {
+    apply plugin: 'jacoco'
+    jacocoTestReport {
+      enabled = false
+    }
   }
 
   dependencies {

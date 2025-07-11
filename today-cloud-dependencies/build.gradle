@@ -8,8 +8,7 @@ javaPlatform {
 }
 
 dependencies {
-  api(platform("cn.taketoday:infra-bom:$infraVersion"))
-  api(platform("cn.taketoday:infra-dependencies:$infraVersion"))
+  api(platform(project(":today-cloud-bom")))
 
   constraints {
 

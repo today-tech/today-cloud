@@ -80,7 +80,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
   final int mtu;
   final int maxFrameLength;
   final int maxInboundPayloadSize;
-  final RequesterResponderSupport requesterResponderSupport;
+  final ChannelSupport channelSupport;
   final DuplexConnection connection;
   final long firstRequest;
 
@@ -115,17 +115,17 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
           int streamId,
           long firstRequestN,
           ByteBuf firstFrame,
-          RequesterResponderSupport requesterResponderSupport,
+          ChannelSupport channelSupport,
           Channel handler) {
     this.streamId = streamId;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.allocator = channelSupport.getAllocator();
+    this.mtu = channelSupport.getMtu();
+    this.maxFrameLength = channelSupport.getMaxFrameLength();
+    this.maxInboundPayloadSize = channelSupport.getMaxInboundPayloadSize();
+    this.channelSupport = channelSupport;
+    this.connection = channelSupport.getDuplexConnection();
+    this.payloadDecoder = channelSupport.getPayloadDecoder();
+    this.requestInterceptor = channelSupport.getRequestInterceptor();
     this.handler = handler;
     this.firstRequest = firstRequestN;
 
@@ -139,16 +139,16 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
           int streamId,
           long firstRequestN,
           Payload firstPayload,
-          RequesterResponderSupport requesterResponderSupport) {
+          ChannelSupport channelSupport) {
     this.streamId = streamId;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.allocator = channelSupport.getAllocator();
+    this.mtu = channelSupport.getMtu();
+    this.maxFrameLength = channelSupport.getMaxFrameLength();
+    this.maxInboundPayloadSize = channelSupport.getMaxInboundPayloadSize();
+    this.channelSupport = channelSupport;
+    this.connection = channelSupport.getDuplexConnection();
+    this.payloadDecoder = channelSupport.getPayloadDecoder();
+    this.requestInterceptor = channelSupport.getRequestInterceptor();
     this.firstRequest = firstRequestN;
     this.firstPayload = firstPayload;
 
@@ -338,7 +338,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
 
     final boolean isOutboundTerminated = isOutboundTerminated(previousState);
     if (isOutboundTerminated) {
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
     }
 
     final ByteBuf cancelFrame = CancelFrameCodec.encode(this.allocator, streamId);
@@ -360,7 +360,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
       // and fragmentation of the first frame was cancelled before
       lazyTerminate(STATE, this);
 
-      this.requesterResponderSupport.remove(this.streamId, this);
+      this.channelSupport.remove(this.streamId, this);
 
       final CompositeByteBuf frames = this.frames;
       if (frames != null) {
@@ -400,7 +400,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
       return previousState;
     }
 
-    this.requesterResponderSupport.remove(this.streamId, this);
+    this.channelSupport.remove(this.streamId, this);
 
     if (isReassembling(previousState)) {
       final CompositeByteBuf frames = this.frames;
@@ -475,7 +475,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
           return;
         }
 
-        this.requesterResponderSupport.remove(this.streamId, this);
+        this.channelSupport.remove(this.streamId, this);
 
         this.connection.sendFrame(
                 streamId,
@@ -531,7 +531,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
       return;
     }
 
-    this.requesterResponderSupport.remove(this.streamId, this);
+    this.channelSupport.remove(this.streamId, this);
 
     if (isReassembling(previousState)) {
       final CompositeByteBuf frames = this.frames;
@@ -575,7 +575,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
 
     final boolean isOutboundTerminated = isOutboundTerminated(previousState);
     if (isOutboundTerminated) {
-      this.requesterResponderSupport.remove(this.streamId, this);
+      this.channelSupport.remove(this.streamId, this);
     }
 
     if (isFirstFrameSent(previousState)) {
@@ -883,7 +883,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
 
     final int streamId = this.streamId;
 
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     if (isReassembling(previousState)) {
       final CompositeByteBuf frames = this.frames;
@@ -939,7 +939,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload>
 
     final boolean isInboundTerminated = isInboundTerminated(previousState);
     if (isInboundTerminated) {
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
     }
 
     final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(this.allocator, streamId);

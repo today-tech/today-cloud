@@ -29,10 +29,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.util.CharsetUtil;
-import io.netty.util.IllegalReferenceCountException;
 import infra.remoting.FrameAssert;
 import infra.remoting.Payload;
 import infra.remoting.PayloadAssert;
@@ -42,13 +38,17 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.test.util.TestDuplexConnection;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.EmptyPayload;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.CharsetUtil;
+import io.netty.util.IllegalReferenceCountException;
 import reactor.core.Scannable;
 import reactor.test.StepVerifier;
 
 import static infra.remoting.core.FragmentationUtils.FRAME_OFFSET;
 import static infra.remoting.core.FragmentationUtils.FRAME_OFFSET_WITH_METADATA;
 import static infra.remoting.core.PayloadValidationUtils.INVALID_PAYLOAD_ERROR_MESSAGE;
-import static infra.remoting.core.TestRequesterResponderSupport.genericPayload;
+import static infra.remoting.core.TestChannelSupport.genericPayload;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public class RequestResponseRequesterMonoTest {
@@ -76,7 +76,7 @@ public class RequestResponseRequesterMonoTest {
   public void frameShouldBeSentOnSubscription(
           BiFunction<RequestResponseRequesterMono, StepVerifier.Step<Payload>, StepVerifier>
                   transformer) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final Payload payload = genericPayload(allocator);
@@ -169,7 +169,7 @@ public class RequestResponseRequesterMonoTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFirstFragment(
-                                                rrm.allocator,
+                                                rrm.channel.allocator,
                                                 64,
                                                 FrameType.REQUEST_RESPONSE,
                                                 1,
@@ -190,7 +190,7 @@ public class RequestResponseRequesterMonoTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFollowsFragment(
-                                                rrm.allocator, 64, 1, false, payload.metadata(), payload.data());
+                                                rrm.channel.allocator, 64, 1, false, payload.metadata(), payload.data());
                                 rrm.handleNext(followingFrame, true, false);
                                 followingFrame.release();
                               })
@@ -205,7 +205,7 @@ public class RequestResponseRequesterMonoTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFollowsFragment(
-                                                rrm.allocator, 64, 1, false, payload.metadata(), payload.data());
+                                                rrm.channel.allocator, 64, 1, false, payload.metadata(), payload.data());
                                 rrm.handleNext(followingFrame, true, false);
                                 followingFrame.release();
                               })
@@ -220,7 +220,7 @@ public class RequestResponseRequesterMonoTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFollowsFragment(
-                                                rrm.allocator, 64, 1, false, payload.metadata(), payload.data());
+                                                rrm.channel.allocator, 64, 1, false, payload.metadata(), payload.data());
                                 rrm.handleNext(followingFrame, false, false);
                                 followingFrame.release();
                               })
@@ -247,7 +247,7 @@ public class RequestResponseRequesterMonoTest {
               ByteBuf[] fragments =
                       new ByteBuf[] {
                               FragmentationUtils.encodeFirstFragment(
-                                      rrm.allocator,
+                                      rrm.channel.allocator,
                                       64,
                                       FrameType.REQUEST_RESPONSE,
                                       1,
@@ -255,9 +255,9 @@ public class RequestResponseRequesterMonoTest {
                                       payload.metadata(),
                                       payload.data()),
                               FragmentationUtils.encodeFollowsFragment(
-                                      rrm.allocator, 64, 1, false, payload.metadata(), payload.data()),
+                                      rrm.channel.allocator, 64, 1, false, payload.metadata(), payload.data()),
                               FragmentationUtils.encodeFollowsFragment(
-                                      rrm.allocator, 64, 1, false, payload.metadata(), payload.data())
+                                      rrm.channel.allocator, 64, 1, false, payload.metadata(), payload.data())
                       };
 
               final StepVerifier stepVerifier =
@@ -321,7 +321,7 @@ public class RequestResponseRequesterMonoTest {
           BiFunction<RequestResponseRequesterMono, StepVerifier.Step<Payload>, StepVerifier>
                   transformer) {
     final int mtu = 64;
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client(mtu);
+    final TestChannelSupport activeStreams = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
 
@@ -431,7 +431,7 @@ public class RequestResponseRequesterMonoTest {
    */
   @Test
   public void shouldBeNoOpsOnCancel() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final Payload payload = ByteBufPayload.create("testData", "testMetadata");
@@ -467,7 +467,7 @@ public class RequestResponseRequesterMonoTest {
   @MethodSource("shouldErrorOnIncorrectRefCntInGivenPayloadSource")
   public void shouldErrorOnIncorrectRefCntInGivenPayload(
           Consumer<RequestResponseRequesterMono> monoConsumer) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     ;
@@ -511,7 +511,7 @@ public class RequestResponseRequesterMonoTest {
    */
   @Test
   public void shouldErrorOnIncorrectRefCntInGivenPayloadLatePhase() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     ;
@@ -546,7 +546,7 @@ public class RequestResponseRequesterMonoTest {
   @Test
   public void shouldErrorOnIncorrectRefCntInGivenPayloadLatePhaseWithFragmentation() {
     final int mtu = 64;
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client(mtu);
+    final TestChannelSupport activeStreams = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     ;
@@ -586,7 +586,7 @@ public class RequestResponseRequesterMonoTest {
   @MethodSource("shouldErrorIfFragmentExitsAllowanceIfFragmentationDisabledSource")
   public void shouldErrorIfFragmentExitsAllowanceIfFragmentationDisabled(
           Consumer<RequestResponseRequesterMono> monoConsumer) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     ;
@@ -643,8 +643,8 @@ public class RequestResponseRequesterMonoTest {
   @ParameterizedTest
   @MethodSource("shouldErrorIfNoAvailabilitySource")
   public void shouldErrorIfNoAvailability(Consumer<RequestResponseRequesterMono> monoConsumer) {
-    final TestRequesterResponderSupport activeStreams =
-            TestRequesterResponderSupport.client(new RuntimeException("test"));
+    final TestChannelSupport activeStreams =
+            TestChannelSupport.client(new RuntimeException("test"));
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final Payload payload = genericPayload(allocator);
 
@@ -686,7 +686,7 @@ public class RequestResponseRequesterMonoTest {
 
   @Test
   public void checkName() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final Payload payload = genericPayload(allocator);
 

@@ -70,10 +70,10 @@ public class RequestChannelRequesterFluxTest {
   @ParameterizedTest
   @ValueSource(strings = { "inbound", "outbound" })
   public void requestNFrameShouldBeSentOnSubscriptionAndThenSeparately(String completionCase) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
     final RequestChannelRequesterFlux requestChannelRequesterFlux =
@@ -163,13 +163,13 @@ public class RequestChannelRequesterFluxTest {
     // state machine check
     stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasFirstFrameSentFlag();
 
-    Payload nextPayload = TestRequesterResponderSupport.genericPayload(allocator);
+    Payload nextPayload = TestChannelSupport.genericPayload(allocator);
     requestChannelRequesterFlux.handlePayload(nextPayload);
 
     int mtu = ThreadLocalRandom.current().nextInt(64, 256);
-    Payload randomPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload randomPayload = TestChannelSupport.randomPayload(allocator);
     ArrayList<ByteBuf> fragments =
-            TestRequesterResponderSupport.prepareFragments(allocator, mtu, randomPayload);
+            TestChannelSupport.prepareFragments(allocator, mtu, randomPayload);
 
     ByteBuf firstFragment = fragments.remove(0);
     requestChannelRequesterFlux.handleNext(firstFragment, true, false);
@@ -252,7 +252,7 @@ public class RequestChannelRequesterFluxTest {
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
   public void streamShouldErrorWithoutInitializingRemoteStreamIfSourceIsEmpty(boolean doRequest) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
@@ -297,7 +297,7 @@ public class RequestChannelRequesterFluxTest {
   @ValueSource(booleans = { true, false })
   public void streamShouldPropagateErrorWithoutInitializingRemoteStreamIfTheFirstSignalIsError(
           boolean doRequest) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
@@ -341,7 +341,7 @@ public class RequestChannelRequesterFluxTest {
   @ParameterizedTest
   @ValueSource(strings = { "inbound", "outbound" })
   public void streamShouldBeInHalfClosedStateOnTheInboundCancellation(String terminationMode) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
@@ -367,9 +367,9 @@ public class RequestChannelRequesterFluxTest {
     stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasNoFirstFrameSentFlag();
     activeStreams.assertNoActiveStreams();
 
-    Payload payload1 = TestRequesterResponderSupport.randomPayload(allocator);
-    Payload payload2 = TestRequesterResponderSupport.randomPayload(allocator);
-    Payload payload3 = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload payload1 = TestChannelSupport.randomPayload(allocator);
+    Payload payload2 = TestChannelSupport.randomPayload(allocator);
+    Payload payload3 = TestChannelSupport.randomPayload(allocator);
 
     publisher.next(payload1.retain());
 
@@ -440,7 +440,7 @@ public class RequestChannelRequesterFluxTest {
   @ParameterizedTest
   @ValueSource(strings = { "inbound", "outbound" })
   public void errorShouldTerminateExecution(String terminationMode) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
@@ -466,9 +466,9 @@ public class RequestChannelRequesterFluxTest {
     stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasNoFirstFrameSentFlag();
     activeStreams.assertNoActiveStreams();
 
-    Payload payload1 = TestRequesterResponderSupport.randomPayload(allocator);
-    Payload payload2 = TestRequesterResponderSupport.randomPayload(allocator);
-    Payload payload3 = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload payload1 = TestChannelSupport.randomPayload(allocator);
+    Payload payload2 = TestChannelSupport.randomPayload(allocator);
+    Payload payload3 = TestChannelSupport.randomPayload(allocator);
 
     publisher.next(payload1.retain());
 
@@ -523,7 +523,7 @@ public class RequestChannelRequesterFluxTest {
 
   @Test
   public void failOnOverflow() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
@@ -549,7 +549,7 @@ public class RequestChannelRequesterFluxTest {
     stateAssert.hasSubscribedFlag().hasRequestN(1).hasNoFirstFrameSentFlag();
     activeStreams.assertNoActiveStreams();
 
-    Payload payload1 = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload payload1 = TestChannelSupport.randomPayload(allocator);
 
     publisher.next(payload1.retain());
 
@@ -565,10 +565,10 @@ public class RequestChannelRequesterFluxTest {
 
     publisher.assertMaxRequested(1);
 
-    Payload nextPayload = TestRequesterResponderSupport.genericPayload(allocator);
+    Payload nextPayload = TestChannelSupport.genericPayload(allocator);
     requestChannelRequesterFlux.handlePayload(nextPayload);
 
-    Payload unrequestedPayload = TestRequesterResponderSupport.genericPayload(allocator);
+    Payload unrequestedPayload = TestChannelSupport.genericPayload(allocator);
     requestChannelRequesterFlux.handlePayload(unrequestedPayload);
 
     final ByteBuf cancelFrame = sender.awaitFrame();
@@ -626,7 +626,7 @@ public class RequestChannelRequesterFluxTest {
     Hooks.onErrorDropped(droppedErrors::add);
     try {
       for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-        final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+        final TestChannelSupport activeStreams = TestChannelSupport.client();
         final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
         final TestDuplexConnection sender = activeStreams.getDuplexConnection();
         final TestPublisher<Payload> publisher =
@@ -651,7 +651,7 @@ public class RequestChannelRequesterFluxTest {
         stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasNoFirstFrameSentFlag();
         activeStreams.assertNoActiveStreams();
 
-        Payload requestPayload = TestRequesterResponderSupport.randomPayload(allocator);
+        Payload requestPayload = TestChannelSupport.randomPayload(allocator);
         publisher.next(requestPayload);
 
         stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasFirstFrameSentFlag();
@@ -663,9 +663,9 @@ public class RequestChannelRequesterFluxTest {
 
         requestChannelRequesterFlux.handleRequestN(Long.MAX_VALUE);
 
-        Payload responsePayload1 = TestRequesterResponderSupport.randomPayload(allocator);
-        Payload responsePayload2 = TestRequesterResponderSupport.randomPayload(allocator);
-        Payload responsePayload3 = TestRequesterResponderSupport.randomPayload(allocator);
+        Payload responsePayload1 = TestChannelSupport.randomPayload(allocator);
+        Payload responsePayload2 = TestChannelSupport.randomPayload(allocator);
+        Payload responsePayload3 = TestChannelSupport.randomPayload(allocator);
 
         Payload releasedPayload = ByteBufPayload.create(Unpooled.EMPTY_BUFFER);
         releasedPayload.release();
@@ -798,7 +798,7 @@ public class RequestChannelRequesterFluxTest {
   public void shouldRemoveItselfFromActiveStreamsWhenInboundAndOutboundAreTerminated(
           String outboundTerminationMode) {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-      final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+      final TestChannelSupport activeStreams = TestChannelSupport.client();
       final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
       final TestDuplexConnection sender = activeStreams.getDuplexConnection();
       final TestPublisher<Payload> publisher =
@@ -823,7 +823,7 @@ public class RequestChannelRequesterFluxTest {
       stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasNoFirstFrameSentFlag();
       activeStreams.assertNoActiveStreams();
 
-      Payload requestPayload = TestRequesterResponderSupport.randomPayload(allocator);
+      Payload requestPayload = TestChannelSupport.randomPayload(allocator);
       publisher.next(requestPayload);
 
       stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasFirstFrameSentFlag();

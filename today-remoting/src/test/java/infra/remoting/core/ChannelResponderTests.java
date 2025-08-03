@@ -82,11 +82,11 @@ import reactor.test.util.RaceTestUtils;
 
 import static infra.remoting.core.PayloadValidationUtils.INVALID_PAYLOAD_ERROR_MESSAGE;
 import static infra.remoting.core.ReassemblyUtils.ILLEGAL_REASSEMBLED_PAYLOAD_SIZE;
-import static infra.remoting.core.TestRequesterResponderSupport.fixedSizePayload;
-import static infra.remoting.core.TestRequesterResponderSupport.genericPayload;
-import static infra.remoting.core.TestRequesterResponderSupport.prepareFragments;
-import static infra.remoting.core.TestRequesterResponderSupport.randomMetadataOnlyPayload;
-import static infra.remoting.core.TestRequesterResponderSupport.randomPayload;
+import static infra.remoting.core.TestChannelSupport.fixedSizePayload;
+import static infra.remoting.core.TestChannelSupport.genericPayload;
+import static infra.remoting.core.TestChannelSupport.prepareFragments;
+import static infra.remoting.core.TestChannelSupport.randomMetadataOnlyPayload;
+import static infra.remoting.core.TestChannelSupport.randomPayload;
 import static infra.remoting.frame.FrameHeaderCodec.frameType;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 import static infra.remoting.frame.FrameType.COMPLETE;
@@ -894,8 +894,8 @@ public class ChannelResponderTests {
     if (frameType != REQUEST_FNF) {
       FrameAssert.assertThat(rule.connection.getSent().poll())
               .typeOf(frameType == REQUEST_RESPONSE ? NEXT_COMPLETE : NEXT)
-              .hasData(TestRequesterResponderSupport.DATA_CONTENT)
-              .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
+              .hasData(TestChannelSupport.DATA_CONTENT)
+              .hasMetadata(TestChannelSupport.METADATA_CONTENT)
               .hasNoLeaks();
       if (frameType != REQUEST_RESPONSE) {
         FrameAssert.assertThat(rule.connection.getSent().poll()).typeOf(COMPLETE).hasNoLeaks();
@@ -952,8 +952,8 @@ public class ChannelResponderTests {
     if (frameType != REQUEST_FNF) {
       FrameAssert.assertThat(rule.connection.getSent().poll())
               .typeOf(frameType == REQUEST_RESPONSE ? NEXT_COMPLETE : NEXT)
-              .hasData(TestRequesterResponderSupport.DATA_CONTENT)
-              .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
+              .hasData(TestChannelSupport.DATA_CONTENT)
+              .hasMetadata(TestChannelSupport.METADATA_CONTENT)
               .hasNoLeaks();
       if (frameType != REQUEST_RESPONSE) {
         FrameAssert.assertThat(rule.connection.getSent().poll()).typeOf(COMPLETE).hasNoLeaks();

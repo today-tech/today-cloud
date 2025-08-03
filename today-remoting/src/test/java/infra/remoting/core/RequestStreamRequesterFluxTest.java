@@ -30,10 +30,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.util.CharsetUtil;
-import io.netty.util.IllegalReferenceCountException;
 import infra.remoting.FrameAssert;
 import infra.remoting.Payload;
 import infra.remoting.PayloadAssert;
@@ -44,6 +40,10 @@ import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.TestDuplexConnection;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.EmptyPayload;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.CharsetUtil;
+import io.netty.util.IllegalReferenceCountException;
 import reactor.core.Scannable;
 import reactor.test.StepVerifier;
 
@@ -81,10 +81,10 @@ public class RequestStreamRequesterFluxTest {
    */
   @Test
   public void requestNFrameShouldBeSentOnSubscriptionAndThenSeparately() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
 
     final RequestStreamRequesterFlux requestStreamRequesterFlux =
             new RequestStreamRequesterFlux(payload, activeStreams);
@@ -166,9 +166,9 @@ public class RequestStreamRequesterFluxTest {
     stateAssert.hasSubscribedFlag().hasRequestN(Integer.MAX_VALUE).hasFirstFrameSentFlag();
 
     int mtu = ThreadLocalRandom.current().nextInt(64, 256);
-    Payload randomPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload randomPayload = TestChannelSupport.randomPayload(allocator);
     ArrayList<ByteBuf> fragments =
-            TestRequesterResponderSupport.prepareFragments(allocator, mtu, randomPayload);
+            TestChannelSupport.prepareFragments(allocator, mtu, randomPayload);
     ByteBuf firstFragment = fragments.remove(0);
     requestStreamRequesterFlux.handleNext(firstFragment, true, false);
     firstFragment.release();
@@ -195,7 +195,7 @@ public class RequestStreamRequesterFluxTest {
             .hasFirstFrameSentFlag()
             .hasNoReassemblingFlag();
 
-    Payload finalRandomPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload finalRandomPayload = TestChannelSupport.randomPayload(allocator);
     requestStreamRequesterFlux.handlePayload(finalRandomPayload);
     requestStreamRequesterFlux.handleComplete();
 
@@ -228,10 +228,10 @@ public class RequestStreamRequesterFluxTest {
    */
   @Test
   public void requestNFrameShouldBeSentExactlyOnceIfItIsMaxAllowed() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
 
     final RequestStreamRequesterFlux requestStreamRequesterFlux =
             new RequestStreamRequesterFlux(payload, activeStreams);
@@ -333,10 +333,10 @@ public class RequestStreamRequesterFluxTest {
   public void frameShouldBeSentOnFirstRequest(
           BiFunction<RequestStreamRequesterFlux, StepVerifier.Step<Payload>, StepVerifier>
                   transformer) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
 
     final RequestStreamRequesterFlux requestStreamRequesterFlux =
             new RequestStreamRequesterFlux(payload, activeStreams);
@@ -504,7 +504,7 @@ public class RequestStreamRequesterFluxTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFirstFragment(
-                                                rsf.allocator,
+                                                rsf.channel.allocator,
                                                 64,
                                                 FrameType.NEXT,
                                                 1,
@@ -526,7 +526,7 @@ public class RequestStreamRequesterFluxTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFollowsFragment(
-                                                rsf.allocator, 64, 1, false, payload.metadata(), payload.data());
+                                                rsf.channel.allocator, 64, 1, false, payload.metadata(), payload.data());
                                 rsf.handleNext(followingFrame, true, false);
                                 followingFrame.release();
                               })
@@ -542,7 +542,7 @@ public class RequestStreamRequesterFluxTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFollowsFragment(
-                                                rsf.allocator, 64, 1, false, payload.metadata(), payload.data());
+                                                rsf.channel.allocator, 64, 1, false, payload.metadata(), payload.data());
                                 rsf.handleNext(followingFrame, true, false);
                                 followingFrame.release();
                               })
@@ -567,7 +567,7 @@ public class RequestStreamRequesterFluxTest {
                               () -> {
                                 final ByteBuf followingFrame =
                                         FragmentationUtils.encodeFollowsFragment(
-                                                rsf.allocator, 64, 1, false, payload.metadata(), payload.data());
+                                                rsf.channel.allocator, 64, 1, false, payload.metadata(), payload.data());
                                 rsf.handleNext(followingFrame, false, false);
                                 followingFrame.release();
                               })
@@ -632,7 +632,7 @@ public class RequestStreamRequesterFluxTest {
               ByteBuf[] fragments =
                       new ByteBuf[] {
                               FragmentationUtils.encodeFirstFragment(
-                                      rsf.allocator,
+                                      rsf.channel.allocator,
                                       64,
                                       FrameType.NEXT,
                                       1,
@@ -640,9 +640,9 @@ public class RequestStreamRequesterFluxTest {
                                       payload.metadata(),
                                       payload.data()),
                               FragmentationUtils.encodeFollowsFragment(
-                                      rsf.allocator, 64, 1, false, payload.metadata(), payload.data()),
+                                      rsf.channel.allocator, 64, 1, false, payload.metadata(), payload.data()),
                               FragmentationUtils.encodeFollowsFragment(
-                                      rsf.allocator, 64, 1, false, payload.metadata(), payload.data())
+                                      rsf.channel.allocator, 64, 1, false, payload.metadata(), payload.data())
                       };
 
               final StepVerifier stepVerifier =
@@ -765,7 +765,7 @@ public class RequestStreamRequesterFluxTest {
           BiFunction<RequestStreamRequesterFlux, StepVerifier.Step<Payload>, StepVerifier>
                   transformer) {
     final int mtu = 64;
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client(mtu);
+    final TestChannelSupport activeStreams = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
 
@@ -883,7 +883,7 @@ public class RequestStreamRequesterFluxTest {
   @MethodSource("shouldErrorOnIncorrectRefCntInGivenPayloadSource")
   public void shouldErrorOnIncorrectRefCntInGivenPayload(
           Consumer<RequestStreamRequesterFlux> monoConsumer) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
     final Payload payload = ByteBufPayload.create("");
@@ -926,7 +926,7 @@ public class RequestStreamRequesterFluxTest {
    */
   @Test
   public void shouldErrorOnIncorrectRefCntInGivenPayloadLatePhase() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
 
@@ -971,7 +971,7 @@ public class RequestStreamRequesterFluxTest {
   @Test
   public void shouldErrorOnIncorrectRefCntInGivenPayloadLatePhaseWithFragmentation() {
     final int mtu = 64;
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client(mtu);
+    final TestChannelSupport activeStreams = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
 
@@ -1021,7 +1021,7 @@ public class RequestStreamRequesterFluxTest {
   @MethodSource("shouldErrorIfFragmentExitsAllowanceIfFragmentationDisabledSource")
   public void shouldErrorIfFragmentExitsAllowanceIfFragmentationDisabled(
           Consumer<RequestStreamRequesterFlux> monoConsumer) {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
 
@@ -1084,10 +1084,10 @@ public class RequestStreamRequesterFluxTest {
   @ParameterizedTest
   @MethodSource("shouldErrorIfNoAvailabilitySource")
   public void shouldErrorIfNoAvailability(Consumer<RequestStreamRequesterFlux> monoConsumer) {
-    final TestRequesterResponderSupport activeStreams =
-            TestRequesterResponderSupport.client(new RuntimeException("test"));
+    final TestChannelSupport activeStreams =
+            TestChannelSupport.client(new RuntimeException("test"));
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
 
     final RequestStreamRequesterFlux requestStreamRequesterFlux =
             new RequestStreamRequesterFlux(payload, activeStreams);
@@ -1134,10 +1134,10 @@ public class RequestStreamRequesterFluxTest {
 
   @Test
   public void failOnOverflow() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
     final TestDuplexConnection sender = activeStreams.getDuplexConnection();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
 
     final RequestStreamRequesterFlux requestStreamRequesterFlux =
             new RequestStreamRequesterFlux(payload, activeStreams);
@@ -1181,10 +1181,10 @@ public class RequestStreamRequesterFluxTest {
 
     Assertions.assertThat(sender.isEmpty()).isTrue();
 
-    Payload requestedPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload requestedPayload = TestChannelSupport.randomPayload(allocator);
     requestStreamRequesterFlux.handlePayload(requestedPayload);
 
-    Payload unrequestedPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload unrequestedPayload = TestChannelSupport.randomPayload(allocator);
     requestStreamRequesterFlux.handlePayload(unrequestedPayload);
 
     final ByteBuf cancelFrame = sender.awaitFrame();
@@ -1215,9 +1215,9 @@ public class RequestStreamRequesterFluxTest {
 
   @Test
   public void checkName() {
-    final TestRequesterResponderSupport activeStreams = TestRequesterResponderSupport.client();
+    final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final Payload payload = TestRequesterResponderSupport.genericPayload(allocator);
+    final Payload payload = TestChannelSupport.genericPayload(allocator);
 
     final RequestStreamRequesterFlux requestStreamRequesterFlux =
             new RequestStreamRequesterFlux(payload, activeStreams);

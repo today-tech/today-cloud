@@ -58,13 +58,13 @@ public class ResponderOperatorsCommonTest {
     ResponderFrameHandler responseOperator(
             long initialRequestN,
             Payload firstPayload,
-            TestRequesterResponderSupport streamManager,
+            TestChannelSupport streamManager,
             Channel handler);
 
     ResponderFrameHandler responseOperator(
             long initialRequestN,
             ByteBuf firstFragment,
-            TestRequesterResponderSupport streamManager,
+            TestChannelSupport streamManager,
             Channel handler);
   }
 
@@ -85,7 +85,7 @@ public class ResponderOperatorsCommonTest {
               public ResponderFrameHandler responseOperator(
                       long initialRequestN,
                       ByteBuf firstFragment,
-                      TestRequesterResponderSupport streamManager,
+                      TestChannelSupport streamManager,
                       Channel handler) {
                 int streamId = streamManager.getNextStreamId();
                 RequestResponseResponderSubscriber subscriber =
@@ -105,7 +105,7 @@ public class ResponderOperatorsCommonTest {
               public ResponderFrameHandler responseOperator(
                       long initialRequestN,
                       Payload firstPayload,
-                      TestRequesterResponderSupport streamManager,
+                      TestChannelSupport streamManager,
                       Channel handler) {
                 int streamId = streamManager.getNextStreamId();
                 RequestResponseResponderSubscriber subscriber =
@@ -140,7 +140,7 @@ public class ResponderOperatorsCommonTest {
               public ResponderFrameHandler responseOperator(
                       long initialRequestN,
                       ByteBuf firstFragment,
-                      TestRequesterResponderSupport streamManager,
+                      TestChannelSupport streamManager,
                       Channel handler) {
                 int streamId = streamManager.getNextStreamId();
                 RequestStreamResponderSubscriber subscriber =
@@ -160,7 +160,7 @@ public class ResponderOperatorsCommonTest {
               public ResponderFrameHandler responseOperator(
                       long initialRequestN,
                       Payload firstPayload,
-                      TestRequesterResponderSupport streamManager,
+                      TestChannelSupport streamManager,
                       Channel handler) {
                 int streamId = streamManager.getNextStreamId();
                 RequestStreamResponderSubscriber subscriber =
@@ -195,7 +195,7 @@ public class ResponderOperatorsCommonTest {
               public ResponderFrameHandler responseOperator(
                       long initialRequestN,
                       ByteBuf firstFragment,
-                      TestRequesterResponderSupport streamManager,
+                      TestChannelSupport streamManager,
                       Channel handler) {
                 int streamId = streamManager.getNextStreamId();
                 RequestChannelResponderSubscriber subscriber =
@@ -215,7 +215,7 @@ public class ResponderOperatorsCommonTest {
               public ResponderFrameHandler responseOperator(
                       long initialRequestN,
                       Payload firstPayload,
-                      TestRequesterResponderSupport streamManager,
+                      TestChannelSupport streamManager,
                       Channel handler) {
                 int streamId = streamManager.getNextStreamId();
                 RequestChannelResponderSubscriber responderSubscriber =
@@ -285,8 +285,8 @@ public class ResponderOperatorsCommonTest {
     Assumptions.assumeThat(scenario.requestType()).isNotIn(REQUEST_FNF, METADATA_PUSH);
 
     TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    TestRequesterResponderSupport testRequesterResponderSupport =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    TestChannelSupport testRequesterResponderSupport =
+            TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = testRequesterResponderSupport.getAllocator();
     final TestDuplexConnection sender = testRequesterResponderSupport.getDuplexConnection();
     TestPublisher<Payload> testPublisher = TestPublisher.create();
@@ -295,11 +295,11 @@ public class ResponderOperatorsCommonTest {
     ResponderFrameHandler responderFrameHandler =
             scenario.responseOperator(
                     Long.MAX_VALUE,
-                    TestRequesterResponderSupport.genericPayload(allocator),
+                    TestChannelSupport.genericPayload(allocator),
                     testRequesterResponderSupport,
                     testHandler);
 
-    Payload randomPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload randomPayload = TestChannelSupport.randomPayload(allocator);
     testPublisher.assertWasSubscribed();
     testPublisher.next(randomPayload.retain());
     testPublisher.complete();
@@ -353,17 +353,17 @@ public class ResponderOperatorsCommonTest {
     Assumptions.assumeThat(scenario.requestType()).isNotIn(REQUEST_FNF, METADATA_PUSH);
 
     TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    TestRequesterResponderSupport testRequesterResponderSupport =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    TestChannelSupport testRequesterResponderSupport =
+            TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = testRequesterResponderSupport.getAllocator();
     final TestDuplexConnection sender = testRequesterResponderSupport.getDuplexConnection();
     TestPublisher<Payload> testPublisher = TestPublisher.create();
     TestHandler testHandler = new TestHandler(testPublisher, new AssertSubscriber<>(0));
 
     int mtu = ThreadLocalRandom.current().nextInt(64, 256);
-    Payload firstPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload firstPayload = TestChannelSupport.randomPayload(allocator);
     ArrayList<ByteBuf> fragments =
-            TestRequesterResponderSupport.prepareFragments(allocator, mtu, firstPayload);
+            TestChannelSupport.prepareFragments(allocator, mtu, firstPayload);
 
     ByteBuf firstFragment = fragments.remove(0);
     ResponderFrameHandler responderFrameHandler =
@@ -381,7 +381,7 @@ public class ResponderOperatorsCommonTest {
       fragment.release();
     }
 
-    Payload randomPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload randomPayload = TestChannelSupport.randomPayload(allocator);
     testPublisher.assertWasSubscribed();
     testPublisher.next(randomPayload.retain());
     testPublisher.complete();
@@ -435,16 +435,16 @@ public class ResponderOperatorsCommonTest {
     Assumptions.assumeThat(scenario.requestType()).isNotIn(REQUEST_FNF, METADATA_PUSH);
 
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    TestRequesterResponderSupport testRequesterResponderSupport =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    TestChannelSupport testRequesterResponderSupport =
+            TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = testRequesterResponderSupport.getAllocator();
     TestPublisher<Payload> testPublisher = TestPublisher.create();
     TestHandler testHandler = new TestHandler(testPublisher, new AssertSubscriber<>(0));
 
     int mtu = ThreadLocalRandom.current().nextInt(64, 256);
-    Payload firstPayload = TestRequesterResponderSupport.randomPayload(allocator);
+    Payload firstPayload = TestChannelSupport.randomPayload(allocator);
     ArrayList<ByteBuf> fragments =
-            TestRequesterResponderSupport.prepareFragments(allocator, mtu, firstPayload);
+            TestChannelSupport.prepareFragments(allocator, mtu, firstPayload);
     firstPayload.release();
 
     ByteBuf firstFragment = fragments.remove(0);

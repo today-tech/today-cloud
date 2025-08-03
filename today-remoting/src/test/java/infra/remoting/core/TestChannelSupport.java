@@ -39,14 +39,14 @@ import reactor.core.Exceptions;
 
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
-final class TestRequesterResponderSupport extends RequesterResponderSupport implements Channel {
+final class TestChannelSupport extends ChannelSupport implements Channel {
 
   static final String DATA_CONTENT = "testData";
   static final String METADATA_CONTENT = "testMetadata";
 
   final Throwable error;
 
-  TestRequesterResponderSupport(@Nullable Throwable error, StreamIdProvider streamIdProvider, DuplexConnection connection,
+  TestChannelSupport(@Nullable Throwable error, StreamIdProvider streamIdProvider, DuplexConnection connection,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, @Nullable RequestInterceptor requestInterceptor) {
     super(mtu, maxFrameLength, maxInboundPayloadSize, PayloadDecoder.ZERO_COPY, connection, streamIdProvider, (__) -> requestInterceptor);
     this.error = error;
@@ -166,7 +166,7 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
     return nextStreamId;
   }
 
-  public static TestRequesterResponderSupport client(
+  public static TestChannelSupport client(
           @Nullable Throwable e, @Nullable RequestInterceptor requestInterceptor) {
     return client(
             new TestDuplexConnection(
@@ -178,11 +178,11 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
             e);
   }
 
-  public static TestRequesterResponderSupport client(@Nullable Throwable e) {
+  public static TestChannelSupport client(@Nullable Throwable e) {
     return client(0, FRAME_LENGTH_MASK, Integer.MAX_VALUE, e);
   }
 
-  public static TestRequesterResponderSupport client(
+  public static TestChannelSupport client(
           int mtu, int maxFrameLength, int maxInboundPayloadSize, @Nullable Throwable e) {
     return client(
             new TestDuplexConnection(
@@ -194,7 +194,7 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
             e);
   }
 
-  public static TestRequesterResponderSupport client(
+  public static TestChannelSupport client(
           TestDuplexConnection duplexConnection,
           int mtu,
           int maxFrameLength,
@@ -202,7 +202,7 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
     return client(duplexConnection, mtu, maxFrameLength, maxInboundPayloadSize, null);
   }
 
-  public static TestRequesterResponderSupport client(
+  public static TestChannelSupport client(
           TestDuplexConnection duplexConnection,
           int mtu,
           int maxFrameLength,
@@ -212,14 +212,14 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
             duplexConnection, mtu, maxFrameLength, maxInboundPayloadSize, requestInterceptor, null);
   }
 
-  public static TestRequesterResponderSupport client(
+  public static TestChannelSupport client(
           TestDuplexConnection duplexConnection,
           int mtu,
           int maxFrameLength,
           int maxInboundPayloadSize,
           @Nullable RequestInterceptor requestInterceptor,
           @Nullable Throwable e) {
-    return new TestRequesterResponderSupport(
+    return new TestChannelSupport(
             e,
             StreamIdProvider.forClient(),
             duplexConnection,
@@ -229,24 +229,24 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
             requestInterceptor);
   }
 
-  public static TestRequesterResponderSupport client(
+  public static TestChannelSupport client(
           int mtu, int maxFrameLength, int maxInboundPayloadSize) {
     return client(mtu, maxFrameLength, maxInboundPayloadSize, null);
   }
 
-  public static TestRequesterResponderSupport client(int mtu, int maxFrameLength) {
+  public static TestChannelSupport client(int mtu, int maxFrameLength) {
     return client(mtu, maxFrameLength, Integer.MAX_VALUE);
   }
 
-  public static TestRequesterResponderSupport client(int mtu) {
+  public static TestChannelSupport client(int mtu) {
     return client(mtu, FRAME_LENGTH_MASK);
   }
 
-  public static TestRequesterResponderSupport client() {
+  public static TestChannelSupport client() {
     return client(0);
   }
 
-  public static TestRequesterResponderSupport client(RequestInterceptor requestInterceptor) {
+  public static TestChannelSupport client(RequestInterceptor requestInterceptor) {
     return client(
             new TestDuplexConnection(
                     LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT)),
@@ -256,12 +256,12 @@ final class TestRequesterResponderSupport extends RequesterResponderSupport impl
             requestInterceptor);
   }
 
-  public TestRequesterResponderSupport assertNoActiveStreams() {
+  public TestChannelSupport assertNoActiveStreams() {
     Assertions.assertThat(activeStreams).isEmpty();
     return this;
   }
 
-  public TestRequesterResponderSupport assertHasStream(int i, FrameHandler stream) {
+  public TestChannelSupport assertHasStream(int i, FrameHandler stream) {
     Assertions.assertThat(activeStreams).containsEntry(i, stream);
     return this;
   }

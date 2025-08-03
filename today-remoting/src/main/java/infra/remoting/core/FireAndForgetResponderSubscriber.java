@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
+
 package infra.remoting.core;
 
 import org.reactivestreams.Subscription;
@@ -33,8 +34,7 @@ import io.netty.util.ReferenceCountUtil;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
 
-final class FireAndForgetResponderSubscriber
-        implements CoreSubscriber<Void>, ResponderFrameHandler {
+final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, ResponderFrameHandler {
 
   static final Logger logger = LoggerFactory.getLogger(FireAndForgetResponderSubscriber.class);
 
@@ -43,7 +43,9 @@ final class FireAndForgetResponderSubscriber
   final int streamId;
   final ByteBufAllocator allocator;
   final PayloadDecoder payloadDecoder;
-  final RequesterResponderSupport requesterResponderSupport;
+
+  final ChannelSupport channel;
+
   final Channel handler;
   final int maxInboundPayloadSize;
 
@@ -57,40 +59,34 @@ final class FireAndForgetResponderSubscriber
     this.allocator = null;
     this.payloadDecoder = null;
     this.maxInboundPayloadSize = 0;
-    this.requesterResponderSupport = null;
+    this.channel = null;
     this.handler = null;
     this.requestInterceptor = null;
     this.frames = null;
   }
 
-  FireAndForgetResponderSubscriber(
-          int streamId, RequesterResponderSupport requesterResponderSupport) {
+  FireAndForgetResponderSubscriber(int streamId, ChannelSupport channel) {
     this.streamId = streamId;
     this.allocator = null;
     this.payloadDecoder = null;
     this.maxInboundPayloadSize = 0;
-    this.requesterResponderSupport = null;
+    this.channel = null;
     this.handler = null;
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.requestInterceptor = channel.getRequestInterceptor();
     this.frames = null;
   }
 
-  FireAndForgetResponderSubscriber(
-          int streamId,
-          ByteBuf firstFrame,
-          RequesterResponderSupport requesterResponderSupport,
-          Channel handler) {
+  FireAndForgetResponderSubscriber(int streamId, ByteBuf firstFrame, ChannelSupport channel, Channel handler) {
     this.streamId = streamId;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
+    this.allocator = channel.getAllocator();
+    this.payloadDecoder = channel.getPayloadDecoder();
+    this.maxInboundPayloadSize = channel.getMaxInboundPayloadSize();
+    this.channel = channel;
     this.handler = handler;
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.requestInterceptor = channel.getRequestInterceptor();
 
-    this.frames =
-            ReassemblyUtils.addFollowingFrame(
-                    allocator.compositeBuffer(), firstFrame, true, maxInboundPayloadSize);
+    this.frames = ReassemblyUtils.addFollowingFrame(
+            allocator.compositeBuffer(), firstFrame, true, maxInboundPayloadSize);
   }
 
   @Override
@@ -129,7 +125,7 @@ final class FireAndForgetResponderSubscriber
     }
     catch (IllegalStateException t) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channel.remove(streamId, this);
 
       this.frames = null;
       frames.release();
@@ -144,7 +140,7 @@ final class FireAndForgetResponderSubscriber
     }
 
     if (!hasFollows) {
-      this.requesterResponderSupport.remove(this.streamId, this);
+      this.channel.remove(this.streamId, this);
       this.frames = null;
 
       Payload payload;
@@ -174,7 +170,7 @@ final class FireAndForgetResponderSubscriber
     final CompositeByteBuf frames = this.frames;
     if (frames != null) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channel.remove(streamId, this);
 
       this.frames = null;
       frames.release();

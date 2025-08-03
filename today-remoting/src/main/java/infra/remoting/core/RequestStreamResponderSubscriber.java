@@ -58,7 +58,7 @@ final class RequestStreamResponderSubscriber
   final int mtu;
   final int maxFrameLength;
   final int maxInboundPayloadSize;
-  final RequesterResponderSupport requesterResponderSupport;
+  final ChannelSupport channelSupport;
   final DuplexConnection connection;
 
   @Nullable
@@ -78,18 +78,18 @@ final class RequestStreamResponderSubscriber
           int streamId,
           long firstRequest,
           ByteBuf firstFrame,
-          RequesterResponderSupport requesterResponderSupport,
+          ChannelSupport channelSupport,
           Channel handler) {
     this.streamId = streamId;
     this.firstRequest = firstRequest;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.allocator = channelSupport.getAllocator();
+    this.mtu = channelSupport.getMtu();
+    this.maxFrameLength = channelSupport.getMaxFrameLength();
+    this.maxInboundPayloadSize = channelSupport.getMaxInboundPayloadSize();
+    this.channelSupport = channelSupport;
+    this.connection = channelSupport.getDuplexConnection();
+    this.payloadDecoder = channelSupport.getPayloadDecoder();
+    this.requestInterceptor = channelSupport.getRequestInterceptor();
     this.handler = handler;
     this.frames =
             ReassemblyUtils.addFollowingFrame(
@@ -97,16 +97,16 @@ final class RequestStreamResponderSubscriber
   }
 
   public RequestStreamResponderSubscriber(
-          int streamId, long firstRequest, RequesterResponderSupport requesterResponderSupport) {
+          int streamId, long firstRequest, ChannelSupport channelSupport) {
     this.streamId = streamId;
     this.firstRequest = firstRequest;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.allocator = channelSupport.getAllocator();
+    this.mtu = channelSupport.getMtu();
+    this.maxFrameLength = channelSupport.getMaxFrameLength();
+    this.maxInboundPayloadSize = channelSupport.getMaxInboundPayloadSize();
+    this.channelSupport = channelSupport;
+    this.connection = channelSupport.getDuplexConnection();
+    this.requestInterceptor = channelSupport.getRequestInterceptor();
 
     this.payloadDecoder = null;
     this.handler = null;
@@ -148,7 +148,7 @@ final class RequestStreamResponderSubscriber
         final ByteBuf errorFrame = ErrorFrameCodec.encode(allocator, streamId, e);
         sender.sendFrame(streamId, errorFrame);
 
-        this.requesterResponderSupport.remove(streamId, this);
+        this.channelSupport.remove(streamId, this);
 
         final RequestInterceptor requestInterceptor = this.requestInterceptor;
         if (requestInterceptor != null) {
@@ -169,7 +169,7 @@ final class RequestStreamResponderSubscriber
                       new CanceledException("Failed to validate payload. Cause" + e.getMessage()));
       sender.sendFrame(streamId, errorFrame);
 
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
 
       final RequestInterceptor requestInterceptor = this.requestInterceptor;
       if (requestInterceptor != null) {
@@ -186,7 +186,7 @@ final class RequestStreamResponderSubscriber
         return;
       }
 
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
 
       final RequestInterceptor requestInterceptor = this.requestInterceptor;
       if (requestInterceptor != null) {
@@ -236,7 +236,7 @@ final class RequestStreamResponderSubscriber
     final ByteBuf errorFrame = ErrorFrameCodec.encode(this.allocator, streamId, t);
     this.connection.sendFrame(streamId, errorFrame);
 
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     final RequestInterceptor requestInterceptor = this.requestInterceptor;
     if (requestInterceptor != null) {
@@ -261,7 +261,7 @@ final class RequestStreamResponderSubscriber
     final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(this.allocator, streamId);
     this.connection.sendFrame(streamId, completeFrame);
 
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     final RequestInterceptor requestInterceptor = this.requestInterceptor;
     if (requestInterceptor != null) {
@@ -287,7 +287,7 @@ final class RequestStreamResponderSubscriber
       S.lazySet(this, Operators.cancelledSubscription());
 
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
 
       final CompositeByteBuf frames = this.frames;
       if (frames != null) {
@@ -307,7 +307,7 @@ final class RequestStreamResponderSubscriber
     }
 
     final int streamId = this.streamId;
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     currentSubscription.cancel();
 
@@ -346,7 +346,7 @@ final class RequestStreamResponderSubscriber
                       new CanceledException("Failed to reassemble payload. Cause: " + e.getMessage()));
       this.connection.sendFrame(streamId, errorFrame);
 
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
 
       final RequestInterceptor requestInterceptor = this.requestInterceptor;
       if (requestInterceptor != null) {
@@ -380,7 +380,7 @@ final class RequestStreamResponderSubscriber
                         new CanceledException("Failed to reassemble payload. Cause: " + t.getMessage()));
         this.connection.sendFrame(streamId, errorFrame);
 
-        this.requesterResponderSupport.remove(streamId, this);
+        this.channelSupport.remove(streamId, this);
 
         final RequestInterceptor requestInterceptor = this.requestInterceptor;
         if (requestInterceptor != null) {

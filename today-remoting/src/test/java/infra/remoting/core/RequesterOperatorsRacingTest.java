@@ -61,7 +61,7 @@ public class RequesterOperatorsRacingTest {
     FrameType requestType();
 
     Publisher<?> requestOperator(
-            Supplier<Payload> payloadsSupplier, RequesterResponderSupport requesterResponderSupport);
+            Supplier<Payload> payloadsSupplier, ChannelSupport channelSupport);
   }
 
   static Stream<Scenario> scenarios() {
@@ -75,8 +75,8 @@ public class RequesterOperatorsRacingTest {
               @Override
               public Publisher<?> requestOperator(
                       Supplier<Payload> payloadsSupplier,
-                      RequesterResponderSupport requesterResponderSupport) {
-                return new MetadataPushRequesterMono(payloadsSupplier.get(), requesterResponderSupport);
+                      ChannelSupport channelSupport) {
+                return new MetadataPushRequesterMono(payloadsSupplier.get(), channelSupport);
               }
 
               @Override
@@ -93,9 +93,9 @@ public class RequesterOperatorsRacingTest {
               @Override
               public Publisher<?> requestOperator(
                       Supplier<Payload> payloadsSupplier,
-                      RequesterResponderSupport requesterResponderSupport) {
+                      ChannelSupport channelSupport) {
                 return new FireAndForgetRequesterMono(
-                        payloadsSupplier.get(), requesterResponderSupport);
+                        payloadsSupplier.get(), channelSupport);
               }
 
               @Override
@@ -112,9 +112,9 @@ public class RequesterOperatorsRacingTest {
               @Override
               public Publisher<?> requestOperator(
                       Supplier<Payload> payloadsSupplier,
-                      RequesterResponderSupport requesterResponderSupport) {
+                      ChannelSupport channelSupport) {
                 return new RequestResponseRequesterMono(
-                        payloadsSupplier.get(), requesterResponderSupport);
+                        payloadsSupplier.get(), channelSupport);
               }
 
               @Override
@@ -131,9 +131,9 @@ public class RequesterOperatorsRacingTest {
               @Override
               public Publisher<?> requestOperator(
                       Supplier<Payload> payloadsSupplier,
-                      RequesterResponderSupport requesterResponderSupport) {
+                      ChannelSupport channelSupport) {
                 return new RequestStreamRequesterFlux(
-                        payloadsSupplier.get(), requesterResponderSupport);
+                        payloadsSupplier.get(), channelSupport);
               }
 
               @Override
@@ -150,9 +150,9 @@ public class RequesterOperatorsRacingTest {
               @Override
               public Publisher<?> requestOperator(
                       Supplier<Payload> payloadsSupplier,
-                      RequesterResponderSupport requesterResponderSupport) {
+                      ChannelSupport channelSupport) {
                 return new RequestChannelRequesterFlux(
-                        Flux.generate(s -> s.next(payloadsSupplier.get())), requesterResponderSupport);
+                        Flux.generate(s -> s.next(payloadsSupplier.get())), channelSupport);
               }
 
               @Override
@@ -174,11 +174,11 @@ public class RequesterOperatorsRacingTest {
   public void shouldSubscribeExactlyOnce(Scenario scenario) {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-      final TestRequesterResponderSupport requesterResponderSupport =
-              TestRequesterResponderSupport.client(testRequestInterceptor);
+      final TestChannelSupport requesterResponderSupport =
+              TestChannelSupport.client(testRequestInterceptor);
       final Supplier<Payload> payloadSupplier =
               () ->
-                      TestRequesterResponderSupport.genericPayload(
+                      TestChannelSupport.genericPayload(
                               requesterResponderSupport.getAllocator());
 
       final Publisher<?> requestOperator =
@@ -197,24 +197,24 @@ public class RequesterOperatorsRacingTest {
                                   frameAssert
                                           .hasStreamIdZero()
                                           .hasPayloadSize(
-                                                  TestRequesterResponderSupport.METADATA_CONTENT.getBytes(
+                                                  TestChannelSupport.METADATA_CONTENT.getBytes(
                                                           CharsetUtil.UTF_8)
                                                           .length)
-                                          .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT);
+                                          .hasMetadata(TestChannelSupport.METADATA_CONTENT);
                                 }
                                 else {
                                   frameAssert
                                           .hasClientSideStreamId()
                                           .hasStreamId(1)
                                           .hasPayloadSize(
-                                                  TestRequesterResponderSupport.METADATA_CONTENT.getBytes(
+                                                  TestChannelSupport.METADATA_CONTENT.getBytes(
                                                           CharsetUtil.UTF_8)
                                                           .length
-                                                          + TestRequesterResponderSupport.DATA_CONTENT.getBytes(
+                                                          + TestChannelSupport.DATA_CONTENT.getBytes(
                                                           CharsetUtil.UTF_8)
                                                           .length)
-                                          .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-                                          .hasData(TestRequesterResponderSupport.DATA_CONTENT);
+                                          .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+                                          .hasData(TestChannelSupport.DATA_CONTENT);
                                 }
                                 frameAssert.hasNoLeaks();
 
@@ -284,10 +284,10 @@ public class RequesterOperatorsRacingTest {
 
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-      final TestRequesterResponderSupport activeStreams =
-              TestRequesterResponderSupport.client(testRequestInterceptor);
+      final TestChannelSupport activeStreams =
+              TestChannelSupport.client(testRequestInterceptor);
       final Supplier<Payload> payloadSupplier =
-              () -> TestRequesterResponderSupport.genericPayload(activeStreams.getAllocator());
+              () -> TestChannelSupport.genericPayload(activeStreams.getAllocator());
 
       final Publisher<Payload> requestOperator =
               (Publisher<Payload>) scenario.requestOperator(payloadSupplier, activeStreams);
@@ -318,11 +318,11 @@ public class RequesterOperatorsRacingTest {
       FrameAssert.assertThat(sentFrame)
               .isNotNull()
               .hasPayloadSize(
-                      TestRequesterResponderSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
-                              + TestRequesterResponderSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
+                      TestChannelSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
+                              + TestChannelSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
                               .length)
-              .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-              .hasData(TestRequesterResponderSupport.DATA_CONTENT)
+              .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+              .hasData(TestChannelSupport.DATA_CONTENT)
               .hasNoFragmentsFollow()
               .typeOf(scenario.requestType())
               .hasClientSideStreamId()
@@ -372,10 +372,10 @@ public class RequesterOperatorsRacingTest {
 
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-      final TestRequesterResponderSupport activeStreams =
-              TestRequesterResponderSupport.client(testRequestInterceptor);
+      final TestChannelSupport activeStreams =
+              TestChannelSupport.client(testRequestInterceptor);
       final Supplier<Payload> payloadSupplier =
-              () -> TestRequesterResponderSupport.genericPayload(activeStreams.getAllocator());
+              () -> TestChannelSupport.genericPayload(activeStreams.getAllocator());
 
       final Publisher<Payload> requestOperator =
               (Publisher<Payload>) scenario.requestOperator(payloadSupplier, activeStreams);
@@ -388,11 +388,11 @@ public class RequesterOperatorsRacingTest {
       FrameAssert.assertThat(sentFrame)
               .isNotNull()
               .hasPayloadSize(
-                      TestRequesterResponderSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
-                              + TestRequesterResponderSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
+                      TestChannelSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
+                              + TestChannelSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
                               .length)
-              .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-              .hasData(TestRequesterResponderSupport.DATA_CONTENT)
+              .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+              .hasData(TestChannelSupport.DATA_CONTENT)
               .hasNoFragmentsFollow()
               .typeOf(scenario.requestType())
               .hasClientSideStreamId()
@@ -401,9 +401,9 @@ public class RequesterOperatorsRacingTest {
 
       int mtu = ThreadLocalRandom.current().nextInt(64, 256);
       Payload responsePayload =
-              TestRequesterResponderSupport.randomPayload(activeStreams.getAllocator());
+              TestChannelSupport.randomPayload(activeStreams.getAllocator());
       ArrayList<ByteBuf> fragments =
-              TestRequesterResponderSupport.prepareFragments(
+              TestChannelSupport.prepareFragments(
                       activeStreams.getAllocator(), mtu, responsePayload);
       RaceTestUtils.race(
               assertSubscriber::cancel,
@@ -481,10 +481,10 @@ public class RequesterOperatorsRacingTest {
 
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-      final TestRequesterResponderSupport activeStreams =
-              TestRequesterResponderSupport.client(testRequestInterceptor);
+      final TestChannelSupport activeStreams =
+              TestChannelSupport.client(testRequestInterceptor);
       final Supplier<Payload> payloadSupplier =
-              () -> TestRequesterResponderSupport.genericPayload(activeStreams.getAllocator());
+              () -> TestChannelSupport.genericPayload(activeStreams.getAllocator());
 
       final Publisher<?> requestOperator = scenario.requestOperator(payloadSupplier, activeStreams);
 
@@ -496,11 +496,11 @@ public class RequesterOperatorsRacingTest {
       FrameAssert.assertThat(sentFrame)
               .isNotNull()
               .hasPayloadSize(
-                      TestRequesterResponderSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
-                              + TestRequesterResponderSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
+                      TestChannelSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
+                              + TestChannelSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
                               .length)
-              .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-              .hasData(TestRequesterResponderSupport.DATA_CONTENT)
+              .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+              .hasData(TestChannelSupport.DATA_CONTENT)
               .hasNoFragmentsFollow()
               .typeOf(scenario.requestType())
               .hasClientSideStreamId()
@@ -560,10 +560,10 @@ public class RequesterOperatorsRacingTest {
       for (boolean withReassembly : withReassemblyOptions) {
         for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
           final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-          final TestRequesterResponderSupport activeStreams =
-                  TestRequesterResponderSupport.client(testRequestInterceptor);
+          final TestChannelSupport activeStreams =
+                  TestChannelSupport.client(testRequestInterceptor);
           final Supplier<Payload> payloadSupplier =
-                  () -> TestRequesterResponderSupport.genericPayload(activeStreams.getAllocator());
+                  () -> TestChannelSupport.genericPayload(activeStreams.getAllocator());
 
           final Publisher<?> requestOperator =
                   scenario.requestOperator(payloadSupplier, activeStreams);
@@ -594,11 +594,11 @@ public class RequesterOperatorsRacingTest {
           FrameAssert.assertThat(sentFrame)
                   .isNotNull()
                   .hasPayloadSize(
-                          TestRequesterResponderSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
-                                  + TestRequesterResponderSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
+                          TestChannelSupport.DATA_CONTENT.getBytes(CharsetUtil.UTF_8).length
+                                  + TestChannelSupport.METADATA_CONTENT.getBytes(CharsetUtil.UTF_8)
                                   .length)
-                  .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-                  .hasData(TestRequesterResponderSupport.DATA_CONTENT)
+                  .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+                  .hasData(TestChannelSupport.DATA_CONTENT)
                   .hasNoFragmentsFollow()
                   .typeOf(scenario.requestType())
                   .hasClientSideStreamId()
@@ -682,10 +682,10 @@ public class RequesterOperatorsRacingTest {
             .isIn(REQUEST_RESPONSE, REQUEST_STREAM, REQUEST_CHANNEL);
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-      final TestRequesterResponderSupport activeStreams =
-              TestRequesterResponderSupport.client(testRequestInterceptor);
+      final TestChannelSupport activeStreams =
+              TestChannelSupport.client(testRequestInterceptor);
       final Supplier<Payload> payloadSupplier =
-              () -> TestRequesterResponderSupport.genericPayload(activeStreams.getAllocator());
+              () -> TestChannelSupport.genericPayload(activeStreams.getAllocator());
 
       final Publisher<?> requestOperator = scenario.requestOperator(payloadSupplier, activeStreams);
 
@@ -702,8 +702,8 @@ public class RequesterOperatorsRacingTest {
         FrameAssert.assertThat(sentFrame)
                 .isNotNull()
                 .typeOf(scenario.requestType())
-                .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-                .hasData(TestRequesterResponderSupport.DATA_CONTENT)
+                .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+                .hasData(TestChannelSupport.DATA_CONTENT)
                 .hasNoFragmentsFollow()
                 .hasClientSideStreamId()
                 .hasStreamId(1)
@@ -741,10 +741,10 @@ public class RequesterOperatorsRacingTest {
             .isIn(REQUEST_RESPONSE, REQUEST_STREAM, REQUEST_CHANNEL);
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-      final TestRequesterResponderSupport activeStreams =
-              TestRequesterResponderSupport.client(testRequestInterceptor);
+      final TestChannelSupport activeStreams =
+              TestChannelSupport.client(testRequestInterceptor);
       final Supplier<Payload> payloadSupplier =
-              () -> TestRequesterResponderSupport.genericPayload(activeStreams.getAllocator());
+              () -> TestChannelSupport.genericPayload(activeStreams.getAllocator());
 
       final Publisher<?> requesterOperator =
               scenario.requestOperator(payloadSupplier, activeStreams);
@@ -763,8 +763,8 @@ public class RequesterOperatorsRacingTest {
               .hasNoFragmentsFollow()
               .typeOf(scenario.requestType())
               .hasClientSideStreamId()
-              .hasMetadata(TestRequesterResponderSupport.METADATA_CONTENT)
-              .hasData(TestRequesterResponderSupport.DATA_CONTENT)
+              .hasMetadata(TestChannelSupport.METADATA_CONTENT)
+              .hasData(TestChannelSupport.DATA_CONTENT)
               .hasStreamId(1)
               .hasNoLeaks();
 

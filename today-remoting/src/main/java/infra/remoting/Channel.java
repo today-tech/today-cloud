@@ -89,7 +89,8 @@ public interface Channel extends Availability, Closeable, RemotingOperations {
   }
 
   @Override
-  default void dispose() { }
+  default void dispose() {
+  }
 
   @Override
   default boolean isDisposed() {
@@ -100,4 +101,5 @@ public interface Channel extends Availability, Closeable, RemotingOperations {
   default Mono<Void> onClose() {
     return Mono.never();
   }
+
 }

@@ -52,7 +52,7 @@ import reactor.core.publisher.Sinks;
 /**
  * Responder side of Channel. Receives {@link ByteBuf}s from a peer's {@link ChannelRequester}
  */
-class ChannelResponder extends RequesterResponderSupport implements Channel {
+class ChannelResponder extends ChannelSupport implements Channel {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ChannelResponder.class);
 

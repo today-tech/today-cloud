@@ -57,7 +57,7 @@ final class RequestResponseResponderSubscriber
   final int mtu;
   final int maxFrameLength;
   final int maxInboundPayloadSize;
-  final RequesterResponderSupport requesterResponderSupport;
+  final ChannelSupport channelSupport;
   final DuplexConnection connection;
   final Channel handler;
 
@@ -75,17 +75,17 @@ final class RequestResponseResponderSubscriber
   public RequestResponseResponderSubscriber(
           int streamId,
           ByteBuf firstFrame,
-          RequesterResponderSupport requesterResponderSupport,
+          ChannelSupport channelSupport,
           Channel handler) {
     this.streamId = streamId;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.allocator = channelSupport.getAllocator();
+    this.mtu = channelSupport.getMtu();
+    this.maxFrameLength = channelSupport.getMaxFrameLength();
+    this.maxInboundPayloadSize = channelSupport.getMaxInboundPayloadSize();
+    this.channelSupport = channelSupport;
+    this.connection = channelSupport.getDuplexConnection();
+    this.payloadDecoder = channelSupport.getPayloadDecoder();
+    this.requestInterceptor = channelSupport.getRequestInterceptor();
     this.handler = handler;
 
     this.frames =
@@ -94,15 +94,15 @@ final class RequestResponseResponderSubscriber
   }
 
   public RequestResponseResponderSubscriber(
-          int streamId, RequesterResponderSupport requesterResponderSupport) {
+          int streamId, ChannelSupport channelSupport) {
     this.streamId = streamId;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.allocator = channelSupport.getAllocator();
+    this.mtu = channelSupport.getMtu();
+    this.maxFrameLength = channelSupport.getMaxFrameLength();
+    this.maxInboundPayloadSize = channelSupport.getMaxInboundPayloadSize();
+    this.channelSupport = channelSupport;
+    this.connection = channelSupport.getDuplexConnection();
+    this.requestInterceptor = channelSupport.getRequestInterceptor();
 
     this.payloadDecoder = null;
     this.handler = null;
@@ -141,7 +141,7 @@ final class RequestResponseResponderSubscriber
     final DuplexConnection connection = this.connection;
     final ByteBufAllocator allocator = this.allocator;
 
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     if (p == null) {
       final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(allocator, streamId);
@@ -227,7 +227,7 @@ final class RequestResponseResponderSubscriber
 
     final int streamId = this.streamId;
 
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     final ByteBuf errorFrame = ErrorFrameCodec.encode(this.allocator, streamId, t);
     this.connection.sendFrame(streamId, errorFrame);
@@ -256,7 +256,7 @@ final class RequestResponseResponderSubscriber
       S.lazySet(this, Operators.cancelledSubscription());
 
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channelSupport.remove(streamId, this);
 
       final CompositeByteBuf frames = this.frames;
       if (frames != null) {
@@ -276,7 +276,7 @@ final class RequestResponseResponderSubscriber
     }
 
     final int streamId = this.streamId;
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channelSupport.remove(streamId, this);
 
     currentSubscription.cancel();
 
@@ -299,7 +299,7 @@ final class RequestResponseResponderSubscriber
     catch (IllegalStateException t) {
       S.lazySet(this, Operators.cancelledSubscription());
 
-      this.requesterResponderSupport.remove(this.streamId, this);
+      this.channelSupport.remove(this.streamId, this);
 
       this.frames = null;
       frames.release();
@@ -333,7 +333,7 @@ final class RequestResponseResponderSubscriber
         S.lazySet(this, Operators.cancelledSubscription());
 
         final int streamId = this.streamId;
-        this.requesterResponderSupport.remove(streamId, this);
+        this.channelSupport.remove(streamId, this);
 
         ReferenceCountUtil.safeRelease(frames);
 

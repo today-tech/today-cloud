@@ -53,7 +53,7 @@ import static infra.remoting.keepalive.KeepAliveSupport.ClientKeepAliveSupport;
 /**
  * Requester Side of a Channel socket. Sends {@link ByteBuf}s to a {@link ChannelResponder} of peer
  */
-class ChannelRequester extends RequesterResponderSupport implements Channel {
+class ChannelRequester extends ChannelSupport implements Channel {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ChannelRequester.class);
 

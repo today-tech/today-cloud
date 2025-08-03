@@ -32,7 +32,6 @@ import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.PayloadFrameCodec;
 import infra.remoting.frame.RequestNFrameCodec;
-import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.RequestInterceptor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -77,20 +76,12 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
         Subscription,
         Scannable {
 
-  final ByteBufAllocator allocator;
-  final int mtu;
-  final int maxFrameLength;
-  final int maxInboundPayloadSize;
-  final RequesterResponderSupport requesterResponderSupport;
-  final DuplexConnection connection;
-  final PayloadDecoder payloadDecoder;
+  final ChannelSupport channel;
 
   final Publisher<Payload> payloadsPublisher;
 
   @Nullable
   final RequesterLeaseTracker requesterLeaseTracker;
-  @Nullable
-  final RequestInterceptor requestInterceptor;
 
   volatile long state;
   static final AtomicLongFieldUpdater<RequestChannelRequesterFlux> STATE =
@@ -113,18 +104,10 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
 
   CompositeByteBuf frames;
 
-  RequestChannelRequesterFlux(
-          Publisher<Payload> payloadsPublisher, RequesterResponderSupport requesterResponderSupport) {
-    this.allocator = requesterResponderSupport.getAllocator();
+  RequestChannelRequesterFlux(Publisher<Payload> payloadsPublisher, ChannelSupport channel) {
     this.payloadsPublisher = payloadsPublisher;
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.requesterLeaseTracker = requesterResponderSupport.getRequesterLeaseTracker();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.channel = channel;
+    this.requesterLeaseTracker = channel.getRequesterLeaseTracker();
   }
 
   @Override
@@ -135,7 +118,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     if (isSubscribedOrTerminated(previousState)) {
       final IllegalStateException e =
               new IllegalStateException("RequestChannelFlux allows only a single Subscriber");
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(e, FrameType.REQUEST_CHANNEL, null);
       }
@@ -173,8 +156,8 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
       if (isFirstFrameSent(previousState)
               && !isMaxAllowedRequestN(extractRequestN(previousState))) {
         final int streamId = this.streamId;
-        final ByteBuf requestNFrame = RequestNFrameCodec.encode(this.allocator, streamId, n);
-        this.connection.sendFrame(streamId, requestNFrame);
+        final ByteBuf requestNFrame = RequestNFrameCodec.encode(channel.allocator, streamId, n);
+        channel.connection.sendFrame(streamId, requestNFrame);
       }
       return;
     }
@@ -240,9 +223,9 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
   }
 
   void sendFirstPayload(Payload firstPayload, long initialRequestN, boolean completed) {
-    int mtu = this.mtu;
+    int mtu = channel.mtu;
     try {
-      if (!isValid(mtu, this.maxFrameLength, firstPayload, true)) {
+      if (!isValid(mtu, channel.maxFrameLength, firstPayload, true)) {
         final long previousState = markTerminated(STATE, this);
 
         if (isTerminated(previousState)) {
@@ -253,10 +236,8 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
           this.outboundSubscription.cancel();
         }
 
-        final IllegalArgumentException e =
-                new IllegalArgumentException(
-                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, this.maxFrameLength));
-        final RequestInterceptor requestInterceptor = this.requestInterceptor;
+        final IllegalArgumentException e = new IllegalArgumentException(String.format(INVALID_PAYLOAD_ERROR_MESSAGE, channel.maxFrameLength));
+        final RequestInterceptor requestInterceptor = channel.requestInterceptor;
         if (requestInterceptor != null) {
           requestInterceptor.onReject(e, FrameType.REQUEST_CHANNEL, firstPayload.metadata());
         }
@@ -280,7 +261,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
         this.outboundSubscription.cancel();
       }
 
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(e, FrameType.REQUEST_CHANNEL, null);
       }
@@ -290,13 +271,13 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
       return;
     }
 
-    final RequesterResponderSupport sm = this.requesterResponderSupport;
-    final DuplexConnection connection = this.connection;
-    final ByteBufAllocator allocator = this.allocator;
+    final ChannelSupport channel = this.channel;
+    final DuplexConnection connection = channel.connection;
+    final ByteBufAllocator allocator = channel.allocator;
 
     final int streamId;
     try {
-      streamId = sm.addAndGetNextStreamId(this);
+      streamId = channel.addAndGetNextStreamId(this);
       this.streamId = streamId;
     }
     catch (Throwable t) {
@@ -314,7 +295,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
       }
 
       final Throwable ut = Exceptions.unwrap(t);
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = this.channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(ut, FrameType.REQUEST_CHANNEL, firstPayload.metadata());
       }
@@ -325,7 +306,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
       return;
     }
 
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = this.channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onStart(streamId, FrameType.REQUEST_CHANNEL, firstPayload.metadata());
     }
@@ -351,7 +332,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
         return;
       }
 
-      sm.remove(streamId, this);
+      channel.remove(streamId, this);
 
       if (!isOutboundTerminated(previousState)) {
         this.outboundSubscription.cancel();
@@ -377,7 +358,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
         return;
       }
 
-      sm.remove(streamId, this);
+      channel.remove(streamId, this);
 
       // 2) SendFirst is called asynchronously on the connection event-loop. Thus, we
       // need to check if outbound error is present. Note, we check outboundError since
@@ -411,7 +392,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     }
 
     if (!completed && isOutboundTerminated(previousState)) {
-      final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(this.allocator, streamId);
+      final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(this.channel.allocator, streamId);
       connection.sendFrame(streamId, completeFrame);
     }
 
@@ -435,15 +416,13 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
 
   final void sendFollowingPayload(Payload followingPayload) {
     int streamId = this.streamId;
-    int mtu = this.mtu;
+    int mtu = channel.mtu;
 
     try {
-      if (!isValid(mtu, this.maxFrameLength, followingPayload, true)) {
+      if (!isValid(mtu, channel.maxFrameLength, followingPayload, true)) {
         followingPayload.release();
 
-        final IllegalArgumentException e =
-                new IllegalArgumentException(
-                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, this.maxFrameLength));
+        final IllegalArgumentException e = new IllegalArgumentException(String.format(INVALID_PAYLOAD_ERROR_MESSAGE, channel.maxFrameLength));
         if (!this.tryCancel()) {
           Operators.onErrorDropped(e, this.inboundSubscriber.currentContext());
           return;
@@ -473,8 +452,8 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
               FrameType.NEXT,
               mtu,
               followingPayload,
-              this.connection,
-              allocator,
+              channel.connection,
+              channel.allocator,
               true);
     }
     catch (Throwable e) {
@@ -493,7 +472,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     if (!this.inboundDone) {
       synchronized(this) {
         if (!this.inboundDone) {
-          final RequestInterceptor interceptor = requestInterceptor;
+          final RequestInterceptor interceptor = channel.requestInterceptor;
           if (interceptor != null) {
             interceptor.onTerminate(this.streamId, FrameType.REQUEST_CHANNEL, t);
           }
@@ -517,7 +496,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
       return;
     }
 
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onCancel(this.streamId, FrameType.REQUEST_CHANNEL);
     }
@@ -546,10 +525,11 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     final boolean firstFrameSent = isFirstFrameSent(previousState);
     if (firstFrameSent) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      final ChannelSupport channel = this.channel;
+      channel.remove(streamId, this);
 
-      final ByteBuf cancelFrame = CancelFrameCodec.encode(this.allocator, streamId);
-      this.connection.sendFrame(streamId, cancelFrame);
+      final ByteBuf cancelFrame = CancelFrameCodec.encode(channel.allocator, streamId);
+      channel.connection.sendFrame(streamId, cancelFrame);
     }
 
     return firstFrameSent;
@@ -595,16 +575,17 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
 
     if (isFirstFrameSent(previousState)) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      final ChannelSupport channel = this.channel;
+      channel.remove(streamId, this);
       // propagates error to remote responder
-      final ByteBuf errorFrame = ErrorFrameCodec.encode(this.allocator, streamId, t);
-      this.connection.sendFrame(streamId, errorFrame);
+      final ByteBuf errorFrame = ErrorFrameCodec.encode(channel.allocator, streamId, t);
+      channel.connection.sendFrame(streamId, errorFrame);
 
       if (!isInboundTerminated(previousState)) {
         // FIXME: must be scheduled on the connection event-loop to achieve serial
         //  behaviour on the inbound subscriber
         synchronized(this) {
-          final RequestInterceptor interceptor = requestInterceptor;
+          final RequestInterceptor interceptor = channel.requestInterceptor;
           if (interceptor != null) {
             interceptor.onTerminate(streamId, FrameType.REQUEST_CHANNEL, t);
           }
@@ -641,14 +622,15 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     }
 
     final int streamId = this.streamId;
-    final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(this.allocator, streamId);
+    final ChannelSupport channel = this.channel;
+    final ByteBuf completeFrame = PayloadFrameCodec.encodeComplete(channel.allocator, streamId);
 
-    this.connection.sendFrame(streamId, completeFrame);
+    channel.connection.sendFrame(streamId, completeFrame);
 
     if (isInboundTerminated(previousState)) {
-      this.requesterResponderSupport.remove(streamId, this);
+      channel.remove(streamId, this);
 
-      final RequestInterceptor interceptor = requestInterceptor;
+      final RequestInterceptor interceptor = channel.requestInterceptor;
       if (interceptor != null) {
         interceptor.onTerminate(streamId, FrameType.REQUEST_CHANNEL, null);
       }
@@ -669,9 +651,9 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     }
 
     if (isOutboundTerminated(previousState)) {
-      this.requesterResponderSupport.remove(this.streamId, this);
+      this.channel.remove(this.streamId, this);
 
-      final RequestInterceptor interceptor = this.requestInterceptor;
+      final RequestInterceptor interceptor = channel.requestInterceptor;
       if (interceptor != null) {
         interceptor.onTerminate(this.streamId, FrameType.REQUEST_CHANNEL, null);
       }
@@ -695,7 +677,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     }
 
     final Payload p = this.firstPayload;
-    final RequestInterceptor interceptor = requestInterceptor;
+    final RequestInterceptor interceptor = channel.requestInterceptor;
     if (interceptor != null) {
       interceptor.onReject(cause, FrameType.REQUEST_CHANNEL, p.metadata());
     }
@@ -726,9 +708,9 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
     ReassemblyUtils.release(this, previousState);
 
     final int streamId = this.streamId;
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channel.remove(streamId, this);
 
-    final RequestInterceptor interceptor = requestInterceptor;
+    final RequestInterceptor interceptor = channel.requestInterceptor;
     if (interceptor != null) {
       interceptor.onTerminate(streamId, FrameType.REQUEST_CHANNEL, cause);
     }
@@ -754,7 +736,7 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
         final Throwable cause =
                 Exceptions.failWithOverflow(
                         "The number of messages received exceeds the number requested");
-        final RequestInterceptor requestInterceptor = this.requestInterceptor;
+        final RequestInterceptor requestInterceptor = channel.requestInterceptor;
         if (requestInterceptor != null) {
           requestInterceptor.onTerminate(streamId, FrameType.REQUEST_CHANNEL, cause);
         }
@@ -787,13 +769,13 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
 
     final boolean inboundTerminated = isInboundTerminated(previousState);
     if (inboundTerminated) {
-      this.requesterResponderSupport.remove(this.streamId, this);
+      this.channel.remove(this.streamId, this);
     }
 
     this.outboundSubscription.cancel();
 
     if (inboundTerminated) {
-      final RequestInterceptor interceptor = requestInterceptor;
+      final RequestInterceptor interceptor = channel.requestInterceptor;
       if (interceptor != null) {
         interceptor.onTerminate(this.streamId, FrameType.REQUEST_CHANNEL, null);
       }
@@ -807,9 +789,9 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
             this,
             this,
             this.inboundSubscriber,
-            this.payloadDecoder,
-            this.allocator,
-            this.maxInboundPayloadSize,
+            channel.payloadDecoder,
+            channel.allocator,
+            channel.maxInboundPayloadSize,
             frame,
             hasFollows,
             isLastPayload);

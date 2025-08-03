@@ -49,7 +49,7 @@ import reactor.test.util.RaceTestUtils;
 import static infra.remoting.core.FragmentationUtils.FRAME_OFFSET;
 import static infra.remoting.core.FragmentationUtils.FRAME_OFFSET_WITH_METADATA;
 import static infra.remoting.core.PayloadValidationUtils.INVALID_PAYLOAD_ERROR_MESSAGE;
-import static infra.remoting.core.TestRequesterResponderSupport.genericPayload;
+import static infra.remoting.core.TestChannelSupport.genericPayload;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public class FireAndForgetRequesterMonoTest {
@@ -67,8 +67,8 @@ public class FireAndForgetRequesterMonoTest {
   @MethodSource("frameSent")
   public void frameShouldBeSentOnSubscription(Consumer<FireAndForgetRequesterMono> monoConsumer) {
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    final TestRequesterResponderSupport activeStreams =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    final TestChannelSupport activeStreams =
+            TestChannelSupport.client(testRequestInterceptor);
     final Payload payload = genericPayload(activeStreams.getAllocator());
     final FireAndForgetRequesterMono fireAndForgetRequesterMono =
             new FireAndForgetRequesterMono(payload, activeStreams);
@@ -116,7 +116,7 @@ public class FireAndForgetRequesterMonoTest {
   public void frameFragmentsShouldBeSentOnSubscription(
           Consumer<FireAndForgetRequesterMono> monoConsumer) {
     final int mtu = 64;
-    final TestRequesterResponderSupport streamManager = TestRequesterResponderSupport.client(mtu);
+    final TestChannelSupport streamManager = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
     final TestDuplexConnection sender = streamManager.getDuplexConnection();
 
@@ -215,8 +215,8 @@ public class FireAndForgetRequesterMonoTest {
   public void shouldErrorOnIncorrectRefCntInGivenPayload(
           Consumer<FireAndForgetRequesterMono> monoConsumer) {
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    final TestRequesterResponderSupport streamManager =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    final TestChannelSupport streamManager =
+            TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
     final TestDuplexConnection sender = streamManager.getDuplexConnection();
     final Payload payload = ByteBufPayload.create("");
@@ -264,8 +264,8 @@ public class FireAndForgetRequesterMonoTest {
   public void shouldErrorIfFragmentExitsAllowanceIfFragmentationDisabled(
           Consumer<FireAndForgetRequesterMono> monoConsumer) {
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    final TestRequesterResponderSupport streamManager =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    final TestChannelSupport streamManager =
+            TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
     final TestDuplexConnection sender = streamManager.getDuplexConnection();
 
@@ -329,8 +329,8 @@ public class FireAndForgetRequesterMonoTest {
   public void shouldErrorIfNoAvailability(Consumer<FireAndForgetRequesterMono> monoConsumer) {
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
     final RuntimeException exception = new RuntimeException("test");
-    final TestRequesterResponderSupport streamManager =
-            TestRequesterResponderSupport.client(exception, testRequestInterceptor);
+    final TestChannelSupport streamManager =
+            TestChannelSupport.client(exception, testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
     final TestDuplexConnection sender = streamManager.getDuplexConnection();
     final Payload payload = genericPayload(allocator);
@@ -375,8 +375,8 @@ public class FireAndForgetRequesterMonoTest {
   @Test
   public void shouldSubscribeExactlyOnce1() {
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    final TestRequesterResponderSupport streamManager =
-            TestRequesterResponderSupport.client(testRequestInterceptor);
+    final TestChannelSupport streamManager =
+            TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
     final TestDuplexConnection sender = streamManager.getDuplexConnection();
 
@@ -452,8 +452,8 @@ public class FireAndForgetRequesterMonoTest {
 
   @Test
   public void checkName() {
-    final TestRequesterResponderSupport testRequesterResponderSupport =
-            TestRequesterResponderSupport.client();
+    final TestChannelSupport testRequesterResponderSupport =
+            TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = testRequesterResponderSupport.getAllocator();
     final Payload payload = ByteBufPayload.create("testData", "testMetadata");
 

@@ -29,29 +29,29 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 
-class RequesterResponderSupport {
+class ChannelSupport {
 
-  protected final int mtu;
+  public final int mtu;
 
-  protected final int maxFrameLength;
+  public final int maxFrameLength;
 
-  protected final int maxInboundPayloadSize;
+  public final int maxInboundPayloadSize;
 
-  protected final PayloadDecoder payloadDecoder;
+  public final PayloadDecoder payloadDecoder;
 
-  protected final ByteBufAllocator allocator;
+  public final ByteBufAllocator allocator;
 
-  protected final DuplexConnection connection;
+  public final DuplexConnection connection;
 
   @Nullable
-  protected final RequestInterceptor requestInterceptor;
+  public final RequestInterceptor requestInterceptor;
 
   @Nullable
   protected final StreamIdProvider streamIdProvider;
 
   protected final IntObjectMap<FrameHandler> activeStreams;
 
-  public RequesterResponderSupport(int mtu, int maxFrameLength, int maxInboundPayloadSize,
+  public ChannelSupport(int mtu, int maxFrameLength, int maxInboundPayloadSize,
           PayloadDecoder payloadDecoder, DuplexConnection connection, @Nullable StreamIdProvider streamIdProvider,
           Function<Channel, ? extends RequestInterceptor> requestInterceptorFunction) {
 
@@ -104,7 +104,7 @@ class RequesterResponderSupport {
    * Issues next {@code streamId}
    *
    * @return issued {@code streamId}
-   * @throws RuntimeException if the {@link RequesterResponderSupport} is terminated for any reason
+   * @throws RuntimeException if the {@link ChannelSupport} is terminated for any reason
    */
   public int getNextStreamId() {
     final StreamIdProvider streamIdProvider = this.streamIdProvider;
@@ -123,7 +123,7 @@ class RequesterResponderSupport {
    *
    * @param frameHandler to store
    * @return issued {@code streamId}
-   * @throws RuntimeException if the {@link RequesterResponderSupport} is terminated for any reason
+   * @throws RuntimeException if the {@link ChannelSupport} is terminated for any reason
    */
   public int addAndGetNextStreamId(FrameHandler frameHandler) {
     final StreamIdProvider streamIdProvider = this.streamIdProvider;

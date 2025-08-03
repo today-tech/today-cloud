@@ -6,19 +6,19 @@ pluginManagement {
   }
 }
 
-plugins {
-  id("com.gradle.enterprise") version("3.14.1")
-}
-
-gradleEnterprise {
-  if (System.getenv("CI") != null || Boolean.getBoolean("CI")) {
-    buildScan {
-      publishAlways()
-      termsOfServiceUrl = "https://gradle.com/terms-of-service"
-      termsOfServiceAgree = "yes"
-    }
-  }
-}
+//plugins {
+//  id("com.gradle.enterprise") version("3.14.1")
+//}
+//
+//gradleEnterprise {
+//  if (System.getenv("CI") != null || Boolean.getBoolean("CI")) {
+//    buildScan {
+//      publishAlways()
+//      termsOfServiceUrl = "https://gradle.com/terms-of-service"
+//      termsOfServiceAgree = "yes"
+//    }
+//  }
+//}
 
 // A Java library for studying to create a microservices framework like Spring Cloud.
 

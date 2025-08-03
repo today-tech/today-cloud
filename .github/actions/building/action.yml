@@ -85,7 +85,7 @@ runs:
       id: build
       if: ${{ inputs.publish == 'false' }}
       shell: bash
-      run: ./gradlew -DCI=true --no-daemon --no-parallel check --scan
+      run: ./gradlew -DCI=true --no-daemon --no-parallel check #--scan
 
     - name: Publish
       id: publish

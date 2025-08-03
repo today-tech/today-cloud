@@ -21,10 +21,10 @@ import org.HdrHistogram.Recorder;
 
 import java.time.Duration;
 
-import io.rsocket.Channel;
-import io.rsocket.core.ChannelConnector;
-import io.rsocket.frame.decoder.PayloadDecoder;
-import io.rsocket.test.PingClient;
+import infra.remoting.Channel;
+import infra.remoting.core.ChannelConnector;
+import infra.remoting.frame.decoder.PayloadDecoder;
+import infra.remoting.test.PingClient;
 import infra.remoting.transport.netty.client.WebsocketClientTransport;
 import reactor.core.publisher.Mono;
 

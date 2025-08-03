@@ -1,1 +1,1 @@
-io.rsocket.frame.ByteBufRepresentation
+infra.remoting.frame.ByteBufRepresentation

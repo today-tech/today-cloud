@@ -23,8 +23,8 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 
 import io.netty.channel.ChannelOption;
-import io.rsocket.test.TransportPair;
-import io.rsocket.test.TransportTest;
+import infra.remoting.test.TransportPair;
+import infra.remoting.test.TransportTest;
 import infra.remoting.transport.netty.client.TcpClientTransport;
 import infra.remoting.transport.netty.server.TcpServerTransport;
 import reactor.netty.tcp.TcpClient;

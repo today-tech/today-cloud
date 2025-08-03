@@ -22,18 +22,18 @@ import java.util.function.Function;
 
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
+import infra.remoting.Closeable;
+import infra.remoting.transport.ServerTransport;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.util.ReferenceCountUtil;
-import io.rsocket.Closeable;
-import io.rsocket.transport.ServerTransport;
 import reactor.netty.http.server.HttpServer;
 import reactor.netty.http.server.WebsocketServerSpec;
 
+import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 import static io.netty.channel.ChannelHandler.Sharable;
-import static io.rsocket.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 abstract class BaseWebsocketServerTransport<SELF extends BaseWebsocketServerTransport<SELF, T>, T extends Closeable> implements ServerTransport<T> {
 

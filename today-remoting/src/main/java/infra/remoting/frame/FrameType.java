@@ -176,7 +176,7 @@ public enum FrameType {
    * Sent in response to a RESUME if resuming operation possible (optional).
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-resume-ok">Resume OK
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-resume-ok">Resume OK
    * Frame</a>
    */
   RESUME_OK(0x0E),
@@ -214,7 +214,6 @@ public enum FrameType {
   }
 
   private final int encodedType;
-
   private final int flags;
 
   FrameType(int encodedType) {
@@ -236,7 +235,7 @@ public enum FrameType {
     FrameType frameType = FRAME_TYPES_BY_ENCODED_TYPE[encodedType];
 
     if (frameType == null) {
-      throw new IllegalArgumentException("Frame type %d is unknown".formatted(encodedType));
+      throw new IllegalArgumentException(String.format("Frame type %d is unknown", encodedType));
     }
 
     return frameType;

@@ -23,12 +23,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
-import io.rsocket.Channel;
-import io.rsocket.core.ChannelConnector;
-import io.rsocket.core.Resume;
-import io.rsocket.frame.decoder.PayloadDecoder;
-import io.rsocket.test.PerfTest;
-import io.rsocket.test.PingClient;
+import infra.remoting.Channel;
+import infra.remoting.core.ChannelConnector;
+import infra.remoting.core.Resume;
+import infra.remoting.frame.decoder.PayloadDecoder;
+import infra.remoting.test.PerfTest;
+import infra.remoting.test.PingClient;
 import infra.remoting.transport.netty.client.TcpClientTransport;
 import reactor.core.publisher.Mono;
 

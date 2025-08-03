@@ -20,15 +20,15 @@ package infra.remoting.transport.netty.client;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
-import io.rsocket.DuplexConnection;
-import io.rsocket.transport.ClientTransport;
-import io.rsocket.transport.ServerTransport;
+import infra.remoting.DuplexConnection;
+import infra.remoting.transport.ClientTransport;
+import infra.remoting.transport.ServerTransport;
 import infra.remoting.transport.netty.RSocketLengthCodec;
 import infra.remoting.transport.netty.TcpDuplexConnection;
 import reactor.core.publisher.Mono;
 import reactor.netty.tcp.TcpClient;
 
-import static io.rsocket.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
+import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 /**
  * An implementation of {@link ClientTransport} that connects to a {@link ServerTransport} via TCP.

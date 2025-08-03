@@ -17,9 +17,9 @@
 
 package infra.remoting.transport.netty;
 
-import io.rsocket.core.RemotingServer;
-import io.rsocket.frame.decoder.PayloadDecoder;
-import io.rsocket.test.PingHandler;
+import infra.remoting.core.RemotingServer;
+import infra.remoting.frame.decoder.PayloadDecoder;
+import infra.remoting.test.PingHandler;
 import infra.remoting.transport.netty.server.WebsocketServerTransport;
 
 public final class WebsocketPongServer {

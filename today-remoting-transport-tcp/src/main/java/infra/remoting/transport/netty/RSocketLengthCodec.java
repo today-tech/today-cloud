@@ -21,8 +21,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
-import static io.rsocket.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
-import static io.rsocket.frame.FrameLengthCodec.FRAME_LENGTH_SIZE;
+import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
+import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_SIZE;
 
 /**
  * An extension to the Netty {@link LengthFieldBasedFrameDecoder} that encapsulates the

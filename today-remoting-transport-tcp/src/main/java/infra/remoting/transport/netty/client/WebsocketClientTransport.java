@@ -23,18 +23,18 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import infra.remoting.DuplexConnection;
+import infra.remoting.transport.ClientTransport;
+import infra.remoting.transport.ServerTransport;
+import infra.remoting.transport.netty.WebsocketDuplexConnection;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.rsocket.DuplexConnection;
-import io.rsocket.transport.ClientTransport;
-import io.rsocket.transport.ServerTransport;
-import infra.remoting.transport.netty.WebsocketDuplexConnection;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.WebsocketClientSpec;
 import reactor.netty.tcp.TcpClient;
 
-import static io.rsocket.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
+import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 /**
  * An implementation of {@link ClientTransport} that connects to a {@link ServerTransport} over

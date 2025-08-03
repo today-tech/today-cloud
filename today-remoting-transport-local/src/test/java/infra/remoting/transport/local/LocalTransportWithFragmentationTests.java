@@ -23,8 +23,8 @@ import org.junit.jupiter.api.TestInfo;
 import java.time.Duration;
 import java.util.UUID;
 
-import io.rsocket.test.TransportPair;
-import io.rsocket.test.TransportTest;
+import infra.remoting.test.TransportPair;
+import infra.remoting.test.TransportTest;
 
 final class LocalTransportWithFragmentationTests implements TransportTest {
 

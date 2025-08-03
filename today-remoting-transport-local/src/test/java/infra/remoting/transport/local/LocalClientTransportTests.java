@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
-import io.rsocket.Closeable;
+import infra.remoting.Closeable;
 import reactor.test.StepVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;

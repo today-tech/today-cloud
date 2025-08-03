@@ -17,10 +17,10 @@
 
 package infra.remoting.transport.netty;
 
-import io.rsocket.core.RemotingServer;
-import io.rsocket.core.Resume;
-import io.rsocket.frame.decoder.PayloadDecoder;
-import io.rsocket.test.PingHandler;
+import infra.remoting.core.RemotingServer;
+import infra.remoting.core.Resume;
+import infra.remoting.frame.decoder.PayloadDecoder;
+import infra.remoting.test.PingHandler;
 import infra.remoting.transport.netty.server.TcpServerTransport;
 
 public final class TcpPongServer {

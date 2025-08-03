@@ -131,7 +131,7 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
     final ChannelPool parent = this.parent;
     for (; ; ) {
-      final PooledChannel[] sockets = parent.activeSockets;
+      final PooledChannel[] sockets = parent.activeChannels;
       final int activeSocketsCount = sockets.length;
 
       int index = -1;
@@ -163,7 +163,7 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
         }
       }
 
-      if (ChannelPool.ACTIVE_SOCKETS.compareAndSet(parent, sockets, newSockets)) {
+      if (ChannelPool.ACTIVE_CHANNELS.compareAndSet(parent, sockets, newSockets)) {
         break;
       }
     }

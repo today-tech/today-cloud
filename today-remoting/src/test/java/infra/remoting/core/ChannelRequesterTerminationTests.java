@@ -32,7 +32,7 @@ import java.util.function.Function;
 import infra.remoting.FrameAssert;
 import infra.remoting.Payload;
 import infra.remoting.Channel;
-import infra.remoting.core.ChannelRequesterTests.ClientSocketRule;
+import infra.remoting.core.ChannelRequesterTests.ClientChannelRule;
 import infra.remoting.frame.FrameType;
 import infra.remoting.util.EmptyPayload;
 import reactor.core.publisher.Flux;
@@ -41,7 +41,7 @@ import reactor.test.StepVerifier;
 
 public class ChannelRequesterTerminationTests {
 
-  public final ClientSocketRule rule = new ClientSocketRule();
+  public final ClientChannelRule rule = new ClientChannelRule();
 
   @BeforeEach
   public void setup() {
@@ -57,7 +57,7 @@ public class ChannelRequesterTerminationTests {
   @MethodSource("interactions")
   public void testCurrentStreamIsTerminatedOnConnectionClose(
           FrameType requestType, Function<Channel, ? extends Publisher<?>> interaction) {
-    ChannelRequester channel = rule.socket;
+    ChannelRequester channel = rule.channel;
 
     StepVerifier.create(interaction.apply(channel))
             .then(
@@ -73,7 +73,7 @@ public class ChannelRequesterTerminationTests {
   @MethodSource("interactions")
   public void testSubsequentStreamIsTerminatedAfterConnectionClose(
           FrameType requestType, Function<Channel, ? extends Publisher<?>> interaction) {
-    ChannelRequester channel = rule.socket;
+    ChannelRequester channel = rule.channel;
 
     rule.connection.dispose();
     StepVerifier.create(interaction.apply(channel))

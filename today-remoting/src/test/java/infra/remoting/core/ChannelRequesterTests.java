@@ -111,13 +111,13 @@ import static org.mockito.Mockito.verify;
 
 public class ChannelRequesterTests {
 
-  ClientSocketRule rule;
+  ClientChannelRule rule;
 
   @BeforeEach
   public void setUp() throws Throwable {
     Hooks.onNextDropped(ReferenceCountUtil::safeRelease);
     Hooks.onErrorDropped((t) -> { });
-    rule = new ClientSocketRule();
+    rule = new ClientChannelRule();
     rule.init();
   }
 
@@ -132,14 +132,14 @@ public class ChannelRequesterTests {
   @Timeout(2_000)
   public void testInvalidFrameOnStream0ShouldNotTerminateChannel() {
     rule.connection.addToReceivedBuffer(RequestNFrameCodec.encode(rule.alloc(), 0, 10));
-    assertThat(rule.socket.isDisposed()).isFalse();
+    assertThat(rule.channel.isDisposed()).isFalse();
     rule.assertHasNoLeaks();
   }
 
   @Test
   @Timeout(2_000)
   public void testStreamInitialN() {
-    Flux<Payload> stream = rule.socket.requestStream(EmptyPayload.INSTANCE);
+    Flux<Payload> stream = rule.channel.requestStream(EmptyPayload.INSTANCE);
 
     BaseSubscriber<Payload> subscriber =
             new BaseSubscriber<Payload>() {
@@ -173,7 +173,7 @@ public class ChannelRequesterTests {
   public void testHandleSetupException() {
     rule.connection.addToReceivedBuffer(
             ErrorFrameCodec.encode(rule.alloc(), 0, new RejectedSetupException("boom")));
-    assertThatThrownBy(() -> rule.socket.onClose().block())
+    assertThatThrownBy(() -> rule.channel.onClose().block())
             .isInstanceOf(RejectedSetupException.class);
     rule.assertHasNoLeaks();
   }
@@ -182,7 +182,7 @@ public class ChannelRequesterTests {
   @Timeout(2_000)
   public void testHandleApplicationException() {
     rule.connection.clearSendReceiveBuffers();
-    Publisher<Payload> response = rule.socket.requestResponse(EmptyPayload.INSTANCE);
+    Publisher<Payload> response = rule.channel.requestResponse(EmptyPayload.INSTANCE);
     Subscriber<Payload> responseSub = TestSubscriber.create();
     response.subscribe(responseSub);
 
@@ -203,7 +203,7 @@ public class ChannelRequesterTests {
   @Test
   @Timeout(2_000)
   public void testHandleValidFrame() {
-    Publisher<Payload> response = rule.socket.requestResponse(EmptyPayload.INSTANCE);
+    Publisher<Payload> response = rule.channel.requestResponse(EmptyPayload.INSTANCE);
     Subscriber<Payload> sub = TestSubscriber.create();
     response.subscribe(sub);
 
@@ -220,7 +220,7 @@ public class ChannelRequesterTests {
   @Test
   @Timeout(2_000)
   public void testRequestReplyWithCancel() {
-    Mono<Payload> response = rule.socket.requestResponse(EmptyPayload.INSTANCE);
+    Mono<Payload> response = rule.channel.requestResponse(EmptyPayload.INSTANCE);
 
     try {
       response.block(Duration.ofMillis(100));
@@ -245,12 +245,12 @@ public class ChannelRequesterTests {
   @Timeout(2_000)
   public void testRequestReplyErrorOnSend() {
     rule.connection.setAvailability(0); // Fails send
-    Mono<Payload> response = rule.socket.requestResponse(EmptyPayload.INSTANCE);
+    Mono<Payload> response = rule.channel.requestResponse(EmptyPayload.INSTANCE);
     Subscriber<Payload> responseSub = TestSubscriber.create(10);
     response.subscribe(responseSub);
 
     this.rule
-            .socket
+            .channel
             .onClose()
             .as(StepVerifier::create)
             .expectComplete()
@@ -268,7 +268,7 @@ public class ChannelRequesterTests {
   public void testChannelRequestCancellation() {
     Sinks.Empty<Void> cancelled = Sinks.empty();
     Flux<Payload> request = Flux.<Payload>never().doOnCancel(cancelled::tryEmitEmpty);
-    rule.socket.requestChannel(request).subscribe().dispose();
+    rule.channel.requestChannel(request).subscribe().dispose();
     Flux.firstWithSignal(
                     cancelled.asMono(),
                     Flux.error(new IllegalStateException("Channel request not cancelled"))
@@ -283,7 +283,7 @@ public class ChannelRequesterTests {
     Sinks.Empty<Void> cancelled = Sinks.empty();
     Flux<Payload> request =
             Flux.<Payload>just(EmptyPayload.INSTANCE).repeat(259).doOnCancel(cancelled::tryEmitEmpty);
-    rule.socket.requestChannel(request).subscribe().dispose();
+    rule.channel.requestChannel(request).subscribe().dispose();
     Flux.firstWithSignal(
                     cancelled.asMono(),
                     Flux.error(new IllegalStateException("Channel request not cancelled"))
@@ -298,7 +298,7 @@ public class ChannelRequesterTests {
     Sinks.One<Payload> cancelled = Sinks.one();
     Sinks.Many<Payload> request = Sinks.many().unicast().onBackpressureBuffer();
     request.tryEmitNext(EmptyPayload.INSTANCE);
-    rule.socket
+    rule.channel
             .requestChannel(request.asFlux())
             .subscribe(cancelled::tryEmitValue, cancelled::tryEmitError, cancelled::tryEmitEmpty);
     int streamId = rule.getStreamIdForRequestType(REQUEST_CHANNEL);
@@ -328,7 +328,7 @@ public class ChannelRequesterTests {
               @Override
               protected void hookOnSubscribe(Subscription subscription) { }
             };
-    rule.socket
+    rule.channel
             .requestChannel(
                     Flux.concat(Flux.just(0).delayUntil(i -> delayer.asMono()), Flux.range(1, 999))
                             .map(i -> DefaultPayload.create(i + "")))
@@ -365,7 +365,7 @@ public class ChannelRequesterTests {
                       ThreadLocalRandom.current().nextBytes(metadata);
                       ThreadLocalRandom.current().nextBytes(data);
                       StepVerifier.create(
-                                      generator.apply(rule.socket, DefaultPayload.create(data, metadata)))
+                                      generator.apply(rule.channel, DefaultPayload.create(data, metadata)))
                               .expectSubscription()
                               .expectErrorSatisfies(
                                       t ->
@@ -394,7 +394,7 @@ public class ChannelRequesterTests {
                       assertThatThrownBy(
                               () -> {
                                 final Publisher<?> source =
-                                        generator.apply(rule.socket, DefaultPayload.create(data, metadata));
+                                        generator.apply(rule.channel, DefaultPayload.create(data, metadata));
 
                                 if (source instanceof Mono) {
                                   ((Mono<?>) source).block();
@@ -414,7 +414,7 @@ public class ChannelRequesterTests {
   public void shouldRejectCallOfNoMetadataPayload() {
     final ByteBuf data = rule.allocator.buffer(10);
     final Payload payload = ByteBufPayload.create(data);
-    StepVerifier.create(rule.socket.metadataPush(payload))
+    StepVerifier.create(rule.channel.metadataPush(payload))
             .expectSubscription()
             .expectErrorSatisfies(
                     t ->
@@ -431,7 +431,7 @@ public class ChannelRequesterTests {
     final ByteBuf data = rule.allocator.buffer(10);
     final Payload payload = ByteBufPayload.create(data);
 
-    assertThatThrownBy(() -> rule.socket.metadataPush(payload).block())
+    assertThatThrownBy(() -> rule.channel.metadataPush(payload).block())
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("Metadata push should have metadata field present");
     PayloadAssert.assertThat(payload).isReleased();
@@ -458,7 +458,7 @@ public class ChannelRequesterTests {
     ThreadLocalRandom.current().nextBytes(metadata);
     ThreadLocalRandom.current().nextBytes(data);
     StepVerifier.create(
-                    rule.socket.requestChannel(
+                    rule.channel.requestChannel(
                             Flux.just(EmptyPayload.INSTANCE, DefaultPayload.create(data, metadata))),
                     0)
             .expectSubscription()
@@ -486,10 +486,10 @@ public class ChannelRequesterTests {
   @ParameterizedTest
   @MethodSource("racingCases")
   public void checkNoLeaksOnRacing(
-          Function<ClientSocketRule, Publisher<Payload>> initiator,
-          BiConsumer<AssertSubscriber<Payload>, ClientSocketRule> runner) {
+          Function<ClientChannelRule, Publisher<Payload>> initiator,
+          BiConsumer<AssertSubscriber<Payload>, ClientChannelRule> runner) {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-      ClientSocketRule clientSocketRule = new ClientSocketRule();
+      ClientChannelRule clientSocketRule = new ClientChannelRule();
 
       clientSocketRule.init();
 
@@ -514,9 +514,9 @@ public class ChannelRequesterTests {
   private static Stream<Arguments> racingCases() {
     return Stream.of(
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
-                            (rule) -> rule.socket.requestStream(EmptyPayload.INSTANCE),
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
+                            (rule) -> rule.channel.requestStream(EmptyPayload.INSTANCE),
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               ByteBuf metadata = allocator.buffer();
@@ -532,9 +532,9 @@ public class ChannelRequesterTests {
                               RaceTestUtils.race(as::cancel, () -> rule.connection.addToReceivedBuffer(frame));
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
-                            (rule) -> rule.socket.requestChannel(Flux.just(EmptyPayload.INSTANCE)),
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
+                            (rule) -> rule.channel.requestChannel(Flux.just(EmptyPayload.INSTANCE)),
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               ByteBuf metadata = allocator.buffer();
@@ -550,7 +550,7 @@ public class ChannelRequesterTests {
                               RaceTestUtils.race(as::cancel, () -> rule.connection.addToReceivedBuffer(frame));
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
                             (rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               ByteBuf metadata = allocator.buffer();
@@ -559,9 +559,9 @@ public class ChannelRequesterTests {
                               data.writeCharSequence("data", CharsetUtil.UTF_8);
                               final Payload payload = ByteBufPayload.create(data, metadata);
 
-                              return rule.socket.requestStream(payload);
+                              return rule.channel.requestStream(payload);
                             },
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               RaceTestUtils.race(() -> as.request(1), as::cancel);
                               // ensures proper frames order
@@ -589,10 +589,10 @@ public class ChannelRequesterTests {
                               }
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
                             (rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
-                              return rule.socket.requestChannel(
+                              return rule.channel.requestChannel(
                                       Flux.generate(
                                               () -> 1L,
                                               (index, sink) -> {
@@ -606,7 +606,7 @@ public class ChannelRequesterTests {
                                                 return ++index;
                                               }));
                             },
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               RaceTestUtils.race(() -> as.request(1), as::cancel);
                               // ensures proper frames order
@@ -664,9 +664,9 @@ public class ChannelRequesterTests {
                               }
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
                             (rule) ->
-                                    rule.socket.requestChannel(
+                                    rule.channel.requestChannel(
                                             Flux.generate(
                                                     () -> 1L,
                                                     (index, sink) -> {
@@ -678,7 +678,7 @@ public class ChannelRequesterTests {
                                                       sink.next(payload);
                                                       return ++index;
                                                     })),
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               as.request(1);
@@ -690,9 +690,9 @@ public class ChannelRequesterTests {
                                       () -> rule.connection.addToReceivedBuffer(frame));
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
                             (rule) ->
-                                    rule.socket.requestChannel(
+                                    rule.channel.requestChannel(
                                             Flux.generate(
                                                     () -> 1L,
                                                     (index, sink) -> {
@@ -704,7 +704,7 @@ public class ChannelRequesterTests {
                                                       sink.next(payload);
                                                       return ++index;
                                                     })),
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               as.request(1);
@@ -717,7 +717,7 @@ public class ChannelRequesterTests {
                                       () -> rule.connection.addToReceivedBuffer(frame));
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
                             (rule) -> {
                               ByteBuf data = rule.allocator.buffer();
                               data.writeCharSequence("testData", CharsetUtil.UTF_8);
@@ -725,9 +725,9 @@ public class ChannelRequesterTests {
                               ByteBuf metadata = rule.allocator.buffer();
                               metadata.writeCharSequence("testMetadata", CharsetUtil.UTF_8);
                               Payload requestPayload = ByteBufPayload.create(data, metadata);
-                              return rule.socket.requestResponse(requestPayload);
+                              return rule.channel.requestResponse(requestPayload);
                             },
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               ByteBuf metadata = allocator.buffer();
@@ -743,7 +743,7 @@ public class ChannelRequesterTests {
                               RaceTestUtils.race(as::cancel, () -> rule.connection.addToReceivedBuffer(frame));
                             }),
             Arguments.of(
-                    (Function<ClientSocketRule, Publisher<Payload>>)
+                    (Function<ClientChannelRule, Publisher<Payload>>)
                             (rule) -> {
                               ByteBuf data = rule.allocator.buffer();
                               data.writeCharSequence("testData", CharsetUtil.UTF_8);
@@ -751,9 +751,9 @@ public class ChannelRequesterTests {
                               ByteBuf metadata = rule.allocator.buffer();
                               metadata.writeCharSequence("testMetadata", CharsetUtil.UTF_8);
                               Payload requestPayload = ByteBufPayload.create(data, metadata);
-                              return rule.socket.requestStream(requestPayload);
+                              return rule.channel.requestStream(requestPayload);
                             },
-                    (BiConsumer<AssertSubscriber<Payload>, ClientSocketRule>)
+                    (BiConsumer<AssertSubscriber<Payload>, ClientChannelRule>)
                             (as, rule) -> {
                               ByteBufAllocator allocator = rule.alloc();
                               ByteBuf metadata = allocator.buffer();
@@ -775,7 +775,7 @@ public class ChannelRequesterTests {
     AssertSubscriber<Payload> assertSubscriber = AssertSubscriber.create(1);
     Sinks.Many<Payload> testPublisher = Sinks.many().unicast().onBackpressureBuffer();
 
-    Flux<Payload> payloadFlux = rule.socket.requestChannel(testPublisher.asFlux());
+    Flux<Payload> payloadFlux = rule.channel.requestChannel(testPublisher.asFlux());
 
     payloadFlux.subscribe(assertSubscriber);
 
@@ -802,7 +802,7 @@ public class ChannelRequesterTests {
     AssertSubscriber<Payload> assertSubscriber = AssertSubscriber.create(1);
     Sinks.Many<Payload> testPublisher = Sinks.many().unicast().onBackpressureBuffer();
 
-    Flux<Payload> payloadFlux = rule.socket.requestChannel(testPublisher.asFlux());
+    Flux<Payload> payloadFlux = rule.channel.requestChannel(testPublisher.asFlux());
 
     payloadFlux.subscribe(assertSubscriber);
 
@@ -840,16 +840,16 @@ public class ChannelRequesterTests {
     switch (frameType) {
       case REQUEST_FNF:
         response =
-                testPublisher.mono().flatMap(p -> rule.socket.fireAndForget(p)).then(Mono.empty());
+                testPublisher.mono().flatMap(p -> rule.channel.fireAndForget(p)).then(Mono.empty());
         break;
       case REQUEST_RESPONSE:
-        response = testPublisher.mono().flatMap(p -> rule.socket.requestResponse(p));
+        response = testPublisher.mono().flatMap(p -> rule.channel.requestResponse(p));
         break;
       case REQUEST_STREAM:
-        response = testPublisher.mono().flatMapMany(p -> rule.socket.requestStream(p));
+        response = testPublisher.mono().flatMapMany(p -> rule.channel.requestStream(p));
         break;
       case REQUEST_CHANNEL:
-        response = rule.socket.requestChannel(testPublisher.flux());
+        response = rule.channel.requestChannel(testPublisher.flux());
         break;
       default:
         throw new UnsupportedOperationException("illegal case");
@@ -927,7 +927,7 @@ public class ChannelRequesterTests {
   @ParameterizedTest
   @MethodSource("refCntCases")
   public void ensureSendsErrorOnIllegalRefCntPayload(
-          BiFunction<Payload, ClientSocketRule, Publisher<?>> sourceProducer) {
+          BiFunction<Payload, ClientChannelRule, Publisher<?>> sourceProducer) {
     Payload invalidPayload =
             ByteBufPayload.create(
                     ByteBufUtil.writeUtf8(rule.alloc(), "test"),
@@ -941,12 +941,12 @@ public class ChannelRequesterTests {
             .verify(Duration.ofMillis(1000));
   }
 
-  private static Stream<BiFunction<Payload, ClientSocketRule, Publisher<?>>> refCntCases() {
+  private static Stream<BiFunction<Payload, ClientChannelRule, Publisher<?>>> refCntCases() {
     return Stream.of(
-            (p, clientSocketRule) -> clientSocketRule.socket.fireAndForget(p),
-            (p, clientSocketRule) -> clientSocketRule.socket.requestResponse(p),
-            (p, clientSocketRule) -> clientSocketRule.socket.requestStream(p),
-            (p, clientSocketRule) -> clientSocketRule.socket.requestChannel(Mono.just(p)),
+            (p, clientSocketRule) -> clientSocketRule.channel.fireAndForget(p),
+            (p, clientSocketRule) -> clientSocketRule.channel.requestResponse(p),
+            (p, clientSocketRule) -> clientSocketRule.channel.requestStream(p),
+            (p, clientSocketRule) -> clientSocketRule.channel.requestChannel(Mono.just(p)),
             (p, clientSocketRule) -> {
               Flux.from(clientSocketRule.connection.getSentAsPublisher())
                       .filter(bb -> frameType(bb) == REQUEST_CHANNEL)
@@ -959,17 +959,17 @@ public class ChannelRequesterTests {
                                 bb.release();
                               });
 
-              return clientSocketRule.socket.requestChannel(Flux.just(EmptyPayload.INSTANCE, p));
+              return clientSocketRule.channel.requestChannel(Flux.just(EmptyPayload.INSTANCE, p));
             });
   }
 
   @Test
   public void ensuresThatNoOpsMustHappenUntilSubscriptionInCaseOfFnfCall() {
     Payload payload1 = ByteBufPayload.create("abc1");
-    Mono<Void> fnf1 = rule.socket.fireAndForget(payload1);
+    Mono<Void> fnf1 = rule.channel.fireAndForget(payload1);
 
     Payload payload2 = ByteBufPayload.create("abc2");
-    Mono<Void> fnf2 = rule.socket.fireAndForget(payload2);
+    Mono<Void> fnf2 = rule.channel.fireAndForget(payload2);
 
     assertThat(rule.connection.getSent()).isEmpty();
 
@@ -1011,7 +1011,7 @@ public class ChannelRequesterTests {
   @ParameterizedTest
   @MethodSource("requestNInteractions")
   public void ensuresThatNoOpsMustHappenUntilFirstRequestN(
-          FrameType frameType, BiFunction<ClientSocketRule, Payload, Publisher<Payload>> interaction) {
+          FrameType frameType, BiFunction<ClientChannelRule, Payload, Publisher<Payload>> interaction) {
     Payload payload1 = ByteBufPayload.create("abc1");
     Publisher<Payload> interaction1 = interaction.apply(rule, payload1);
 
@@ -1120,24 +1120,24 @@ public class ChannelRequesterTests {
     return Stream.of(
             Arguments.of(
                     REQUEST_RESPONSE,
-                    (BiFunction<ClientSocketRule, Payload, Publisher<Payload>>)
-                            (rule, payload) -> rule.socket.requestResponse(payload)),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<Payload>>)
+                            (rule, payload) -> rule.channel.requestResponse(payload)),
             Arguments.of(
                     REQUEST_STREAM,
-                    (BiFunction<ClientSocketRule, Payload, Publisher<Payload>>)
-                            (rule, payload) -> rule.socket.requestStream(payload)),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<Payload>>)
+                            (rule, payload) -> rule.channel.requestStream(payload)),
             Arguments.of(
                     REQUEST_CHANNEL,
-                    (BiFunction<ClientSocketRule, Payload, Publisher<Payload>>)
-                            (rule, payload) -> rule.socket.requestChannel(Flux.just(payload))));
+                    (BiFunction<ClientChannelRule, Payload, Publisher<Payload>>)
+                            (rule, payload) -> rule.channel.requestChannel(Flux.just(payload))));
   }
 
   @ParameterizedTest
   @MethodSource("streamRacingCases")
   @Disabled("Connection should take care of ordering if such is necessary")
   public void ensuresCorrectOrderOfStreamIdIssuingInCaseOfRacing(
-          BiFunction<ClientSocketRule, Payload, Publisher<?>> interaction1,
-          BiFunction<ClientSocketRule, Payload, Publisher<?>> interaction2,
+          BiFunction<ClientChannelRule, Payload, Publisher<?>> interaction1,
+          BiFunction<ClientChannelRule, Payload, Publisher<?>> interaction2,
           FrameType interactionType1,
           FrameType interactionType2) {
     Assumptions.assumeThat(interactionType1).isNotEqualTo(METADATA_PUSH);
@@ -1161,27 +1161,27 @@ public class ChannelRequesterTests {
   public static Stream<Arguments> streamRacingCases() {
     return Stream.of(
             Arguments.of(
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.fireAndForget(p),
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.requestResponse(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.fireAndForget(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.requestResponse(p),
                     REQUEST_FNF,
                     REQUEST_RESPONSE),
             Arguments.of(
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.requestResponse(p),
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.requestStream(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.requestResponse(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.requestStream(p),
                     REQUEST_RESPONSE,
                     REQUEST_STREAM),
             Arguments.of(
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.requestStream(p),
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.requestStream(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
                             (r, p) -> {
                               AtomicBoolean subscribed = new AtomicBoolean();
                               Flux<Payload> just = Flux.just(p).doOnSubscribe((__) -> subscribed.set(true));
-                              return r.socket
+                              return r.channel
                                       .requestChannel(just)
                                       .doFinally(
                                               __ -> {
@@ -1193,11 +1193,11 @@ public class ChannelRequesterTests {
                     REQUEST_STREAM,
                     REQUEST_CHANNEL),
             Arguments.of(
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
                             (r, p) -> {
                               AtomicBoolean subscribed = new AtomicBoolean();
                               Flux<Payload> just = Flux.just(p).doOnSubscribe((__) -> subscribed.set(true));
-                              return r.socket
+                              return r.channel
                                       .requestChannel(just)
                                       .doFinally(
                                               __ -> {
@@ -1206,15 +1206,15 @@ public class ChannelRequesterTests {
                                                 }
                                               });
                             },
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.fireAndForget(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.fireAndForget(p),
                     REQUEST_CHANNEL,
                     REQUEST_FNF),
             Arguments.of(
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.metadataPush(p),
-                    (BiFunction<ClientSocketRule, Payload, Publisher<?>>)
-                            (r, p) -> r.socket.fireAndForget(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.metadataPush(p),
+                    (BiFunction<ClientChannelRule, Payload, Publisher<?>>)
+                            (r, p) -> r.channel.fireAndForget(p),
                     METADATA_PUSH,
                     REQUEST_FNF));
   }
@@ -1223,8 +1223,8 @@ public class ChannelRequesterTests {
   @MethodSource("streamRacingCases")
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void shouldTerminateAllStreamsIfThereRacingBetweenDisposeAndRequests(
-          BiFunction<ClientSocketRule, Payload, Publisher<?>> interaction1,
-          BiFunction<ClientSocketRule, Payload, Publisher<?>> interaction2,
+          BiFunction<ClientChannelRule, Payload, Publisher<?>> interaction1,
+          BiFunction<ClientChannelRule, Payload, Publisher<?>> interaction2,
           FrameType interactionType1,
           FrameType interactionType2) {
     for (int i = 1; i < RaceTestConstants.REPEATS; i++) {
@@ -1235,7 +1235,7 @@ public class ChannelRequesterTests {
       Publisher<?> publisher1 = interaction1.apply(rule, payload1);
       Publisher<?> publisher2 = interaction2.apply(rule, payload2);
       RaceTestUtils.race(
-              () -> rule.socket.dispose(),
+              () -> rule.channel.dispose(),
               () -> publisher1.subscribe(assertSubscriber1),
               () -> publisher2.subscribe(assertSubscriber2));
 
@@ -1279,7 +1279,7 @@ public class ChannelRequesterTests {
     ByteBuf buffer = rule.alloc().buffer();
     buffer.writeCharSequence("test", CharsetUtil.UTF_8);
 
-    rule.socket.requestResponse(ByteBufPayload.create(buffer)).subscribe();
+    rule.channel.requestResponse(ByteBufPayload.create(buffer)).subscribe();
 
     rule.connection.addToReceivedBuffer(
             ErrorFrameCodec.encode(rule.alloc(), 1, new RuntimeException("test")));
@@ -1290,7 +1290,7 @@ public class ChannelRequesterTests {
             .matches(bb -> FrameHeaderCodec.frameType(bb) == REQUEST_RESPONSE)
             .matches(ByteBuf::release);
 
-    assertThat(rule.socket.isDisposed()).isFalse();
+    assertThat(rule.channel.isDisposed()).isFalse();
 
     rule.assertHasNoLeaks();
   }
@@ -1300,7 +1300,7 @@ public class ChannelRequesterTests {
   @MethodSource("requestNInteractions")
   void reassembleData(
           FrameType frameType,
-          BiFunction<ClientSocketRule, Payload, Publisher<Payload>> requestFunction) {
+          BiFunction<ClientChannelRule, Payload, Publisher<Payload>> requestFunction) {
     final int mtu = ThreadLocalRandom.current().nextInt(64, 256);
     final LeaksTrackingByteBufAllocator leaksTrackingByteBufAllocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
@@ -1337,7 +1337,7 @@ public class ChannelRequesterTests {
   @MethodSource("requestNInteractions")
   void reassembleMetadata(
           FrameType frameType,
-          BiFunction<ClientSocketRule, Payload, Publisher<Payload>> requestFunction) {
+          BiFunction<ClientChannelRule, Payload, Publisher<Payload>> requestFunction) {
     final int mtu = ThreadLocalRandom.current().nextInt(64, 256);
     final LeaksTrackingByteBufAllocator leaksTrackingByteBufAllocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
@@ -1374,7 +1374,7 @@ public class ChannelRequesterTests {
   @MethodSource("requestNInteractions")
   public void errorTooBigPayload(
           FrameType frameType,
-          BiFunction<ClientSocketRule, Payload, Publisher<Payload>> requestFunction) {
+          BiFunction<ClientChannelRule, Payload, Publisher<Payload>> requestFunction) {
     final int mtu = ThreadLocalRandom.current().nextInt(64, 256);
     final int maxInboundPayloadSize = ThreadLocalRandom.current().nextInt(mtu + 1, 4096);
     final LeaksTrackingByteBufAllocator leaksTrackingByteBufAllocator =
@@ -1408,7 +1408,7 @@ public class ChannelRequesterTests {
   @MethodSource("requestNInteractions")
   public void errorFragmentTooSmall(
           FrameType frameType,
-          BiFunction<ClientSocketRule, Payload, Publisher<Payload>> requestFunction) {
+          BiFunction<ClientChannelRule, Payload, Publisher<Payload>> requestFunction) {
     final int mtu = 32;
     final LeaksTrackingByteBufAllocator leaksTrackingByteBufAllocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
@@ -1443,10 +1443,10 @@ public class ChannelRequesterTests {
 
       final AssertSubscriber<Payload> assertSubscriber = new AssertSubscriber<>(3);
       if (type.equals("stream")) {
-        rule.socket.requestStream(ByteBufPayload.create(buffer)).subscribe(assertSubscriber);
+        rule.channel.requestStream(ByteBufPayload.create(buffer)).subscribe(assertSubscriber);
       }
       else if (type.equals("channel")) {
-        rule.socket
+        rule.channel
                 .requestChannel(Flux.just(ByteBufPayload.create(buffer)))
                 .subscribe(assertSubscriber);
       }
@@ -1469,7 +1469,7 @@ public class ChannelRequesterTests {
 
       assertThat(rule.connection.getSent()).allMatch(ByteBuf::release);
 
-      assertThat(rule.socket.isDisposed()).isFalse();
+      assertThat(rule.channel.isDisposed()).isFalse();
 
       assertSubscriber.values().forEach(ReferenceCountUtil::safeRelease);
       assertSubscriber.assertNoError();
@@ -1479,7 +1479,7 @@ public class ChannelRequesterTests {
     }
   }
 
-  public static class ClientSocketRule extends AbstractSocketRule<ChannelRequester> {
+  public static class ClientChannelRule extends AbstractChannelRule<ChannelRequester> {
 
     protected Sinks.Empty<Void> thisClosedSink;
     protected Sinks.Empty<Void> otherClosedSink;

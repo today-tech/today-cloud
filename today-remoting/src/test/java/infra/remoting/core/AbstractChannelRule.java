@@ -29,11 +29,11 @@ import infra.remoting.test.util.TestSubscriber;
 
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
-public abstract class AbstractSocketRule<T extends Channel> {
+public abstract class AbstractChannelRule<T extends Channel> {
 
   protected TestDuplexConnection connection;
   protected Subscriber<Void> connectSub;
-  protected T socket;
+  protected T channel;
   protected LeaksTrackingByteBufAllocator allocator;
   protected int maxFrameLength = FRAME_LENGTH_MASK;
   protected int maxInboundPayloadSize = Integer.MAX_VALUE;
@@ -50,11 +50,11 @@ public abstract class AbstractSocketRule<T extends Channel> {
     if (connection != null) {
       connection.dispose();
     }
-    if (socket != null) {
-      socket.dispose();
+    if (channel != null) {
+      channel.dispose();
     }
     connection = new TestDuplexConnection(allocator);
-    socket = newChannel();
+    channel = newChannel();
   }
 
   public void setMaxInboundPayloadSize(int maxInboundPayloadSize) {

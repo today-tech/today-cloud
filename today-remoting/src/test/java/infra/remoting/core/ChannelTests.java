@@ -53,7 +53,7 @@ import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public class ChannelTests {
 
-  public final SocketRule rule = new SocketRule();
+  public final ChannelRule rule = new ChannelRule();
 
   @BeforeEach
   public void setup() {
@@ -506,7 +506,7 @@ public class ChannelTests {
     responderPublisher.assertNoSubscribers();
   }
 
-  public static class SocketRule {
+  public static class ChannelRule {
 
     Sinks.Many<ByteBuf> serverProcessor;
     Sinks.Many<ByteBuf> clientProcessor;

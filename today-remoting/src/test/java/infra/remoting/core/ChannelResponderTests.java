@@ -102,13 +102,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ChannelResponderTests {
 
-  ServerSocketRule rule;
+  ServerChannelRule rule;
 
   @BeforeEach
   public void setUp() {
     Hooks.onNextDropped(ReferenceCountUtil::safeRelease);
     Hooks.onErrorDropped(t -> { });
-    rule = new ServerSocketRule();
+    rule = new ServerChannelRule();
     rule.init();
   }
 
@@ -840,7 +840,7 @@ public class ChannelResponderTests {
             .matches(bb -> FrameHeaderCodec.frameType(bb) == REQUEST_N)
             .matches(ReferenceCounted::release);
 
-    assertThat(rule.socket.isDisposed()).isFalse();
+    assertThat(rule.channel.isDisposed()).isFalse();
     testPublisher.assertWasCancelled();
 
     rule.assertHasNoLeaks();
@@ -1182,7 +1182,7 @@ public class ChannelResponderTests {
     rule.assertHasNoLeaks();
   }
 
-  public static class ServerSocketRule extends AbstractSocketRule<ChannelResponder> {
+  public static class ServerChannelRule extends AbstractChannelRule<ChannelResponder> {
 
     private Channel acceptingSocket;
     private volatile int prefetch;

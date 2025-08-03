@@ -27,7 +27,7 @@ jobs:
         os: [ ubuntu-latest, macOS-latest ] #, windows-latest
         java:
           - version: 17
-          - toolchain: false
+          - toolchain: true
           - version: 21
             toolchain: true
           - version: 24

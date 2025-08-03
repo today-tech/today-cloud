@@ -23,9 +23,6 @@ import java.util.List;
 
 import infra.cloud.RpcMethod;
 import infra.cloud.RpcRequest;
-import infra.cloud.core.serialize.DeserializeFailedException;
-import infra.cloud.protocol.ByteBufInput;
-import infra.cloud.protocol.ByteBufOutput;
 import infra.core.MethodParameter;
 import io.netty.buffer.ByteBuf;
 import io.protostuff.Output;
@@ -48,7 +45,10 @@ public class RpcRequestSerialization {
 //    output.writeString(1, request.getMethodName(), true);
 //    output.writeString(2, request.getServiceName(), true);
 
+    payload.writeInt(request.getMethodName().length());
     payload.writeCharSequence(request.getMethodName(), StandardCharsets.UTF_8);
+
+    payload.writeInt(request.getServiceName().length());
     payload.writeCharSequence(request.getServiceName(), StandardCharsets.UTF_8);
 
     RpcMethod rpcMethod = request.getRpcMethod();
@@ -80,16 +80,6 @@ public class RpcRequestSerialization {
 
   protected void beforeSerializeArguments(Output output, Object[] arguments) {
 
-  }
-
-  public RpcRequest deserialize(ByteBuf payload) throws DeserializeFailedException {
-    RpcRequest rpcRequest = new RpcRequest();
-    ByteBufInput input = new ByteBufInput(payload);
-
-//    body.readInt();
-//    body.readCharSequence();
-
-    return rpcRequest;
   }
 
 }

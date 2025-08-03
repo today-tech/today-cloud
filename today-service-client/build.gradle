@@ -19,6 +19,8 @@ description = "TODAY Service Client"
 
 
 dependencies {
+  api project(":today-remoting")
+
   api project(":today-cloud-core")
   api project(":today-service-registry")
 

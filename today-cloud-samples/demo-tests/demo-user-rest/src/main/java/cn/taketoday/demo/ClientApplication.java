@@ -31,7 +31,7 @@ import infra.app.builder.ApplicationBuilder;
 public class ClientApplication {
 
   public static void main(String[] args) {
-    ApplicationBuilder.from(ClientApplication.class)
+    ApplicationBuilder.forSources(ClientApplication.class)
             .type(ApplicationType.NETTY_WEB)
             .run(args);
   }

@@ -21,30 +21,25 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.List;
-import java.util.concurrent.Executor;
 
 import infra.beans.factory.ObjectProvider;
-import infra.beans.factory.annotation.Qualifier;
 import infra.cloud.RpcResponse;
 import infra.cloud.core.serialize.JdkSerialization;
 import infra.cloud.core.serialize.Serialization;
-import infra.cloud.protocol.EventHandler;
-import infra.cloud.protocol.EventHandlers;
 import infra.cloud.protocol.http.HttpServiceRegistry;
 import infra.cloud.registry.HttpRegistration;
 import infra.cloud.registry.RegistryProperties;
 import infra.cloud.registry.ServiceRegistry;
+import infra.cloud.serialize.ReturnValueSerialization;
 import infra.cloud.serialize.RpcArgumentSerialization;
-import infra.cloud.serialize.RpcRequestSerialization;
 import infra.cloud.serialize.RpcResponseSerialization;
+import infra.cloud.serialize.ThrowableSerialization;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.Import;
 import infra.context.annotation.MissingBean;
 import infra.context.properties.EnableConfigurationProperties;
 import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
-import infra.stereotype.Singleton;
 import infra.web.server.ServerProperties;
 
 /**
@@ -75,34 +70,18 @@ class TcpServiceProviderConfig {
 
   @Component
   @SuppressWarnings({ "rawtypes" })
-  static RpcRequestSerialization rpcRequestSerialization(ObjectProvider<RpcArgumentSerialization> serializations) {
-    List<RpcArgumentSerialization> list = TodayStrategies.find(RpcArgumentSerialization.class);
+  static RpcRequestDeserializer rpcRequestDeserializer(ObjectProvider<RpcArgumentSerialization> serializations) {
+    var list = TodayStrategies.find(RpcArgumentSerialization.class);
     serializations.addOrderedTo(list);
-    return new RpcRequestSerialization(list);
+    return new RpcRequestDeserializer(list);
   }
 
   @Component
-  static RpcResponseSerialization responseSerialization() {
-    return new RpcResponseSerialization();
-  }
-
-  @Component
-  static RpcRequestEventHandler rpcInvocationEventHandler(RpcRequestSerialization serialization,
-          RpcResponseSerialization responseSerialization, LocalServiceHolder serviceHolder) {
-    return new RpcRequestEventHandler(serviceHolder, serialization, responseSerialization);
-  }
-
-  @Component
-  static EventHandlers eventHandlers(@Qualifier("applicationTaskExecutor") Executor eventAsyncExecutor, List<EventHandler> handlers) {
-    // TODO eventAsyncExecutor
-    return new EventHandlers(eventAsyncExecutor, handlers);
-  }
-
-  @Singleton
-  static ServiceProviderChannelConnector httpServiceHandlerMapping(LocalServiceHolder serviceHolder, EventHandlers eventHandlers) {
-    ServiceProviderChannelConnector connector = new ServiceProviderChannelConnector(eventHandlers);
-    connector.setPort(serviceHolder.getPort());
-    return connector;
+  @SuppressWarnings({ "rawtypes" })
+  static RpcResponseSerialization responseSerialization(ObjectProvider<ReturnValueSerialization> serializations) {
+    var list = TodayStrategies.find(ReturnValueSerialization.class);
+    serializations.addOrderedTo(list);
+    return new RpcResponseSerialization(list, new ThrowableSerialization());
   }
 
 }

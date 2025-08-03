@@ -27,6 +27,7 @@ import infra.cloud.RpcMethod;
 import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.core.MethodParameter;
 import infra.http.converter.HttpMessageConversionException;
+import infra.lang.Nullable;
 import infra.util.ConcurrentReferenceHashMap;
 import io.netty.buffer.ByteBuf;
 import io.protostuff.Input;
@@ -48,12 +49,12 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public void serialize(MethodParameter parameter, Message value, ByteBuf payload, Output output) throws IOException {
+  public void serialize(MethodParameter parameter, @Nullable Message value, ByteBuf payload, Output output) throws IOException {
 
   }
 
   @Override
-  public Message deserialize(MethodParameter parameter, Input input) throws DeserializeFailedException {
+  public Message deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws DeserializeFailedException {
     Class<?> parameterType = parameter.getParameterType();
     Message.Builder messageBuilder = getMessageBuilder(parameterType);
 
@@ -79,6 +80,10 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
               "Invalid Protobuf Message type: no invocable newBuilder() method on " + clazz, ex);
     }
   }
+
+  // ----------------------------------------------------------------------------------------
+  // ReturnValueSerialization<Message>
+  // ----------------------------------------------------------------------------------------
 
   @Override
   public boolean supportsArgument(RpcMethod method) {

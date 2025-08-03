@@ -18,4 +18,6 @@ infra:
 logging:
   level:
     root: info
+    web: trace
+    cn.taketoday.demo: debug
     infra.cloud.provider: debug

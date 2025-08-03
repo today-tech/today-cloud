@@ -1,0 +1,36 @@
+plugins {
+  id "com.google.osdetector" version "1.4.0"
+}
+
+description = "TODAY remoting Transport TCP based on netty"
+
+
+def os_suffix = ""
+if (osdetector.classifier in ["linux-x86_64", "linux-aarch_64", "osx-x86_64", "osx-aarch_64", "windows-x86_64"]) {
+  os_suffix = "::" + osdetector.classifier
+}
+
+
+dependencies {
+  api(project(":today-remoting"))
+
+  api "io.projectreactor.netty:reactor-netty-core"
+  api "io.projectreactor.netty:reactor-netty-http"
+
+  optional 'io.netty:netty-transport'
+  optional 'io.netty:netty-codec'
+  optional 'io.netty:netty-handler'
+  optional 'io.netty:netty-transport-classes-epoll'
+
+
+  testImplementation 'io.projectreactor:reactor-test'
+
+
+  testRuntimeOnly 'org.bouncycastle:bcpkix-jdk15on:1.70'
+  testRuntimeOnly 'ch.qos.logback:logback-classic'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testRuntimeOnly 'io.netty:netty-tcnative-boringssl-static' + os_suffix
+
+  testImplementation testFixtures(project(":today-remoting"))
+
+}

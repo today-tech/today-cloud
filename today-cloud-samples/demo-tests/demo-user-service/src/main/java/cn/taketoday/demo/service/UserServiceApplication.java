@@ -17,22 +17,21 @@
 
 package cn.taketoday.demo.service;
 
-import infra.cloud.provider.EnableServiceProvider;
 import infra.app.ApplicationType;
 import infra.app.InfraApplication;
 import infra.app.builder.ApplicationBuilder;
+import infra.cloud.provider.EnableServiceProvider;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2022/10/18 00:04
  */
 @InfraApplication
-//@EnableHttpServiceProvider
 @EnableServiceProvider
 public class UserServiceApplication {
 
   public static void main(String[] args) {
-    ApplicationBuilder.from(UserServiceApplication.class)
+    ApplicationBuilder.forSources(UserServiceApplication.class)
             .type(ApplicationType.NETTY_WEB)
             .run(args);
   }

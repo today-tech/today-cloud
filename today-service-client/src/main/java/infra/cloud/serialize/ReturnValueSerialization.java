@@ -39,7 +39,7 @@ public interface ReturnValueSerialization<T> {
    */
   boolean supportsArgument(RpcMethod method);
 
-  void serialize(RpcMethod method, T value, ByteBuf payload, Output output) throws IOException;
+  void serialize(RpcMethod method, T returnValue, ByteBuf payload, Output output) throws IOException;
 
   T deserialize(RpcMethod method, ByteBuf payload, Input input) throws DeserializeFailedException;
 

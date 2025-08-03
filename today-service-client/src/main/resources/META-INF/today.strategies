@@ -15,8 +15,11 @@
 # along with this program.  If not, see [http://www.gnu.org/licenses/]
 #
 infra.beans.factory.support.DependencyResolvingStrategy=\
-    infra.cloud.protocol.ServiceDependencyResolvingStrategy
+    infra.remoting.ServiceDependencyResolvingStrategy
 
 
 infra.cloud.serialize.RpcArgumentSerialization=\
-  infra.cloud.serialize.ProtobufArgumentSerialization
+  infra.cloud.serialize.ProtobufArgumentSerialization,\
+  infra.cloud.serialize.SimpleValueArgumentSerialization
+
+

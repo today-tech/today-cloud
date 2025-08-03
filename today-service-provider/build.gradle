@@ -20,7 +20,9 @@ description = "TODAY Service Provider"
 
 dependencies {
 
+  api project(":today-remoting")
   api project(":today-cloud-core")
+
   implementation project(":today-service-client")
   implementation project(":today-service-registry")
 

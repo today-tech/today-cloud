@@ -45,11 +45,10 @@ configure(allprojects) {
   }
 }
 
-configure([rootProject] + javaProjects) {
+configure(javaProjects) {
   apply plugin: "java"
   apply plugin: 'infra.application'
   apply plugin: 'infra.cloud.conventions'
-  apply from: "${rootDir}/gradle/toolchains.gradle"
 
   if (it.hasProperty("code-coverage")) {
     apply plugin: 'jacoco'

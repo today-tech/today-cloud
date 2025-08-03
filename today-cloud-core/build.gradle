@@ -7,7 +7,6 @@ dependencies {
   optional 'com.esotericsoftware:kryo:5.5.0'
 
   optional 'io.netty:netty-codec-http'
-  optional 'io.netty:netty-transport-classes-epoll'
 
 //  implementation 'org.msgpack:msgpack-core:0.9.8'
   implementation 'io.protostuff:protostuff-core:1.7.4'

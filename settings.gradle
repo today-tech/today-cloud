@@ -22,6 +22,10 @@ include 'today-service-client'
 include 'today-service-provider'
 include 'today-service-registry'
 
+include 'today-remoting'
+include 'today-remoting-transport-tcp'
+include 'today-remoting-transport-local'
+
 // Samples
 
 include 'today-cloud-samples:demo-tests:demo-registry'

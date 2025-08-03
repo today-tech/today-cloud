@@ -411,12 +411,12 @@ public final class RemotingServer {
       final Sinks.Empty<Void> requesterOnAllClosedSink = Sinks.unsafe().empty();
       final Sinks.Empty<Void> responderOnAllClosedSink = Sinks.unsafe().empty();
 
-      Channel channelRequester = new ChannelRequester(multiplexer.asServerConnection(), payloadDecoder, StreamIdProvider.forServer(),
+      Channel requesterChannel = new RequesterChannel(multiplexer.asServerConnection(), payloadDecoder, StreamIdProvider.forServer(),
               mtu, maxFrameLength, maxInboundPayloadSize, setupPayload.keepAliveInterval(), setupPayload.keepAliveMaxLifetime(),
               keepAliveHandler, interceptors::initRequesterRequestInterceptor, requesterLeaseTracker, requesterOnAllClosedSink,
               Mono.whenDelayError(responderOnAllClosedSink.asMono(), requesterOnAllClosedSink.asMono()));
 
-      Channel wrappedChannelRequester = interceptors.decorateRequester(channelRequester);
+      Channel wrappedChannelRequester = interceptors.decorateRequester(requesterChannel);
 
       return interceptors
               .decorateAcceptor(acceptor)
@@ -433,7 +433,7 @@ public final class RemotingServer {
                         ? new ResponderLeaseTracker(SERVER_TAG, clientConnection, leases.sender)
                         : null;
 
-                Channel channelResponder = new ChannelResponder(clientConnection, wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
+                Channel channelResponder = new ResponderChannel(clientConnection, wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
                         mtu, maxFrameLength, maxInboundPayloadSize,
                         leaseEnabled && leases.sender instanceof TrackingLeaseSender
                                 ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)

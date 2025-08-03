@@ -100,7 +100,7 @@ import static infra.remoting.frame.FrameType.REQUEST_RESPONSE;
 import static infra.remoting.frame.FrameType.REQUEST_STREAM;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ChannelResponderTests {
+public class ResponderChannelTests {
 
   ServerChannelRule rule;
 
@@ -1182,7 +1182,7 @@ public class ChannelResponderTests {
     rule.assertHasNoLeaks();
   }
 
-  public static class ServerChannelRule extends AbstractChannelRule<ChannelResponder> {
+  public static class ServerChannelRule extends AbstractChannelRule<ResponderChannel> {
 
     private Channel acceptingSocket;
     private volatile int prefetch;
@@ -1223,9 +1223,9 @@ public class ChannelResponderTests {
     }
 
     @Override
-    protected ChannelResponder newChannel() {
+    protected ResponderChannel newChannel() {
       onCloseSink = Sinks.empty();
-      return new ChannelResponder(
+      return new ResponderChannel(
               connection,
               acceptingSocket,
               PayloadDecoder.ZERO_COPY,

@@ -64,7 +64,7 @@ import static infra.remoting.frame.FrameType.REQUEST_N;
 import static reactor.test.publisher.TestPublisher.Violation.CLEANUP_ON_TERMINATE;
 import static reactor.test.publisher.TestPublisher.Violation.DEFER_CANCELLATION;
 
-public class RequestChannelResponderSubscriberTest {
+public class RequestResponderChannelSubscriberTest {
 
   @BeforeAll
   public static void setUp() {

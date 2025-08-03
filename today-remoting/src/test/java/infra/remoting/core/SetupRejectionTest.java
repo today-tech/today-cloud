@@ -76,8 +76,8 @@ public class SetupRejectionTest {
     TestDuplexConnection conn = new TestDuplexConnection(allocator);
     Sinks.Empty<Void> onThisSideClosedSink = Sinks.empty();
 
-    ChannelRequester channel =
-            new ChannelRequester(
+    RequesterChannel channel =
+            new RequesterChannel(
                     conn,
                     DefaultPayload::create,
                     StreamIdProvider.forClient(),
@@ -118,8 +118,8 @@ public class SetupRejectionTest {
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
     TestDuplexConnection conn = new TestDuplexConnection(allocator);
     Sinks.Empty<Void> onThisSideClosedSink = Sinks.empty();
-    ChannelRequester channel =
-            new ChannelRequester(
+    RequesterChannel channel =
+            new RequesterChannel(
                     conn,
                     DefaultPayload::create,
                     StreamIdProvider.forClient(),

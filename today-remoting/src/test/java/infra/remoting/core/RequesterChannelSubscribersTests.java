@@ -52,7 +52,7 @@ import reactor.test.util.RaceTestUtils;
 
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
-class ChannelRequesterSubscribersTests {
+class RequesterChannelSubscribersTests {
 
   private static final Set<FrameType> REQUEST_TYPES =
           new HashSet<>(
@@ -81,7 +81,7 @@ class ChannelRequesterSubscribersTests {
     this.thisClosedSink = Sinks.empty();
     this.otherClosedSink = Sinks.empty();
     channelRequester =
-            new ChannelRequester(
+            new RequesterChannel(
                     connection,
                     PayloadDecoder.DEFAULT,
                     StreamIdProvider.forClient(),

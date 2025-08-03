@@ -611,7 +611,7 @@ public class ChannelConnector {
                   final Sinks.Empty<Void> requesterOnAllClosedSink = Sinks.unsafe().empty();
                   final Sinks.Empty<Void> responderOnAllClosedSink = Sinks.unsafe().empty();
 
-                  Channel channelRequester = new ChannelRequester(multiplexer.asClientConnection(), payloadDecoder,
+                  Channel channelRequester = new RequesterChannel(multiplexer.asClientConnection(), payloadDecoder,
                           StreamIdProvider.forClient(), mtu, maxFrameLength, maxInboundPayloadSize,
                           (int) keepAliveInterval.toMillis(), (int) keepAliveMaxLifeTime.toMillis(), keepAliveHandler,
                           interceptors::initRequesterRequestInterceptor, requesterLeaseTracker, requesterOnAllClosedSink,
@@ -631,7 +631,7 @@ public class ChannelConnector {
                                     ? new ResponderLeaseTracker(CLIENT_TAG, wrappedConnection, leases.sender)
                                     : null;
 
-                            Channel channelResponder = new ChannelResponder(multiplexer.asServerConnection(), wrappedChannelHandler,
+                            Channel responderChannel = new ResponderChannel(multiplexer.asServerConnection(), wrappedChannelHandler,
                                     payloadDecoder, responderLeaseTracker, mtu, maxFrameLength, maxInboundPayloadSize,
                                     leaseEnabled && leases.sender instanceof TrackingLeaseSender
                                             ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)

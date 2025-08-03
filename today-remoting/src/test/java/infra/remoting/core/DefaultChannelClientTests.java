@@ -756,7 +756,7 @@ public class DefaultChannelClientTests {
     @Override
     protected Channel newChannel() {
       this.thisClosedSink = Sinks.empty();
-      return new ChannelRequester(
+      return new RequesterChannel(
               connection,
               PayloadDecoder.ZERO_COPY,
               StreamIdProvider.forClient(),

@@ -50,11 +50,11 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 /**
- * Responder side of Channel. Receives {@link ByteBuf}s from a peer's {@link ChannelRequester}
+ * Responder side of Channel. Receives {@link ByteBuf}s from a peer's {@link RequesterChannel}
  */
-class ChannelResponder extends ChannelSupport implements Channel {
+class ResponderChannel extends ChannelSupport implements Channel {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ChannelResponder.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ResponderChannel.class);
 
   private static final Exception CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
@@ -66,11 +66,11 @@ class ChannelResponder extends ChannelSupport implements Channel {
   private final ResponderLeaseTracker leaseHandler;
 
   private volatile Throwable terminationError;
-  private static final AtomicReferenceFieldUpdater<ChannelResponder, Throwable> TERMINATION_ERROR =
+  private static final AtomicReferenceFieldUpdater<ResponderChannel, Throwable> TERMINATION_ERROR =
           AtomicReferenceFieldUpdater.newUpdater(
-                  ChannelResponder.class, Throwable.class, "terminationError");
+                  ResponderChannel.class, Throwable.class, "terminationError");
 
-  ChannelResponder(DuplexConnection connection, Channel requestHandler, PayloadDecoder payloadDecoder, @Nullable ResponderLeaseTracker leaseHandler,
+  ResponderChannel(DuplexConnection connection, Channel requestHandler, PayloadDecoder payloadDecoder, @Nullable ResponderLeaseTracker leaseHandler,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, Function<Channel, ? extends RequestInterceptor> requestInterceptorFunction,
           Sinks.Empty<Void> onThisSideClosedSink) {
     super(mtu, maxFrameLength, maxInboundPayloadSize, payloadDecoder, connection, null, requestInterceptorFunction);

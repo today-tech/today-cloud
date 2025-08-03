@@ -74,8 +74,8 @@ public class KeepAliveTest {
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
     TestDuplexConnection connection = new TestDuplexConnection(allocator);
     Sinks.Empty<Void> empty = Sinks.empty();
-    ChannelRequester channel =
-            new ChannelRequester(
+    RequesterChannel channel =
+            new RequesterChannel(
                     connection,
                     PayloadDecoder.ZERO_COPY,
                     StreamIdProvider.forClient(),
@@ -104,8 +104,8 @@ public class KeepAliveTest {
                     new InMemoryResumableFramesStore("test", Unpooled.EMPTY_BUFFER, 10_000));
     Sinks.Empty<Void> onClose = Sinks.empty();
 
-    ChannelRequester channel =
-            new ChannelRequester(
+    RequesterChannel channel =
+            new RequesterChannel(
                     resumableConnection,
                     PayloadDecoder.ZERO_COPY,
                     StreamIdProvider.forClient(),

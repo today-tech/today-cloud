@@ -510,10 +510,10 @@ public class ChannelTests {
 
     Sinks.Many<ByteBuf> serverProcessor;
     Sinks.Many<ByteBuf> clientProcessor;
-    private ChannelRequester crs;
+    private RequesterChannel crs;
 
     @SuppressWarnings("unused")
-    private ChannelResponder srs;
+    private ResponderChannel srs;
 
     private Channel requestAcceptor;
 
@@ -572,7 +572,7 @@ public class ChannelTests {
                       };
 
       srs =
-              new ChannelResponder(
+              new ResponderChannel(
                       serverConnection,
                       requestAcceptor,
                       PayloadDecoder.DEFAULT,
@@ -584,7 +584,7 @@ public class ChannelTests {
                       otherClosedSink);
 
       crs =
-              new ChannelRequester(
+              new RequesterChannel(
                       clientConnection,
                       PayloadDecoder.DEFAULT,
                       StreamIdProvider.forClient(),

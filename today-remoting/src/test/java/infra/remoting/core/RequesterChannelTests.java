@@ -109,7 +109,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
-public class ChannelRequesterTests {
+public class RequesterChannelTests {
 
   ClientChannelRule rule;
 
@@ -1479,16 +1479,16 @@ public class ChannelRequesterTests {
     }
   }
 
-  public static class ClientChannelRule extends AbstractChannelRule<ChannelRequester> {
+  public static class ClientChannelRule extends AbstractChannelRule<RequesterChannel> {
 
     protected Sinks.Empty<Void> thisClosedSink;
     protected Sinks.Empty<Void> otherClosedSink;
 
     @Override
-    protected ChannelRequester newChannel() {
+    protected RequesterChannel newChannel() {
       this.thisClosedSink = Sinks.empty();
       this.otherClosedSink = Sinks.empty();
-      return new ChannelRequester(
+      return new RequesterChannel(
               connection,
               PayloadDecoder.ZERO_COPY,
               StreamIdProvider.forClient(),

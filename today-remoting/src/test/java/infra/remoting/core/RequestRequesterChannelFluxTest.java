@@ -55,7 +55,7 @@ import reactor.test.util.RaceTestUtils;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 import static infra.remoting.frame.FrameType.CANCEL;
 
-public class RequestChannelRequesterFluxTest {
+public class RequestRequesterChannelFluxTest {
 
   @BeforeAll
   public static void setUp() {

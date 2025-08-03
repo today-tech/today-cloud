@@ -51,11 +51,11 @@ import reactor.core.publisher.Sinks;
 import static infra.remoting.keepalive.KeepAliveSupport.ClientKeepAliveSupport;
 
 /**
- * Requester Side of a Channel socket. Sends {@link ByteBuf}s to a {@link ChannelResponder} of peer
+ * Requester Side of a Channel socket. Sends {@link ByteBuf}s to a {@link ResponderChannel} of peer
  */
-class ChannelRequester extends ChannelSupport implements Channel {
+class RequesterChannel extends ChannelSupport implements Channel {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ChannelRequester.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RequesterChannel.class);
 
   private static final Exception CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
@@ -64,8 +64,8 @@ class ChannelRequester extends ChannelSupport implements Channel {
   }
 
   private volatile Throwable terminationError;
-  private static final AtomicReferenceFieldUpdater<ChannelRequester, Throwable> TERMINATION_ERROR =
-          AtomicReferenceFieldUpdater.newUpdater(ChannelRequester.class, Throwable.class, "terminationError");
+  private static final AtomicReferenceFieldUpdater<RequesterChannel, Throwable> TERMINATION_ERROR =
+          AtomicReferenceFieldUpdater.newUpdater(RequesterChannel.class, Throwable.class, "terminationError");
 
   @Nullable
   private final RequesterLeaseTracker requesterLeaseTracker;
@@ -76,7 +76,7 @@ class ChannelRequester extends ChannelSupport implements Channel {
 
   private final Mono<Void> onAllClosed;
 
-  ChannelRequester(DuplexConnection connection, PayloadDecoder payloadDecoder, StreamIdProvider streamIdProvider,
+  RequesterChannel(DuplexConnection connection, PayloadDecoder payloadDecoder, StreamIdProvider streamIdProvider,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, int keepAliveTickPeriod, int keepAliveAckTimeout,
           @Nullable KeepAliveHandler keepAliveHandler, Function<Channel, RequestInterceptor> requestInterceptorFunction,
           @Nullable RequesterLeaseTracker requesterLeaseTracker, Sinks.Empty<Void> onThisSideClosedSink, Mono<Void> onAllClosed) {

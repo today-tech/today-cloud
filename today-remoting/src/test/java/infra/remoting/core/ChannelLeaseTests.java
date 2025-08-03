@@ -90,7 +90,7 @@ class ChannelLeaseTests {
   private ResponderLeaseTracker responderLeaseTracker;
   private LeaksTrackingByteBufAllocator byteBufAllocator;
   private TestDuplexConnection connection;
-  private ChannelResponder channelResponder;
+  private ResponderChannel responderChannel;
   private Channel mockChannelHandler;
 
   private Sinks.Many<Lease> leaseSender = Sinks.many().multicast().onBackpressureBuffer();
@@ -112,7 +112,7 @@ class ChannelLeaseTests {
     ClientServerInputMultiplexer multiplexer =
             new ClientServerInputMultiplexer(connection, new InitializingInterceptorRegistry(), true);
     channelRequester =
-            new ChannelRequester(
+            new RequesterChannel(
                     multiplexer.asClientConnection(),
                     payloadDecoder,
                     StreamIdProvider.forClient(),
@@ -183,8 +183,8 @@ class ChannelLeaseTests {
                                                       }));
                     });
 
-    channelResponder =
-            new ChannelResponder(
+    responderChannel =
+            new ResponderChannel(
                     multiplexer.asServerConnection(),
                     mockChannelHandler,
                     payloadDecoder,
@@ -426,25 +426,25 @@ class ChannelLeaseTests {
       case REQUEST_FNF:
         final ByteBuf fnfFrame =
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        channelResponder.handleFrame(fnfFrame);
+        responderChannel.handleFrame(fnfFrame);
         fnfFrame.release();
         break;
       case REQUEST_RESPONSE:
         final ByteBuf requestResponseFrame =
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        channelResponder.handleFrame(requestResponseFrame);
+        responderChannel.handleFrame(requestResponseFrame);
         requestResponseFrame.release();
         break;
       case REQUEST_STREAM:
         final ByteBuf requestStreamFrame =
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, 1, payload1);
-        channelResponder.handleFrame(requestStreamFrame);
+        responderChannel.handleFrame(requestStreamFrame);
         requestStreamFrame.release();
         break;
       case REQUEST_CHANNEL:
         final ByteBuf requestChannelFrame =
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, true, 1, payload1);
-        channelResponder.handleFrame(requestChannelFrame);
+        responderChannel.handleFrame(requestChannelFrame);
         requestChannelFrame.release();
         break;
     }
@@ -474,25 +474,25 @@ class ChannelLeaseTests {
       case REQUEST_FNF:
         final ByteBuf fnfFrame =
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        channelResponder.handleFireAndForget(1, fnfFrame);
+        responderChannel.handleFireAndForget(1, fnfFrame);
         fnfFrame.release();
         break;
       case REQUEST_RESPONSE:
         final ByteBuf requestResponseFrame =
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        channelResponder.handleFrame(requestResponseFrame);
+        responderChannel.handleFrame(requestResponseFrame);
         requestResponseFrame.release();
         break;
       case REQUEST_STREAM:
         final ByteBuf requestStreamFrame =
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, 1, payload1);
-        channelResponder.handleFrame(requestStreamFrame);
+        responderChannel.handleFrame(requestStreamFrame);
         requestStreamFrame.release();
         break;
       case REQUEST_CHANNEL:
         final ByteBuf requestChannelFrame =
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, true, 1, payload1);
-        channelResponder.handleFrame(requestChannelFrame);
+        responderChannel.handleFrame(requestChannelFrame);
         requestChannelFrame.release();
         break;
     }
@@ -547,8 +547,8 @@ class ChannelLeaseTests {
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
         final ByteBuf fnfFrame2 =
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, payload2);
-        channelResponder.handleFrame(fnfFrame);
-        channelResponder.handleFrame(fnfFrame2);
+        responderChannel.handleFrame(fnfFrame);
+        responderChannel.handleFrame(fnfFrame2);
         fnfFrame.release();
         fnfFrame2.release();
         break;
@@ -557,8 +557,8 @@ class ChannelLeaseTests {
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
         final ByteBuf requestResponseFrame2 =
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, payload2);
-        channelResponder.handleFrame(requestResponseFrame);
-        channelResponder.handleFrame(requestResponseFrame2);
+        responderChannel.handleFrame(requestResponseFrame);
+        responderChannel.handleFrame(requestResponseFrame2);
         requestResponseFrame.release();
         requestResponseFrame2.release();
         break;
@@ -567,8 +567,8 @@ class ChannelLeaseTests {
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, 1, payload1);
         final ByteBuf requestStreamFrame2 =
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, 1, payload2);
-        channelResponder.handleFrame(requestStreamFrame);
-        channelResponder.handleFrame(requestStreamFrame2);
+        responderChannel.handleFrame(requestStreamFrame);
+        responderChannel.handleFrame(requestStreamFrame2);
         requestStreamFrame.release();
         requestStreamFrame2.release();
         break;
@@ -577,8 +577,8 @@ class ChannelLeaseTests {
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, true, 1, payload1);
         final ByteBuf requestChannelFrame2 =
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, true, 1, payload2);
-        channelResponder.handleFrame(requestChannelFrame);
-        channelResponder.handleFrame(requestChannelFrame2);
+        responderChannel.handleFrame(requestChannelFrame);
+        responderChannel.handleFrame(requestChannelFrame2);
         requestChannelFrame.release();
         requestChannelFrame2.release();
         break;

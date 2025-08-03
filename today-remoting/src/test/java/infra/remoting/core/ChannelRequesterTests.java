@@ -59,7 +59,7 @@ import infra.remoting.Channel;
 import infra.remoting.RaceTestConstants;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.exceptions.ApplicationErrorException;
-import infra.remoting.exceptions.CustomRSocketException;
+import infra.remoting.exceptions.CustomProtocolException;
 import infra.remoting.exceptions.RejectedSetupException;
 import infra.remoting.frame.CancelFrameCodec;
 import infra.remoting.frame.ErrorFrameCodec;
@@ -820,7 +820,7 @@ public class ChannelRequesterTests {
 
     rule.connection.addToReceivedBuffer(
             ErrorFrameCodec.encode(
-                    allocator, streamId, new CustomRSocketException(0x00000404, "test")));
+                    allocator, streamId, new CustomProtocolException(0x00000404, "test")));
 
     assertThat(rule.connection.getSent()).allMatch(ByteBuf::release);
 
@@ -1275,7 +1275,6 @@ public class ChannelRequesterTests {
   }
 
   @Test
-  // see https://github.com/rsocket/rsocket-java/issues/858
   public void testWorkaround858() {
     ByteBuf buffer = rule.alloc().buffer();
     buffer.writeCharSequence("test", CharsetUtil.UTF_8);

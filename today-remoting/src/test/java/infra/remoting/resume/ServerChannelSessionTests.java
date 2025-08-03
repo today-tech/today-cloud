@@ -54,8 +54,8 @@ public class ServerChannelSessionTests {
 
       resumableDuplexConnection.receive().subscribe();
 
-      final ServerRSocketSession session =
-              new ServerRSocketSession(
+      final ServerChannelSession session =
+              new ServerChannelSession(
                       Unpooled.EMPTY_BUFFER,
                       resumableDuplexConnection,
                       transport.testConnection(),
@@ -166,8 +166,8 @@ public class ServerChannelSessionTests {
 
       resumableDuplexConnection.receive().subscribe();
 
-      final ServerRSocketSession session =
-              new ServerRSocketSession(
+      final ServerChannelSession session =
+              new ServerChannelSession(
                       Unpooled.EMPTY_BUFFER,
                       resumableDuplexConnection,
                       transport.testConnection(),

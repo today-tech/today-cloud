@@ -39,7 +39,7 @@ dependencies {
 
 jar {
   manifest {
-    attributes("Automatic-Module-Name": "rsocket.transport.local")
+    attributes("Automatic-Module-Name": "infra.remoting.transport.local")
   }
 }
 

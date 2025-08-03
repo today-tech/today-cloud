@@ -26,21 +26,23 @@ import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_SIZE;
 
 /**
  * An extension to the Netty {@link LengthFieldBasedFrameDecoder} that encapsulates the
- * RSocket-specific frame length header details.
+ * specific frame length header details.
  */
-public final class RSocketLengthCodec extends LengthFieldBasedFrameDecoder {
+public final class ProtocolFrameLengthCodec extends LengthFieldBasedFrameDecoder {
 
-  /** Creates a new instance of the decoder, specifying the RSocket frame length header size. */
-  public RSocketLengthCodec() {
+  /**
+   * Creates a new instance of the decoder, specifying the protocol frame length header size.
+   */
+  public ProtocolFrameLengthCodec() {
     this(FRAME_LENGTH_MASK);
   }
 
   /**
    * Creates a new instance of the decoder, specifying the RSocket frame length header size.
    *
-   * @param maxFrameLength maximum allowed frame length for incoming rsocket frames
+   * @param maxFrameLength maximum allowed frame length for incoming protocol frames
    */
-  public RSocketLengthCodec(int maxFrameLength) {
+  public ProtocolFrameLengthCodec(int maxFrameLength) {
     super(maxFrameLength, 0, FRAME_LENGTH_SIZE, 0, 0);
   }
 

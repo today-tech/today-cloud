@@ -33,7 +33,7 @@ import io.netty.util.ResourceLeakDetector;
 import infra.remoting.Closeable;
 import infra.remoting.DuplexConnection;
 import infra.remoting.Channel;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.core.Resume;
@@ -261,7 +261,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
     }
 
     @Override
-    public void sendErrorAndClose(RSocketErrorException e) {
+    public void sendErrorAndClose(ProtocolErrorException e) {
       duplexConnection.sendErrorAndClose(e);
     }
 
@@ -351,7 +351,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
     }
 
     @Override
-    public void sendErrorAndClose(RSocketErrorException errorException) {
+    public void sendErrorAndClose(ProtocolErrorException errorException) {
       source.sendErrorAndClose(errorException);
     }
 

@@ -30,9 +30,9 @@ public class SessionManager {
   static final Logger logger = LoggerFactory.getLogger(SessionManager.class);
 
   private volatile boolean isDisposed;
-  private final Map<String, ServerRSocketSession> sessions = new ConcurrentHashMap<>();
+  private final Map<String, ServerChannelSession> sessions = new ConcurrentHashMap<>();
 
-  public ServerRSocketSession save(ServerRSocketSession session, ByteBuf resumeToken) {
+  public ServerChannelSession save(ServerChannelSession session, ByteBuf resumeToken) {
     if (isDisposed) {
       session.dispose();
     }
@@ -52,7 +52,7 @@ public class SessionManager {
                         }
                       })
               .subscribe();
-      ServerRSocketSession prevSession = sessions.remove(token);
+      ServerChannelSession prevSession = sessions.remove(token);
       if (prevSession != null) {
         prevSession.dispose();
       }
@@ -62,12 +62,12 @@ public class SessionManager {
   }
 
   @Nullable
-  public ServerRSocketSession get(ByteBuf resumeToken) {
+  public ServerChannelSession get(ByteBuf resumeToken) {
     return sessions.get(resumeToken.toString(CharsetUtil.UTF_8));
   }
 
   public void dispose() {
     isDisposed = true;
-    sessions.values().forEach(ServerRSocketSession::dispose);
+    sessions.values().forEach(ServerChannelSession::dispose);
   }
 }

@@ -18,7 +18,7 @@
 package infra.remoting.exceptions;
 
 import infra.lang.Nullable;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 
 /**
@@ -26,10 +26,10 @@ import infra.remoting.frame.ErrorFrameCodec;
  * it didn't process the request. The reason for the rejection is explained in the Error Data
  * section.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
-public class RejectedException extends RSocketErrorException implements Retryable {
+public class RejectedException extends ProtocolErrorException implements Retryable {
 
   private static final long serialVersionUID = 3926231092835143715L;
 

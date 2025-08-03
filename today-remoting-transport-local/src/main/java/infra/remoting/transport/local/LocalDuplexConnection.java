@@ -23,7 +23,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.internal.UnboundedProcessor;
 import io.netty.buffer.ByteBuf;
@@ -95,7 +95,7 @@ final class LocalDuplexConnection implements DuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     final ByteBuf errorFrame = ErrorFrameCodec.encode(allocator, 0, e);
     out.tryEmitFinal(errorFrame);
   }

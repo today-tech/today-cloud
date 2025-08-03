@@ -23,7 +23,7 @@ import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import reactor.core.CoreSubscriber;
@@ -180,7 +180,7 @@ class SetupHandlingDuplexConnection extends Flux<ByteBuf>
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     source.sendErrorAndClose(e);
   }
 

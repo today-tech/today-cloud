@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import infra.remoting.Closeable;
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.plugins.ConnectionInterceptor.Type;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
@@ -297,7 +297,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
     }
 
     @Override
-    public void sendErrorAndClose(RSocketErrorException e) {
+    public void sendErrorAndClose(ProtocolErrorException e) {
       source.sendErrorAndClose(e);
     }
 

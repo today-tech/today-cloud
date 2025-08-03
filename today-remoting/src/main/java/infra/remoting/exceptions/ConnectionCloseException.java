@@ -18,17 +18,17 @@
 package infra.remoting.exceptions;
 
 import infra.lang.Nullable;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 
 /**
  * The connection is being terminated. Sender or Receiver of this frame MUST wait for outstanding
  * streams to terminate before closing the connection. New requests MAY not be accepted.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
-public final class ConnectionCloseException extends RSocketErrorException {
+public final class ConnectionCloseException extends ProtocolErrorException {
 
   private static final long serialVersionUID = -2214953527482377471L;
 

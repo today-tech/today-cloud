@@ -20,14 +20,13 @@ package infra.remoting;
 import infra.lang.Nullable;
 
 /**
- * Exception that represents an RSocket protocol error.
+ * Exception that represents a protocol error.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-frame-0x0b">ERROR
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-frame-0x0b">ERROR
  * Frame (0x0B)</a>
  */
-public class RSocketErrorException extends RuntimeException {
-
-  private static final long serialVersionUID = -1628781753426267554L;
+public class ProtocolErrorException extends RemotingException {
 
   private static final int MIN_ERROR_CODE = 0x00000001;
 
@@ -41,18 +40,18 @@ public class RSocketErrorException extends RuntimeException {
    * @param errorCode the RSocket protocol error code
    * @param message error explanation
    */
-  public RSocketErrorException(int errorCode, String message) {
+  public ProtocolErrorException(int errorCode, String message) {
     this(errorCode, message, null);
   }
 
   /**
-   * Alternative to {@link #RSocketErrorException(int, String)} with a root cause.
+   * Alternative to {@link #ProtocolErrorException(int, String)} with a root cause.
    *
    * @param errorCode the RSocket protocol error code
    * @param message error explanation
    * @param cause a root cause for the error
    */
-  public RSocketErrorException(int errorCode, String message, @Nullable Throwable cause) {
+  public ProtocolErrorException(int errorCode, String message, @Nullable Throwable cause) {
     super(message, cause);
     this.errorCode = errorCode;
     if (errorCode > MAX_ERROR_CODE && errorCode < MIN_ERROR_CODE) {
@@ -62,11 +61,11 @@ public class RSocketErrorException extends RuntimeException {
   }
 
   /**
-   * Return the RSocket <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">error code</a>
+   * Return the Protocol <a
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">error code</a>
    * represented by this exception
    *
-   * @return the RSocket protocol error code
+   * @return the protocol error code
    */
   public int errorCode() {
     return errorCode;
@@ -75,9 +74,8 @@ public class RSocketErrorException extends RuntimeException {
   @Override
   public String toString() {
     return getClass().getSimpleName()
-            + " (0x"
-            + Integer.toHexString(errorCode)
-            + "): "
+            + " (0x" + Integer.toHexString(errorCode) + "): "
             + getMessage();
   }
+
 }

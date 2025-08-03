@@ -17,43 +17,38 @@
 
 package infra.remoting.exceptions;
 
-import infra.remoting.RSocketErrorException;
+import infra.lang.Nullable;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 
-public class TestRSocketException extends RSocketErrorException {
+public class CustomProtocolException extends ProtocolErrorException {
   private static final long serialVersionUID = 7873267740343446585L;
-
-  private final int errorCode;
 
   /**
    * Constructs a new exception with the specified message.
    *
-   * @param errorCode customizable error code
+   * @param errorCode customizable error code. Should be in range [0x00000301-0xFFFFFFFE]
    * @param message the message
-   * @throws NullPointerException if {@code message} is {@code null}
    * @throws IllegalArgumentException if {@code errorCode} is out of allowed range
    */
-  public TestRSocketException(int errorCode, String message) {
-    super(ErrorFrameCodec.APPLICATION_ERROR, message);
-    this.errorCode = errorCode;
+  public CustomProtocolException(int errorCode, String message) {
+    this(errorCode, message, null);
   }
 
   /**
    * Constructs a new exception with the specified message and cause.
    *
-   * @param errorCode customizable error code
+   * @param errorCode customizable error code. Should be in range [0x00000301-0xFFFFFFFE]
    * @param message the message
    * @param cause the cause of this exception
-   * @throws NullPointerException if {@code message} or {@code cause} is {@code null}
    * @throws IllegalArgumentException if {@code errorCode} is out of allowed range
    */
-  public TestRSocketException(int errorCode, String message, Throwable cause) {
-    super(ErrorFrameCodec.APPLICATION_ERROR, message, cause);
-    this.errorCode = errorCode;
-  }
-
-  @Override
-  public int errorCode() {
-    return errorCode;
+  public CustomProtocolException(int errorCode, String message, @Nullable Throwable cause) {
+    super(errorCode, message, cause);
+    if (errorCode > ErrorFrameCodec.MAX_USER_ALLOWED_ERROR_CODE
+            && errorCode < ErrorFrameCodec.MIN_USER_ALLOWED_ERROR_CODE) {
+      throw new IllegalArgumentException(
+              "Allowed errorCode value should be in range [0x00000301-0xFFFFFFFE]", this);
+    }
   }
 }

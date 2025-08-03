@@ -812,7 +812,6 @@ public class ChannelResponderTests {
   }
 
   @Test
-  // see https://github.com/rsocket/rsocket-java/issues/858
   public void testWorkaround858() {
     ByteBuf buffer = rule.alloc().buffer();
     buffer.writeCharSequence("test", CharsetUtil.UTF_8);

@@ -23,7 +23,7 @@ import java.util.Objects;
 import infra.remoting.DuplexConnection;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
-import infra.remoting.transport.netty.RSocketLengthCodec;
+import infra.remoting.transport.netty.ProtocolFrameLengthCodec;
 import infra.remoting.transport.netty.TcpDuplexConnection;
 import reactor.core.publisher.Mono;
 import reactor.netty.tcp.TcpClient;
@@ -116,7 +116,7 @@ public final class TcpClientTransport implements ClientTransport {
   @Override
   public Mono<DuplexConnection> connect() {
     return client
-            .doOnConnected(c -> c.addHandlerLast(new RSocketLengthCodec(maxFrameLength)))
+            .doOnConnected(c -> c.addHandlerLast(new ProtocolFrameLengthCodec(maxFrameLength)))
             .connect()
             .map(connection -> new TcpDuplexConnection("client", connection));
   }

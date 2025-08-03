@@ -40,9 +40,9 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 import reactor.util.concurrent.Queues;
 
-public class ServerRSocketSession
-        implements RSocketSession, ResumeStateHolder, CoreSubscriber<Long> {
-  private static final Logger logger = LoggerFactory.getLogger(ServerRSocketSession.class);
+public class ServerChannelSession implements ChannelSession, ResumeStateHolder, CoreSubscriber<Long> {
+
+  private static final Logger logger = LoggerFactory.getLogger(ServerChannelSession.class);
 
   final ResumableDuplexConnection resumableConnection;
   final Duration resumeSessionDuration;
@@ -59,17 +59,16 @@ public class ServerRSocketSession
   final Queue<Runnable> connectionsQueue;
 
   volatile int wip;
-  static final AtomicIntegerFieldUpdater<ServerRSocketSession> WIP =
-          AtomicIntegerFieldUpdater.newUpdater(ServerRSocketSession.class, "wip");
+  static final AtomicIntegerFieldUpdater<ServerChannelSession> WIP =
+          AtomicIntegerFieldUpdater.newUpdater(ServerChannelSession.class, "wip");
 
   volatile Subscription s;
-  static final AtomicReferenceFieldUpdater<ServerRSocketSession, Subscription> S =
-          AtomicReferenceFieldUpdater.newUpdater(ServerRSocketSession.class, Subscription.class, "s");
+  static final AtomicReferenceFieldUpdater<ServerChannelSession, Subscription> S =
+          AtomicReferenceFieldUpdater.newUpdater(ServerChannelSession.class, Subscription.class, "s");
 
   KeepAliveSupport keepAliveSupport;
 
-  public ServerRSocketSession(
-          ByteBuf session,
+  public ServerChannelSession(ByteBuf session,
           ResumableDuplexConnection resumableDuplexConnection,
           DuplexConnection initialDuplexConnection,
           ResumableFramesStore resumableFramesStore,

@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
  * Package private class with default implementations for use in {@link Channel}. The main purpose
  * is to hide static {@link UnsupportedOperationException} declarations.
  */
-class RSocketAdapter {
+class ChannelAdapter {
 
   private static final Mono<Void> UNSUPPORTED_FIRE_AND_FORGET =
           Mono.error(new UnsupportedInteractionException("Fire-and-Forget"));
@@ -45,26 +45,26 @@ class RSocketAdapter {
 
   static Mono<Void> fireAndForget(Payload payload) {
     payload.release();
-    return RSocketAdapter.UNSUPPORTED_FIRE_AND_FORGET;
+    return ChannelAdapter.UNSUPPORTED_FIRE_AND_FORGET;
   }
 
   static Mono<Payload> requestResponse(Payload payload) {
     payload.release();
-    return RSocketAdapter.UNSUPPORTED_REQUEST_RESPONSE;
+    return ChannelAdapter.UNSUPPORTED_REQUEST_RESPONSE;
   }
 
   static Flux<Payload> requestStream(Payload payload) {
     payload.release();
-    return RSocketAdapter.UNSUPPORTED_REQUEST_STREAM;
+    return ChannelAdapter.UNSUPPORTED_REQUEST_STREAM;
   }
 
   static Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return RSocketAdapter.UNSUPPORTED_REQUEST_CHANNEL;
+    return ChannelAdapter.UNSUPPORTED_REQUEST_CHANNEL;
   }
 
   static Mono<Void> metadataPush(Payload payload) {
     payload.release();
-    return RSocketAdapter.UNSUPPORTED_METADATA_PUSH;
+    return ChannelAdapter.UNSUPPORTED_METADATA_PUSH;
   }
 
   private static class UnsupportedInteractionException extends RuntimeException {

@@ -35,7 +35,7 @@ import infra.remoting.Payload;
 import infra.remoting.Channel;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.exceptions.ApplicationErrorException;
-import infra.remoting.exceptions.CustomRSocketException;
+import infra.remoting.exceptions.CustomProtocolException;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.LocalDuplexConnection;
@@ -131,7 +131,7 @@ public class ChannelTests {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
                 return Mono.error(
-                        new CustomRSocketException(0x00000501, "Deliberate Custom exception."));
+                        new CustomProtocolException(0x00000501, "Deliberate Custom exception."));
               }
             });
     rule.crs
@@ -140,7 +140,7 @@ public class ChannelTests {
             .expectErrorSatisfies(
                     t ->
                             Assertions.assertThat(t)
-                                    .isInstanceOf(CustomRSocketException.class)
+                                    .isInstanceOf(CustomProtocolException.class)
                                     .hasMessage("Deliberate Custom exception.")
                                     .hasFieldOrPropertyWithValue("errorCode", 0x00000501))
             .verify();
@@ -464,7 +464,7 @@ public class ChannelTests {
     requesterPublisher.assertNoSubscribers();
   }
 
-  static final CustomRSocketException EXCEPTION = new CustomRSocketException(123456, "test");
+  static final CustomProtocolException EXCEPTION = new CustomProtocolException(123456, "test");
 
   void errorFromResponderPublisher(
           TestPublisher<Payload> requesterPublisher,
@@ -477,7 +477,7 @@ public class ChannelTests {
     responderSubscriber.assertTerminated().assertError(CancellationException.class);
     requesterSubscriber
             .assertTerminated()
-            .assertError(CustomRSocketException.class)
+            .assertError(CustomProtocolException.class)
             .assertErrorMessage("test");
     // ensures that cancellation is propagated to the actual upstream
     requesterPublisher.assertWasCancelled();
@@ -494,11 +494,11 @@ public class ChannelTests {
     // error should be propagated
     responderSubscriber
             .assertTerminated()
-            .assertError(CustomRSocketException.class)
+            .assertError(CustomProtocolException.class)
             .assertErrorMessage("test");
     requesterSubscriber
             .assertTerminated()
-            .assertError(CustomRSocketException.class)
+            .assertError(CustomProtocolException.class)
             .assertErrorMessage("test");
 
     // ensures that cancellation is propagated to the actual upstream

@@ -21,7 +21,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameLengthCodec;
 import infra.remoting.internal.BaseDuplexConnection;
@@ -78,7 +78,7 @@ public final class TcpDuplexConnection extends BaseDuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     final ByteBuf errorFrame = ErrorFrameCodec.encode(alloc(), 0, e);
     sender.tryEmitFinal(FrameLengthCodec.encode(alloc(), errorFrame.readableBytes(), errorFrame));
   }

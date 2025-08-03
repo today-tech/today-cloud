@@ -18,10 +18,10 @@
 package infra.remoting.exceptions;
 
 import infra.lang.Nullable;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 
 /** The root of the setup exception hierarchy. */
-public abstract class SetupException extends RSocketErrorException {
+public abstract class SetupException extends ProtocolErrorException {
 
   private static final long serialVersionUID = -2928269501877732756L;
 

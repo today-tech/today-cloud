@@ -57,7 +57,7 @@ public class DuplexConnectionWrapper implements DuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException errorException) {
+  public void sendErrorAndClose(ProtocolErrorException errorException) {
     delegate.sendErrorAndClose(errorException);
   }
 

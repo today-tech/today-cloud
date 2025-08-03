@@ -19,7 +19,7 @@ package infra.remoting.exceptions;
 
 import java.util.Objects;
 
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import io.netty.buffer.ByteBuf;
 
@@ -43,10 +43,10 @@ public final class Exceptions {
   }
 
   /**
-   * Create a {@link RSocketErrorException} from a Frame that matches the error code it contains.
+   * Create a {@link ProtocolErrorException} from a Frame that matches the error code it contains.
    *
    * @param frame the frame to retrieve the error code and message from
-   * @return a {@link RSocketErrorException} that matches the error code in the Frame
+   * @return a {@link ProtocolErrorException} that matches the error code in the Frame
    * @throws NullPointerException if {@code frame} is {@code null}
    */
   public static RuntimeException from(int streamId, ByteBuf frame) {
@@ -75,7 +75,7 @@ public final class Exceptions {
         default -> {
           if (errorCode >= MIN_USER_ALLOWED_ERROR_CODE
                   || errorCode <= MAX_USER_ALLOWED_ERROR_CODE) {
-            yield new CustomRSocketException(errorCode, message);
+            yield new CustomProtocolException(errorCode, message);
           }
           yield new IllegalArgumentException(String.format("Invalid Error frame in Stream ID %d: 0x%08X '%s'", streamId, errorCode, message));
         }

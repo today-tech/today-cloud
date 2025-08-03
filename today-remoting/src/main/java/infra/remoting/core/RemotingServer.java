@@ -28,7 +28,7 @@ import infra.remoting.Closeable;
 import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.exceptions.InvalidSetupException;
 import infra.remoting.exceptions.RejectedSetupException;
 import infra.remoting.frame.FrameHeaderCodec;
@@ -180,7 +180,7 @@ public final class RemotingServer {
    * @param resume configuration for the Resume capability
    * @return the same instance for method chaining
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#resuming-operation">Resuming
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming
    * Operation</a>
    */
   public RemotingServer resume(Resume resume) {
@@ -209,7 +209,7 @@ public final class RemotingServer {
    *
    * @param leaseConfigurer consumer which accepts {@link LeaseSpec} and use it for configuring
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#lease-semantics">Lease
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#lease-semantics">Lease
    * Semantics</a>
    */
   public RemotingServer lease(Consumer<LeaseSpec> leaseConfigurer) {
@@ -229,7 +229,7 @@ public final class RemotingServer {
    * {@code maxInboundPayloadSize}
    * @return the same instance for method chaining
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#fragmentation-and-reassembly">Fragmentation
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#fragmentation-and-reassembly">Fragmentation
    * and Reassembly</a>
    */
   public RemotingServer maxInboundPayloadSize(int maxInboundPayloadSize) {
@@ -264,7 +264,7 @@ public final class RemotingServer {
    * @param mtu the threshold size for fragmentation, must be no less than 64
    * @return the same instance for method chaining
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#fragmentation-and-reassembly">Fragmentation
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#fragmentation-and-reassembly">Fragmentation
    * and Reassembly</a>
    */
   public RemotingServer fragment(int mtu) {
@@ -453,7 +453,7 @@ public final class RemotingServer {
             resume.getStreamTimeout(), resume.getStoreFactory(SERVER_TAG), resume.isCleanupStoreOnKeepAlive());
   }
 
-  private RSocketErrorException rejectedSetupError(Throwable err) {
+  private ProtocolErrorException rejectedSetupError(Throwable err) {
     String msg = err.getMessage();
     return new RejectedSetupException(msg == null ? "rejected by server acceptor" : msg);
   }

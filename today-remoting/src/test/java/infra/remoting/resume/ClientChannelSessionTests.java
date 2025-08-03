@@ -61,8 +61,8 @@ public class ClientChannelSessionTests {
 
       resumableDuplexConnection.receive().subscribe();
 
-      final ClientRSocketSession session =
-              new ClientRSocketSession(
+      final ClientChannelSession session =
+              new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
                       resumableDuplexConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
@@ -203,8 +203,8 @@ public class ClientChannelSessionTests {
 
       resumableDuplexConnection.receive().subscribe();
 
-      final ClientRSocketSession session =
-              new ClientRSocketSession(
+      final ClientChannelSession session =
+              new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
                       resumableDuplexConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
@@ -336,8 +336,8 @@ public class ClientChannelSessionTests {
 
       resumableDuplexConnection.receive().subscribe();
 
-      final ClientRSocketSession session =
-              new ClientRSocketSession(
+      final ClientChannelSession session =
+              new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
                       resumableDuplexConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
@@ -433,8 +433,8 @@ public class ClientChannelSessionTests {
 
       resumableDuplexConnection.receive().subscribe();
 
-      final ClientRSocketSession session =
-              new ClientRSocketSession(
+      final ClientChannelSession session =
+              new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
                       resumableDuplexConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),

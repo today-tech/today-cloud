@@ -37,7 +37,7 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.resume.InMemoryResumableFramesStore;
-import infra.remoting.resume.RSocketSession;
+import infra.remoting.resume.ChannelSession;
 import infra.remoting.resume.ResumableDuplexConnection;
 import infra.remoting.resume.ResumeStateHolder;
 import infra.remoting.test.util.TestDuplexConnection;
@@ -116,7 +116,7 @@ public class KeepAliveTest {
                     timeout,
                     new ResumableKeepAliveHandler(
                             resumableConnection,
-                            Mockito.mock(RSocketSession.class),
+                            Mockito.mock(ChannelSession.class),
                             Mockito.mock(ResumeStateHolder.class)),
                     __ -> null,
                     null,

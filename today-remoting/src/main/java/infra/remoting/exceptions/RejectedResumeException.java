@@ -18,16 +18,16 @@
 package infra.remoting.exceptions;
 
 import infra.lang.Nullable;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 
 /**
  * The server rejected the resume, it can specify the reason in the payload.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
-public final class RejectedResumeException extends RSocketErrorException {
+public final class RejectedResumeException extends ProtocolErrorException {
 
   private static final long serialVersionUID = -873684362478544811L;
 

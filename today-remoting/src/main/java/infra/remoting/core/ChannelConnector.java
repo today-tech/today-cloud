@@ -37,7 +37,7 @@ import infra.remoting.plugins.ConnectionInterceptor;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.plugins.InterceptorRegistry;
 import infra.remoting.plugins.RateLimitInterceptor;
-import infra.remoting.resume.ClientRSocketSession;
+import infra.remoting.resume.ClientChannelSession;
 import infra.remoting.resume.ResumableDuplexConnection;
 import infra.remoting.resume.ResumableFramesStore;
 import infra.remoting.transport.ClientTransport;
@@ -148,7 +148,7 @@ public class ChannelConnector {
    *
    * @param setupPayloadMono the payload with data and/or metadata for the {@code SETUP} frame.
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-setup">SETUP
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-setup">SETUP
    * Frame</a>
    */
   public ChannelConnector setupPayload(Mono<Payload> setupPayloadMono) {
@@ -165,7 +165,7 @@ public class ChannelConnector {
    *
    * @param payload the payload with data and/or metadata for the {@code SETUP} frame.
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-setup">SETUP
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-setup">SETUP
    * Frame</a>
    */
   public ChannelConnector setupPayload(Payload payload) {
@@ -187,7 +187,7 @@ public class ChannelConnector {
    *
    * @param dataMimeType the MIME type to be used for payload data
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-setup">SETUP
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-setup">SETUP
    * Frame</a>
    */
   public ChannelConnector dataMimeType(String dataMimeType) {
@@ -207,14 +207,9 @@ public class ChannelConnector {
    *   <li>{@link io.rsocket.metadata.AuthMetadataCodec Authentication}
    * </ul>
    *
-   * <p>For more on the above metadata formats, see the corresponding <a
-   * href="https://github.com/rsocket/rsocket/tree/master/Extensions">protocol extensions</a>
-   *
-   * <p>By default this is set to {@code "application/binary"}.
-   *
    * @param metadataMimeType the MIME type to be used for payload metadata
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-setup">SETUP
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-setup">SETUP
    * Frame</a>
    */
   public ChannelConnector metadataMimeType(String metadataMimeType) {
@@ -243,7 +238,7 @@ public class ChannelConnector {
    * before assuming that connectivity is lost; the value should be generous and allow for
    * multiple missed {@code KEEPALIVE} frames.
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-setup">SETUP
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-setup">SETUP
    * Frame</a>
    */
   public ChannelConnector keepAlive(Duration interval, Duration maxLifeTime) {
@@ -404,7 +399,7 @@ public class ChannelConnector {
    * @param resume configuration for the Resume capability
    * @return the same instance for method chaining
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#resuming-operation">Resuming
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming
    * Operation</a>
    */
   public ChannelConnector resume(Resume resume) {
@@ -428,7 +423,7 @@ public class ChannelConnector {
    * <p>By default this is not enabled.
    *
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#lease-semantics">Lease
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#lease-semantics">Lease
    * Semantics</a>
    */
   public ChannelConnector lease() {
@@ -452,7 +447,7 @@ public class ChannelConnector {
    *
    * @param leaseConfigurer consumer which accepts {@link LeaseSpec} and use it for configuring
    * @return the same instance for method chaining
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#lease-semantics">Lease
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#lease-semantics">Lease
    * Semantics</a>
    */
   public ChannelConnector lease(Consumer<LeaseSpec> leaseConfigurer) {
@@ -472,7 +467,7 @@ public class ChannelConnector {
    * {@code maxInboundPayloadSize}
    * @return the same instance for method chaining
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#fragmentation-and-reassembly">Fragmentation
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#fragmentation-and-reassembly">Fragmentation
    * and Reassembly</a>
    */
   public ChannelConnector maxInboundPayloadSize(int maxInboundPayloadSize) {
@@ -490,7 +485,7 @@ public class ChannelConnector {
    * @param mtu the threshold size for fragmentation, must be no less than 64
    * @return the same instance for method chaining
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#fragmentation-and-reassembly">Fragmentation
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#fragmentation-and-reassembly">Fragmentation
    * and Reassembly</a>
    */
   public ChannelConnector fragment(int mtu) {
@@ -526,17 +521,6 @@ public class ChannelConnector {
    * Connect with the given transport and obtain a live {@link Channel} to use for making requests.
    * Each subscriber to the returned {@code Mono} receives a new connection, if neither {@link
    * #reconnect(Retry) reconnect} nor {@link #resume(Resume)} are enabled.
-   *
-   * <p>The following transports are available through additional RSocket Java modules:
-   *
-   * <ul>
-   *   <li>{@link io.rsocket.transport.netty.client.TcpClientTransport TcpClientTransport} via
-   *       {@code rsocket-transport-netty}.
-   *   <li>{@link io.rsocket.transport.netty.client.WebsocketClientTransport
-   *       WebsocketClientTransport} via {@code rsocket-transport-netty}.
-   *   <li>{@link io.rsocket.transport.local.LocalClientTransport LocalClientTransport} via {@code
-   *       rsocket-transport-local}
-   * </ul>
    *
    * @param transport the transport of choice to connect with
    * @return a {@code Mono} with the connected RSocket
@@ -608,7 +592,7 @@ public class ChannelConnector {
                     final ResumableClientSetup resumableClientSetup = new ResumableClientSetup();
                     final ResumableFramesStore resumableFramesStore = resume.getStoreFactory(CLIENT_TAG).apply(resumeToken);
                     final ResumableDuplexConnection resumableDuplexConnection = new ResumableDuplexConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
-                    final ClientRSocketSession session = new ClientRSocketSession(resumeToken, resumableDuplexConnection, connectionMono, resumableClientSetup::init,
+                    final ClientChannelSession session = new ClientChannelSession(resumeToken, resumableDuplexConnection, connectionMono, resumableClientSetup::init,
                             resumableFramesStore, resume.getSessionDuration(), resume.getRetry(), resume.isCleanupStoreOnKeepAlive());
 
                     keepAliveHandler = new KeepAliveHandler.ResumableKeepAliveHandler(resumableDuplexConnection, session, session);

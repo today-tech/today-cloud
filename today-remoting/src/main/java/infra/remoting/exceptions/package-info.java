@@ -18,7 +18,7 @@
 /**
  * A hierarchy of exceptions that represent RSocket protocol error codes.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
 @NonNullApi

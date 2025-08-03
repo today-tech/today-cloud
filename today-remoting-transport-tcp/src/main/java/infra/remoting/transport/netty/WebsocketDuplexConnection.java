@@ -14,13 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
+
 package infra.remoting.transport.netty;
 
 import java.net.SocketAddress;
 import java.util.Objects;
 
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.internal.BaseDuplexConnection;
 import io.netty.buffer.ByteBuf;
@@ -33,7 +34,7 @@ import reactor.netty.Connection;
 /**
  * An implementation of {@link DuplexConnection} that connects via a Websocket.
  *
- * <p>rsocket-java strongly assumes that each ByteBuf is encoded with the length. This is not true
+ * <p>strongly assumes that each ByteBuf is encoded with the length. This is not true
  * for message oriented transports so this must be specifically dropped from Frames sent and
  * stitched back on for frames received.
  */
@@ -93,7 +94,7 @@ public final class WebsocketDuplexConnection extends BaseDuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     final ByteBuf errorFrame = ErrorFrameCodec.encode(alloc(), 0, e);
     sender.tryEmitFinal(errorFrame);
   }

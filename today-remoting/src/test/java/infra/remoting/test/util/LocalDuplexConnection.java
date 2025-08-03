@@ -24,7 +24,7 @@ import java.net.SocketAddress;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import reactor.core.CoreSubscriber;
 import reactor.core.Scannable;
@@ -59,7 +59,7 @@ public class LocalDuplexConnection implements DuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     final ByteBuf errorFrame = ErrorFrameCodec.encode(allocator, 0, e);
     System.out.println(name + " - " + errorFrame.toString());
     send.tryEmitNext(errorFrame);

@@ -46,7 +46,7 @@ public interface DuplexConnection extends Availability, Closeable {
    *
    * @param errorException to encode in the error frame
    */
-  void sendErrorAndClose(RSocketErrorException errorException);
+  void sendErrorAndClose(ProtocolErrorException errorException);
 
   /**
    * Returns a stream of all {@code Frame}s received on this connection.

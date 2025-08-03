@@ -18,16 +18,16 @@
 package infra.remoting.exceptions;
 
 import infra.lang.Nullable;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 
 /**
  * Application layer logic generating a Reactive Streams {@code onError} event.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
-public final class ApplicationErrorException extends RSocketErrorException {
+public final class ApplicationErrorException extends ProtocolErrorException {
 
   private static final long serialVersionUID = 7873267740343446585L;
 

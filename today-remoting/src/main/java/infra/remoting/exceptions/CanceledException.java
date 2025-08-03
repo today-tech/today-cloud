@@ -18,17 +18,17 @@
 package infra.remoting.exceptions;
 
 import infra.lang.Nullable;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 
 /**
  * The Responder canceled the request but may have started processing it (similar to REJECTED but
  * doesn't guarantee lack of side-effects).
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
-public final class CanceledException extends RSocketErrorException {
+public final class CanceledException extends ProtocolErrorException {
 
   private static final long serialVersionUID = 5074789326089722770L;
 

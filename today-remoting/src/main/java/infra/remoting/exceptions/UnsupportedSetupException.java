@@ -23,7 +23,7 @@ import infra.remoting.frame.ErrorFrameCodec;
 /**
  * Some (or all) of the parameters specified by the client are unsupported by the server.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
 public final class UnsupportedSetupException extends SetupException {

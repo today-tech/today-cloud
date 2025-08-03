@@ -19,7 +19,7 @@ package infra.remoting.frame;
 
 import java.nio.charset.StandardCharsets;
 
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
@@ -45,8 +45,8 @@ public class ErrorFrameCodec {
   public static ByteBuf encode(ByteBufAllocator allocator, int streamId, Throwable t, ByteBuf data) {
     ByteBuf header = FrameHeaderCodec.encode(allocator, streamId, FrameType.ERROR, 0);
 
-    int errorCode = t instanceof RSocketErrorException
-            ? ((RSocketErrorException) t).errorCode()
+    int errorCode = t instanceof ProtocolErrorException
+            ? ((ProtocolErrorException) t).errorCode()
             : APPLICATION_ERROR;
 
     header.writeInt(errorCode);

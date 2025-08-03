@@ -22,7 +22,7 @@ import java.net.SocketAddress;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.FrameUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -30,7 +30,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 class LoggingDuplexConnection implements DuplexConnection {
-  private static final Logger LOGGER = LoggerFactory.getLogger("io.rsocket.FrameLogger");
+  private static final Logger LOGGER = LoggerFactory.getLogger("infra.remoting.FrameLogger");
 
   final DuplexConnection source;
 
@@ -56,7 +56,7 @@ class LoggingDuplexConnection implements DuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     LOGGER.debug("sending -> {}: {}", e.getClass().getSimpleName(), e.getMessage());
 
     source.sendErrorAndClose(e);

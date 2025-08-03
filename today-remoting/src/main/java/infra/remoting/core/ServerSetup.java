@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.exceptions.RejectedResumeException;
 import infra.remoting.exceptions.UnsupportedSetupException;
 import infra.remoting.frame.ResumeFrameCodec;
@@ -31,7 +31,7 @@ import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.keepalive.KeepAliveHandler;
 import infra.remoting.resume.ResumableDuplexConnection;
 import infra.remoting.resume.ResumableFramesStore;
-import infra.remoting.resume.ServerRSocketSession;
+import infra.remoting.resume.ServerChannelSession;
 import infra.remoting.resume.SessionManager;
 import io.netty.buffer.ByteBuf;
 import reactor.core.publisher.Mono;
@@ -62,7 +62,7 @@ abstract class ServerSetup {
 
   void dispose() { }
 
-  void sendError(DuplexConnection duplexConnection, RSocketErrorException exception) {
+  void sendError(DuplexConnection duplexConnection, ProtocolErrorException exception) {
     duplexConnection.sendErrorAndClose(exception);
     duplexConnection.receive().subscribe();
   }
@@ -122,8 +122,8 @@ abstract class ServerSetup {
         final ResumableDuplexConnection resumableDuplexConnection =
                 new ResumableDuplexConnection(
                         "server", resumeToken, duplexConnection, resumableFramesStore);
-        final ServerRSocketSession serverRSocketSession =
-                new ServerRSocketSession(
+        final ServerChannelSession serverRSocketSession =
+                new ServerChannelSession(
                         resumeToken,
                         resumableDuplexConnection,
                         duplexConnection,
@@ -144,7 +144,7 @@ abstract class ServerSetup {
 
     @Override
     public Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection duplexConnection) {
-      ServerRSocketSession session = sessionManager.get(ResumeFrameCodec.token(frame));
+      ServerChannelSession session = sessionManager.get(ResumeFrameCodec.token(frame));
       if (session != null) {
         session.resumeWith(frame, duplexConnection);
         return duplexConnection.onClose();

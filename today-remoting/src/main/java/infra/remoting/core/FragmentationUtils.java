@@ -156,7 +156,7 @@ class FragmentationUtils {
         return PayloadFrameCodec.encode(
                 allocator, streamId, true, false, false, metadataFragment, dataFragment);
       case NEXT:
-        // see https://github.com/rsocket/rsocket/blob/master/Protocol.md#handling-the-unexpected
+        // see https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#handling-the-unexpected
         // point 7
       case NEXT_COMPLETE:
         return PayloadFrameCodec.encode(

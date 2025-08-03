@@ -31,56 +31,56 @@ import reactor.core.publisher.Mono;
 public interface Channel extends Availability, Closeable, RemotingOperations {
 
   /**
-   * Fire and Forget interaction model of {@code RSocket}.
+   * Fire and Forget interaction model of protocol.
    *
    * @param payload Request payload.
    * @return {@code Publisher} that completes when the passed {@code payload} is successfully
    * handled, otherwise errors.
    */
   default Mono<Void> fireAndForget(Payload payload) {
-    return RSocketAdapter.fireAndForget(payload);
+    return ChannelAdapter.fireAndForget(payload);
   }
 
   /**
-   * Request-Response interaction model of {@code RSocket}.
+   * Request-Response interaction model of protocol.
    *
    * @param payload Request payload.
    * @return {@code Publisher} containing at most a single {@code Payload} representing the
    * response.
    */
   default Mono<Payload> requestResponse(Payload payload) {
-    return RSocketAdapter.requestResponse(payload);
+    return ChannelAdapter.requestResponse(payload);
   }
 
   /**
-   * Request-Stream interaction model of {@code RSocket}.
+   * Request-Stream interaction model of protocol.
    *
    * @param payload Request payload.
    * @return {@code Publisher} containing the stream of {@code Payload}s representing the response.
    */
   default Flux<Payload> requestStream(Payload payload) {
-    return RSocketAdapter.requestStream(payload);
+    return ChannelAdapter.requestStream(payload);
   }
 
   /**
-   * Request-Channel interaction model of {@code RSocket}.
+   * Request-Channel interaction model of protocol.
    *
    * @param payloads Stream of request payloads.
    * @return Stream of response payloads.
    */
   default Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return RSocketAdapter.requestChannel(payloads);
+    return ChannelAdapter.requestChannel(payloads);
   }
 
   /**
-   * Metadata-Push interaction model of {@code RSocket}.
+   * Metadata-Push interaction model of protocol.
    *
    * @param payload Request payloads.
    * @return {@code Publisher} that completes when the passed {@code payload} is successfully
    * handled, otherwise errors.
    */
   default Mono<Void> metadataPush(Payload payload) {
-    return RSocketAdapter.metadataPush(payload);
+    return ChannelAdapter.metadataPush(payload);
   }
 
   @Override

@@ -31,8 +31,8 @@
   <logger name="infra.remoting.core.RSocketRequester" level="DEBUG" />
   <logger name="infra.remoting.core.RSocketResponder" level="DEBUG" />
   <logger name="infra.remoting.test.TransportTest" level="DEBUG" />
-  <logger name="infra.remoting.resume.ClientRSocketSession" level="DEBUG" />
-  <logger name="infra.remoting.resume.ServerRSocketSession" level="DEBUG" />
+  <logger name="infra.remoting.resume.ClientChannelSession" level="DEBUG" />
+  <logger name="infra.remoting.resume.ServerChannelSession" level="DEBUG" />
   <logger name="infra.remoting.resume.ResumableDuplexConnection" level="DEBUG" />
   <logger name="infra.remoting.resume.InMemoryResumableFramesStore" level="DEBUG" />
 

@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono;
 public interface RemotingOperations {
 
   /**
-   * Fire and Forget interaction model of {@code RSocket}.
+   * Fire and Forget interaction model of protocol.
    *
    * @param payload Request payload.
    * @return {@code Publisher} that completes when the passed {@code payload} is successfully
@@ -38,7 +38,7 @@ public interface RemotingOperations {
   Mono<Void> fireAndForget(Payload payload);
 
   /**
-   * Request-Response interaction model of {@code RSocket}.
+   * Request-Response interaction model of protocol.
    *
    * @param payload Request payload.
    * @return {@code Publisher} containing at most a single {@code Payload} representing the
@@ -47,7 +47,7 @@ public interface RemotingOperations {
   Mono<Payload> requestResponse(Payload payload);
 
   /**
-   * Request-Stream interaction model of {@code RSocket}.
+   * Request-Stream interaction model of protocol.
    *
    * @param payload Request payload.
    * @return {@code Publisher} containing the stream of {@code Payload}s representing the response.
@@ -55,7 +55,7 @@ public interface RemotingOperations {
   Flux<Payload> requestStream(Payload payload);
 
   /**
-   * Request-Channel interaction model of {@code RSocket}.
+   * Request-Channel interaction model of protocol.
    *
    * @param payloads Stream of request payloads.
    * @return Stream of response payloads.
@@ -63,7 +63,7 @@ public interface RemotingOperations {
   Flux<Payload> requestChannel(Publisher<Payload> payloads);
 
   /**
-   * Metadata-Push interaction model of {@code RSocket}.
+   * Metadata-Push interaction model of protocol.
    *
    * @param payload Request payloads.
    * @return {@code Publisher} that completes when the passed {@code payload} is successfully

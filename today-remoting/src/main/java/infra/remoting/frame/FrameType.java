@@ -22,7 +22,7 @@ import java.util.Arrays;
 /**
  * Types of Frame that can be sent.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-types">Frame
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-types">Frame
  * Types</a>
  */
 public enum FrameType {
@@ -36,7 +36,7 @@ public enum FrameType {
    * Sent by client to initiate protocol processing.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#setup-frame-0x01">Setup
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#setup-frame-0x01">Setup
    * Frame</a>
    */
   SETUP(0x01, Flags.CAN_HAVE_DATA | Flags.CAN_HAVE_METADATA),
@@ -45,7 +45,7 @@ public enum FrameType {
    * Sent by Responder to grant the ability to send requests.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#lease-frame-0x02">Lease
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#lease-frame-0x02">Lease
    * Frame</a>
    */
   LEASE(0x02, Flags.CAN_HAVE_METADATA),
@@ -54,7 +54,7 @@ public enum FrameType {
    * Connection keepalive.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-keepalive">Keepalive
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-keepalive">Keepalive
    * Frame</a>
    */
   KEEPALIVE(0x03, Flags.CAN_HAVE_DATA),
@@ -65,7 +65,7 @@ public enum FrameType {
    * Request single response.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-request-response">Request
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-request-response">Request
    * Response Frame</a>
    */
   REQUEST_RESPONSE(0x04,
@@ -77,7 +77,7 @@ public enum FrameType {
   /**
    * A single one-way message.
    *
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-fnf">Request
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-fnf">Request
    * Fire-and-Forget Frame</a>
    */
   REQUEST_FNF(0x05,
@@ -90,7 +90,7 @@ public enum FrameType {
    * Request a completable stream.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-request-stream">Request
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-request-stream">Request
    * Stream Frame</a>
    */
   REQUEST_STREAM(0x06,
@@ -104,7 +104,7 @@ public enum FrameType {
    * Request a completable stream in both directions.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-request-channel">Request
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-request-channel">Request
    * Channel Frame</a>
    */
   REQUEST_CHANNEL(0x07,
@@ -120,7 +120,7 @@ public enum FrameType {
    * Request N more items with Reactive Streams semantics.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-request-n">RequestN
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-request-n">RequestN
    * Frame</a>
    */
   REQUEST_N(0x08),
@@ -128,7 +128,7 @@ public enum FrameType {
   /**
    * Cancel outstanding request.
    *
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-cancel">Cancel
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-cancel">Cancel
    * Frame</a>
    */
   CANCEL(0x09),
@@ -138,7 +138,7 @@ public enum FrameType {
   /**
    * Payload on a stream. For example, response to a request, or message on a channel.
    *
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-payload">Payload
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-payload">Payload
    * Frame</a>
    */
   PAYLOAD(0x0A, Flags.CAN_HAVE_DATA | Flags.CAN_HAVE_METADATA | Flags.IS_FRAGMENTABLE),
@@ -146,7 +146,7 @@ public enum FrameType {
   /**
    * Error at connection or application level.
    *
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-error">Error
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-error">Error
    * Frame</a>
    */
   ERROR(0x0B, Flags.CAN_HAVE_DATA),
@@ -157,7 +157,7 @@ public enum FrameType {
    * Asynchronous Metadata frame.
    *
    * @see <a
-   * href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-metadata-push">Metadata
+   * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-metadata-push">Metadata
    * Push Frame</a>
    */
   METADATA_PUSH(0x0C, Flags.CAN_HAVE_METADATA),
@@ -167,7 +167,7 @@ public enum FrameType {
   /**
    * Replaces SETUP for Resuming Operation (optional).
    *
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-resume">Resume
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-resume">Resume
    * Frame</a>
    */
   RESUME(0x0D),
@@ -195,7 +195,7 @@ public enum FrameType {
   /**
    * Used To Extend more frame types as well as extensions.
    *
-   * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#frame-ext">Extension
+   * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-ext">Extension
    * Frame</a>
    */
   EXT(0x3F, Flags.CAN_HAVE_DATA | Flags.CAN_HAVE_METADATA);

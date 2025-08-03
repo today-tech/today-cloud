@@ -20,7 +20,7 @@ package infra.remoting.keepalive;
 import java.util.function.Consumer;
 
 import infra.remoting.keepalive.KeepAliveSupport.KeepAlive;
-import infra.remoting.resume.RSocketSession;
+import infra.remoting.resume.ChannelSession;
 import infra.remoting.resume.ResumableDuplexConnection;
 import infra.remoting.resume.ResumeStateHolder;
 import io.netty.buffer.ByteBuf;
@@ -46,21 +46,21 @@ public interface KeepAliveHandler {
 
     private final ResumableDuplexConnection resumableDuplexConnection;
 
-    private final RSocketSession rSocketSession;
+    private final ChannelSession channelSession;
 
     private final ResumeStateHolder resumeStateHolder;
 
     public ResumableKeepAliveHandler(ResumableDuplexConnection resumableDuplexConnection,
-            RSocketSession rSocketSession, ResumeStateHolder resumeStateHolder) {
+            ChannelSession channelSession, ResumeStateHolder resumeStateHolder) {
       this.resumableDuplexConnection = resumableDuplexConnection;
-      this.rSocketSession = rSocketSession;
+      this.channelSession = channelSession;
       this.resumeStateHolder = resumeStateHolder;
     }
 
     @Override
     public KeepAliveFramesAcceptor start(KeepAliveSupport keepAliveSupport,
             Consumer<ByteBuf> onSendKeepAliveFrame, Consumer<KeepAlive> onTimeout) {
-      rSocketSession.setKeepAliveSupport(keepAliveSupport);
+      channelSession.setKeepAliveSupport(keepAliveSupport);
 
       return keepAliveSupport
               .resumeState(resumeStateHolder)

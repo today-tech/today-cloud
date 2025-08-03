@@ -23,7 +23,7 @@ import infra.remoting.frame.ErrorFrameCodec;
 /**
  * The server rejected the setup, it can specify the reason in the payload.
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
 public final class RejectedSetupException extends SetupException implements Retryable {

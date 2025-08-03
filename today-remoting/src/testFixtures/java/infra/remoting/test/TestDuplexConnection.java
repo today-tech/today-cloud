@@ -26,7 +26,7 @@ import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.PayloadFrameCodec;
 import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
@@ -65,7 +65,7 @@ public class TestDuplexConnection implements DuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException errorException) { }
+  public void sendErrorAndClose(ProtocolErrorException errorException) { }
 
   @Override
   public Flux<ByteBuf> receive() {

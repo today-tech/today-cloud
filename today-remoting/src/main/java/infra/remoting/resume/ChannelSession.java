@@ -20,7 +20,8 @@ package infra.remoting.resume;
 import infra.remoting.keepalive.KeepAliveSupport;
 import reactor.core.Disposable;
 
-public interface RSocketSession extends Disposable {
+public interface ChannelSession extends Disposable {
 
   void setKeepAliveSupport(KeepAliveSupport keepAliveSupport);
+
 }

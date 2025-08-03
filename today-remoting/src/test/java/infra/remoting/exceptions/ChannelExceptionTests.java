@@ -20,11 +20,11 @@ package infra.remoting.exceptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-interface ChannelExceptionTests<T extends RSocketErrorException> {
+interface ChannelExceptionTests<T extends ProtocolErrorException> {
 
   @DisplayName("constructor does not throw NullPointerException with null message")
   @Test

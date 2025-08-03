@@ -27,10 +27,10 @@ import java.util.function.Function;
 
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
-import infra.remoting.Payload;
 import infra.remoting.Channel;
-import infra.remoting.core.RemotingClient;
+import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
+import infra.remoting.core.RemotingClient;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.transport.netty.client.TcpClientTransport;
@@ -45,10 +45,6 @@ import reactor.test.StepVerifier;
 import reactor.util.retry.Retry;
 import reactor.util.retry.RetryBackoffSpec;
 
-/**
- * Test case that reproduces the following <a
- * href="https://github.com/rsocket/rsocket-java/issues/1099">GitHub Issue</a>
- */
 public class KeepaliveTests {
 
   private static final Logger LOG = LoggerFactory.getLogger(KeepaliveTests.class);
@@ -161,7 +157,7 @@ public class KeepaliveTests {
     RemotingClient client = RemotingClient.from(rsocketMono);
 
     client.source()
-            .doOnNext(r -> LOG.info("Got RSocket"))
+            .doOnNext(r -> LOG.info("Got"))
             .flatMap(Channel::onClose)
             .doOnError(err -> LOG.error("Error during onClose.", err))
             .retryWhen(reconnectSpec.apply("client-close"))

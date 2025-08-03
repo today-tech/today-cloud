@@ -23,7 +23,7 @@ import java.util.Objects;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ConnectionAcceptor;
 import infra.remoting.transport.ServerTransport;
-import infra.remoting.transport.netty.RSocketLengthCodec;
+import infra.remoting.transport.netty.ProtocolFrameLengthCodec;
 import infra.remoting.transport.netty.TcpDuplexConnection;
 import reactor.core.publisher.Mono;
 import reactor.netty.tcp.TcpServer;
@@ -114,7 +114,7 @@ public final class TcpServerTransport implements ServerTransport<CloseableChanne
   public Mono<CloseableChannel> start(ConnectionAcceptor acceptor) {
     Objects.requireNonNull(acceptor, "acceptor is required");
     return server.doOnConnection(c -> {
-              c.addHandlerLast(new RSocketLengthCodec(maxFrameLength));
+              c.addHandlerLast(new ProtocolFrameLengthCodec(maxFrameLength));
               acceptor.accept(new TcpDuplexConnection("server", c))
                       .then(Mono.<Void>never())
                       .subscribe(c.disposeSubscriber());

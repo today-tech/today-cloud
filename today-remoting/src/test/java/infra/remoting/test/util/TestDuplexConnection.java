@@ -29,7 +29,7 @@ import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.frame.ErrorFrameCodec;
 import reactor.core.CoreSubscriber;
@@ -109,7 +109,7 @@ public class TestDuplexConnection implements DuplexConnection {
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException e) {
+  public void sendErrorAndClose(ProtocolErrorException e) {
     final ByteBuf errorFrame = ErrorFrameCodec.encode(allocator, 0, e);
     sendSink.next(errorFrame);
     sent.offer(errorFrame);

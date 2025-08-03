@@ -269,7 +269,7 @@ final class ExceptionsTests {
       ByteBuf byteBuf = createErrorFrame(0, randomCode, "test-message");
       try {
         assertThat(Exceptions.from(1, byteBuf))
-                .isInstanceOf(CustomRSocketException.class)
+                .isInstanceOf(CustomProtocolException.class)
                 .hasMessage("test-message");
 
         assertThat(Exceptions.from(0, byteBuf))
@@ -293,6 +293,6 @@ final class ExceptionsTests {
 
   private ByteBuf createErrorFrame(int streamId, int errorCode, String message) {
     return ErrorFrameCodec.encode(
-            UnpooledByteBufAllocator.DEFAULT, streamId, new TestRSocketException(errorCode, message));
+            UnpooledByteBufAllocator.DEFAULT, streamId, new TestProtocolException(errorCode, message));
   }
 }

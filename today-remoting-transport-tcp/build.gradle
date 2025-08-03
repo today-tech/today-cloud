@@ -34,3 +34,9 @@ dependencies {
   testImplementation testFixtures(project(":today-remoting"))
 
 }
+
+jar {
+  manifest {
+    attributes("Automatic-Module-Name": "infra.remoting.transport.tcp")
+  }
+}

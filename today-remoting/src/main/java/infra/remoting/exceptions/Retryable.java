@@ -21,4 +21,6 @@ package infra.remoting.exceptions;
  * Indicates that an exception is retryable. This interface is a marker and the strategy for
  * retrying and operation that causes a {@link Retryable} to be thrown is not specified.
  */
-public interface Retryable { }
+public interface Retryable {
+  
+}

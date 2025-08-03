@@ -24,7 +24,7 @@ import infra.remoting.frame.ErrorFrameCodec;
  * The Setup frame is invalid for the server (it could be that the client is too recent for the old
  * server).
  *
- * @see <a href="https://github.com/rsocket/rsocket/blob/master/Protocol.md#error-codes">Error
+ * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
 public final class InvalidSetupException extends SetupException {

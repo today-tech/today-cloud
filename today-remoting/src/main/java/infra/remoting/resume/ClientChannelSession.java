@@ -44,12 +44,10 @@ import reactor.core.publisher.Operators;
 import reactor.util.function.Tuple2;
 import reactor.util.retry.Retry;
 
-public class ClientRSocketSession
-        implements RSocketSession,
-        ResumeStateHolder,
+public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
         CoreSubscriber<Tuple2<ByteBuf, DuplexConnection>> {
 
-  private static final Logger logger = LoggerFactory.getLogger(ClientRSocketSession.class);
+  private static final Logger logger = LoggerFactory.getLogger(ClientChannelSession.class);
 
   final ResumableDuplexConnection resumableConnection;
   final Mono<Tuple2<ByteBuf, DuplexConnection>> connectionFactory;
@@ -64,12 +62,12 @@ public class ClientRSocketSession
   final Disposable reconnectDisposable;
 
   volatile Subscription s;
-  static final AtomicReferenceFieldUpdater<ClientRSocketSession, Subscription> S =
-          AtomicReferenceFieldUpdater.newUpdater(ClientRSocketSession.class, Subscription.class, "s");
+  static final AtomicReferenceFieldUpdater<ClientChannelSession, Subscription> S =
+          AtomicReferenceFieldUpdater.newUpdater(ClientChannelSession.class, Subscription.class, "s");
 
   KeepAliveSupport keepAliveSupport;
 
-  public ClientRSocketSession(
+  public ClientChannelSession(
           ByteBuf resumeToken,
           ResumableDuplexConnection resumableDuplexConnection,
           Mono<DuplexConnection> connectionFactory,

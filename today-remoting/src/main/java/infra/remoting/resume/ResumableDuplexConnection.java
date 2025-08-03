@@ -27,7 +27,7 @@ import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.DuplexConnection;
-import infra.remoting.RSocketErrorException;
+import infra.remoting.ProtocolErrorException;
 import infra.remoting.exceptions.ConnectionErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameHeaderCodec;
@@ -193,7 +193,7 @@ public class ResumableDuplexConnection extends Flux<ByteBuf>
   }
 
   @Override
-  public void sendErrorAndClose(RSocketErrorException rSocketErrorException) {
+  public void sendErrorAndClose(ProtocolErrorException exception) {
     final DuplexConnection activeConnection =
             ACTIVE_CONNECTION.getAndSet(this, DisposedConnection.INSTANCE);
     if (activeConnection == DisposedConnection.INSTANCE) {
@@ -201,7 +201,7 @@ public class ResumableDuplexConnection extends Flux<ByteBuf>
     }
 
     savableFramesSender.tryEmitFinal(
-            ErrorFrameCodec.encode(activeConnection.alloc(), 0, rSocketErrorException));
+            ErrorFrameCodec.encode(activeConnection.alloc(), 0, exception));
 
     activeConnection
             .onClose()
@@ -214,7 +214,7 @@ public class ResumableDuplexConnection extends Flux<ByteBuf>
                     () -> {
                       onConnectionClosedSink.tryEmitComplete();
 
-                      final Throwable cause = rSocketErrorException.getCause();
+                      final Throwable cause = exception.getCause();
                       if (cause == null) {
                         onLastConnectionClose.tryEmitEmpty();
                       }
@@ -373,7 +373,7 @@ public class ResumableDuplexConnection extends Flux<ByteBuf>
     }
 
     @Override
-    public void sendErrorAndClose(RSocketErrorException e) { }
+    public void sendErrorAndClose(ProtocolErrorException e) { }
 
     @Override
     public ByteBufAllocator alloc() {

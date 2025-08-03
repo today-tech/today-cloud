@@ -28,7 +28,6 @@ dependencies {
 
   testRuntimeOnly 'org.bouncycastle:bcpkix-jdk15on:1.70'
   testRuntimeOnly 'ch.qos.logback:logback-classic'
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   testRuntimeOnly 'io.netty:netty-tcnative-boringssl-static' + os_suffix
 
   testImplementation testFixtures(project(":today-remoting"))

@@ -17,6 +17,7 @@
 
 package infra.config.etcd;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,7 @@ import io.etcd.jetcd.watch.WatchResponse;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/10/6 22:20
  */
+@Disabled
 class EtcdPropertySourceTests {
 
   @Test

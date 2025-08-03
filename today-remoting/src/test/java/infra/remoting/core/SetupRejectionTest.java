@@ -64,7 +64,7 @@ public class SetupRejectionTest {
     sentFrame.release();
     assertThat(errorMsg).isEqualTo(error.getMessage());
     assertThat(error).isInstanceOf(RejectedSetupException.class);
-    Channel acceptorSender = acceptor.senderRSocket().block();
+    Channel acceptorSender = acceptor.senderChannel().block();
     assertThat(acceptorSender.isDisposed()).isTrue();
     transport.allocator.assertHasNoLeaks();
   }
@@ -76,7 +76,7 @@ public class SetupRejectionTest {
     TestDuplexConnection conn = new TestDuplexConnection(allocator);
     Sinks.Empty<Void> onThisSideClosedSink = Sinks.empty();
 
-    ChannelRequester rSocket =
+    ChannelRequester channel =
             new ChannelRequester(
                     conn,
                     DefaultPayload::create,
@@ -95,7 +95,7 @@ public class SetupRejectionTest {
     String errorMsg = "error";
 
     StepVerifier.create(
-                    rSocket
+                    channel
                             .requestResponse(DefaultPayload.create("test"))
                             .doOnRequest(
                                     ignored ->
@@ -108,7 +108,7 @@ public class SetupRejectionTest {
                     err -> err instanceof RejectedSetupException && errorMsg.equals(err.getMessage()))
             .verify(Duration.ofSeconds(5));
 
-    assertThat(rSocket.isDisposed()).isTrue();
+    assertThat(channel.isDisposed()).isTrue();
     allocator.assertHasNoLeaks();
   }
 
@@ -118,7 +118,7 @@ public class SetupRejectionTest {
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
     TestDuplexConnection conn = new TestDuplexConnection(allocator);
     Sinks.Empty<Void> onThisSideClosedSink = Sinks.empty();
-    ChannelRequester rSocket =
+    ChannelRequester channel =
             new ChannelRequester(
                     conn,
                     DefaultPayload::create,
@@ -138,7 +138,7 @@ public class SetupRejectionTest {
             ErrorFrameCodec.encode(ByteBufAllocator.DEFAULT, 0, new RejectedSetupException("error")));
 
     StepVerifier.create(
-                    rSocket
+                    channel
                             .requestResponse(DefaultPayload.create("test"))
                             .delaySubscription(Duration.ofMillis(100)))
             .expectErrorMatches(
@@ -149,7 +149,7 @@ public class SetupRejectionTest {
 
   private static class RejectingAcceptor implements ChannelAcceptor {
     private final String errorMessage;
-    private final Sinks.Many<Channel> senderRSockets =
+    private final Sinks.Many<Channel> senderChannels =
             Sinks.many().unicast().onBackpressureBuffer();
 
     public RejectingAcceptor(String errorMessage) {
@@ -158,12 +158,12 @@ public class SetupRejectionTest {
 
     @Override
     public Mono<Channel> accept(ConnectionSetupPayload setup, Channel sendingSocket) {
-      senderRSockets.tryEmitNext(sendingSocket);
+      senderChannels.tryEmitNext(sendingSocket);
       return Mono.error(new RuntimeException(errorMessage));
     }
 
-    public Mono<Channel> senderRSocket() {
-      return senderRSockets.asFlux().next();
+    public Mono<Channel> senderChannel() {
+      return senderChannels.asFlux().next();
     }
   }
 

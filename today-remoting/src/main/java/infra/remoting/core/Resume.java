@@ -30,7 +30,7 @@ import io.netty.buffer.ByteBuf;
 import reactor.util.retry.Retry;
 
 /**
- * Simple holder of configuration settings for the RSocket Resume capability. This can be used to
+ * Simple holder of configuration settings for the protocol Resume capability. This can be used to
  * configure an {@link ChannelConnector} or an {@link RemotingServer} except for {@link
  * #retry(Retry)} and {@link #token(Supplier)} which apply only to the client side.
  */

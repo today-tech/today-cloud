@@ -48,7 +48,7 @@ public class SetupRejectionTests {
   /*
   TODO Fix this test
   @DisplayName(
-      "Rejecting setup by server causes requester RSocket disposal and RejectedSetupException")
+      "Rejecting setup by server causes requester Channel disposal and RejectedSetupException")
   @ParameterizedTest
   @MethodSource(value = "transports")*/
   void rejectSetupTcp(
@@ -57,7 +57,7 @@ public class SetupRejectionTests {
 
     String errorMessage = "error";
     RejectingAcceptor acceptor = new RejectingAcceptor(errorMessage);
-    Mono<Channel> serverRequester = acceptor.requesterRSocket();
+    Mono<Channel> serverRequester = acceptor.requesterChannel();
 
     CloseableChannel channel =
             RemotingServer.create(acceptor)
@@ -129,7 +129,7 @@ public class SetupRejectionTests {
       return Mono.error(new RuntimeException(msg));
     }
 
-    public Mono<Channel> requesterRSocket() {
+    public Mono<Channel> requesterChannel() {
       return requesters.asFlux().next();
     }
   }

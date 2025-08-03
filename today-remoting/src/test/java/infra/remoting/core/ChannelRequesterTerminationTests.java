@@ -54,12 +54,12 @@ public class ChannelRequesterTerminationTests {
   }
 
   @ParameterizedTest
-  @MethodSource("rsocketInteractions")
+  @MethodSource("interactions")
   public void testCurrentStreamIsTerminatedOnConnectionClose(
           FrameType requestType, Function<Channel, ? extends Publisher<?>> interaction) {
-    ChannelRequester rSocket = rule.socket;
+    ChannelRequester channel = rule.socket;
 
-    StepVerifier.create(interaction.apply(rSocket))
+    StepVerifier.create(interaction.apply(channel))
             .then(
                     () -> {
                       FrameAssert.assertThat(rule.connection.pollFrame()).typeOf(requestType).hasNoLeaks();
@@ -70,18 +70,18 @@ public class ChannelRequesterTerminationTests {
   }
 
   @ParameterizedTest
-  @MethodSource("rsocketInteractions")
+  @MethodSource("interactions")
   public void testSubsequentStreamIsTerminatedAfterConnectionClose(
           FrameType requestType, Function<Channel, ? extends Publisher<?>> interaction) {
-    ChannelRequester rSocket = rule.socket;
+    ChannelRequester channel = rule.socket;
 
     rule.connection.dispose();
-    StepVerifier.create(interaction.apply(rSocket))
+    StepVerifier.create(interaction.apply(channel))
             .expectError(ClosedChannelException.class)
             .verify(Duration.ofSeconds(5));
   }
 
-  public static Iterable<Arguments> rsocketInteractions() {
+  public static Iterable<Arguments> interactions() {
     EmptyPayload payload = EmptyPayload.INSTANCE;
 
     Arguments resp =
@@ -89,8 +89,8 @@ public class ChannelRequesterTerminationTests {
                     FrameType.REQUEST_RESPONSE,
                     new Function<Channel, Mono<Payload>>() {
                       @Override
-                      public Mono<Payload> apply(Channel rSocket) {
-                        return rSocket.requestResponse(payload);
+                      public Mono<Payload> apply(Channel channel) {
+                        return channel.requestResponse(payload);
                       }
 
                       @Override
@@ -103,8 +103,8 @@ public class ChannelRequesterTerminationTests {
                     FrameType.REQUEST_STREAM,
                     new Function<Channel, Flux<Payload>>() {
                       @Override
-                      public Flux<Payload> apply(Channel rSocket) {
-                        return rSocket.requestStream(payload);
+                      public Flux<Payload> apply(Channel channel) {
+                        return channel.requestStream(payload);
                       }
 
                       @Override
@@ -113,12 +113,11 @@ public class ChannelRequesterTerminationTests {
                       }
                     });
     Arguments channel =
-            Arguments.of(
-                    FrameType.REQUEST_CHANNEL,
+            Arguments.of(FrameType.REQUEST_CHANNEL,
                     new Function<Channel, Flux<Payload>>() {
                       @Override
-                      public Flux<Payload> apply(Channel rSocket) {
-                        return rSocket.requestChannel(Flux.<Payload>never().startWith(payload));
+                      public Flux<Payload> apply(Channel channel) {
+                        return channel.requestChannel(Flux.<Payload>never().startWith(payload));
                       }
 
                       @Override

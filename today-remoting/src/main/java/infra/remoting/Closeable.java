@@ -22,7 +22,9 @@ import org.reactivestreams.Subscriber;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
-/** An interface which allows listening to when a specific instance of this interface is closed */
+/**
+ * An interface which allows listening to when a specific instance of this interface is closed
+ */
 public interface Closeable extends Disposable {
 
   /**
@@ -32,7 +34,7 @@ public interface Closeable extends Disposable {
    * Subscriber#onComplete()} will be called.
    *
    * @return a {@link Mono} to track completion with success or error of the underlying resource.
-   * When the underlying resource is an `RSocket`, the {@code Mono} exposes stream 0 (i.e.
+   * When the underlying resource is an `Channel`, the {@code Mono} exposes stream 0 (i.e.
    * connection level) errors.
    */
   Mono<Void> onClose();

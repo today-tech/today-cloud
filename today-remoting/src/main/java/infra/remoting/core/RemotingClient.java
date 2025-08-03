@@ -26,52 +26,46 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Contract for performing RSocket requests.
+ * Contract for performing protocol requests.
  *
  * <p>{@link RemotingClient} differs from {@link Channel} in a number of ways:
  *
  * <ul>
- *   <li>{@code RSocket} represents a "live" connection that is transient and needs to be obtained
- *       typically from a {@code Mono<RSocket>} source via {@code flatMap} or block. By contrast,
- *       {@code RSocketClient} is a higher level layer that contains such a {@link #source() source}
+ *   <li>{@code Channel} represents a "live" connection that is transient and needs to be obtained
+ *       typically from a {@code Mono<Channel>} source via {@code flatMap} or block. By contrast,
+ *       {@code RemotingClient} is a higher level layer that contains such a {@link #source() source}
  *       of connections and transparently obtains and re-obtains a shared connection as needed when
- *       requests are made concurrently. That means an {@code RSocketClient} can simply be created
+ *       requests are made concurrently. That means an {@code RemotingClient} can simply be created
  *       once, even before a connection is established, and shared as a singleton across multiple
  *       places as you would with any other client.
- *   <li>For request input {@code RSocket} accepts an instance of {@code Payload} and does not allow
+ *   <li>For request input {@code Channel} accepts an instance of {@code Payload} and does not allow
  *       more than one subscription per request because there is no way to safely re-use that input.
- *       By contrast {@code RSocketClient} accepts {@code Publisher<Payload>} and allow
+ *       By contrast {@code RemotingClient} accepts {@code Publisher<Payload>} and allow
  *       re-subscribing which repeats the request.
- *   <li>{@code RSocket} can be used for sending and it can also be implemented for receiving. By
- *       contrast {@code RSocketClient} is used only for sending, typically from the client side
+ *   <li>{@code Channel} can be used for sending and it can also be implemented for receiving. By
+ *       contrast {@code RemotingClient} is used only for sending, typically from the client side
  *       which allows obtaining and re-obtaining connections from a source as needed. However it can
  *       also be used from the server side by {@link #from(Channel) wrapping} the "live" {@code
- *       RSocket} for a given connection.
+ *       Channel} for a given connection.
  * </ul>
  *
- * <p>The example below shows how to create an {@code RSocketClient}:
+ * <p>The example below shows how to create an {@code RemotingClient}:
  *
- * <pre class="code">{@code
- * Mono<RSocket> source =
- *         RSocketConnector.create()
- *                 .metadataMimeType("message/x.rsocket.composite-metadata.v0")
- *                 .dataMimeType("application/cbor")
- *                 .connect(TcpClientTransport.create("localhost", 7000));
+ * <pre>{@code
+ * Mono<Channel> source = ChannelConnector.create()
+ *      .connect(TcpClientTransport.create("localhost", 7000));
  *
- * RSocketClient client = RSocketClient.from(source);
+ * RemotingClient client = RemotingClient.from(source);
  * }</pre>
  *
- * <p>The below configures retry logic to use when a shared {@code RSocket} connection is obtained:
+ * <p>The below configures retry logic to use when a shared {@code Channel} connection is obtained:
  *
- * <pre class="code">{@code
- * Mono<RSocket> source =
- *         RSocketConnector.create()
- *                 .metadataMimeType("message/x.rsocket.composite-metadata.v0")
- *                 .dataMimeType("application/cbor")
+ * <pre>{@code
+ * Mono<Channel> source =
+ *         ChannelConnector.create()
  *                 .reconnect(Retry.fixedDelay(3, Duration.ofSeconds(1)))
  *                 .connect(TcpClientTransport.create("localhost", 7000));
- *
- * RSocketClient client = RSocketClient.from(source);
+ * RemotingClient client = RemotingClient.from(source);
  * }</pre>
  *
  * @see LoadBalanceRemotingClient
@@ -79,8 +73,8 @@ import reactor.core.publisher.Mono;
 public interface RemotingClient extends Closeable {
 
   /**
-   * Connect to the remote rsocket endpoint, if not yet connected. This method is a shortcut for
-   * {@code RSocketClient#source().subscribe()}.
+   * Connect to the remote endpoint, if not yet connected. This method is a shortcut for
+   * {@code RemotingClient#source().subscribe()}.
    *
    * @return {@code true} if an attempt to connect was triggered or if already connected, or {@code
    * false} if the client is terminated.
@@ -130,7 +124,7 @@ public interface RemotingClient extends Closeable {
 
   /**
    * Create an {@link RemotingClient} that obtains shared connections as needed, when requests are
-   * made, from the given {@code Mono<RSocket>} source.
+   * made, from the given {@code Mono<Channel>} source.
    *
    * @param source the source for connections, typically prepared via {@link ChannelConnector}.
    * @return the created client instance
@@ -141,16 +135,16 @@ public interface RemotingClient extends Closeable {
 
   /**
    * Adapt the given {@link Channel} to use as {@link RemotingClient}. This is useful to wrap the
-   * sending {@code RSocket} in a server.
+   * sending {@code Channel} in a server.
    *
-   * <p><strong>Note:</strong> unlike an {@code RSocketClient} created via {@link
+   * <p><strong>Note:</strong> unlike an {@code RemotingClient} created via {@link
    * RemotingClient#from(Mono)}, the instance returned from this factory method can only perform
-   * requests for as long as the given {@code RSocket} remains "live".
+   * requests for as long as the given {@code Channel} remains "live".
    *
-   * @param rsocket the {@code RSocket} to perform requests with
+   * @param channel the {@code Channel} to perform requests with
    * @return the created client instance
    */
-  static RemotingClient from(Channel rsocket) {
-    return new RemotingClientAdapter(rsocket);
+  static RemotingClient from(Channel channel) {
+    return new RemotingClientAdapter(channel);
   }
 }

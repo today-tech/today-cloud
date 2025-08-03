@@ -50,7 +50,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 /**
- * Responder side of RSocket. Receives {@link ByteBuf}s from a peer's {@link ChannelRequester}
+ * Responder side of Channel. Receives {@link ByteBuf}s from a peer's {@link ChannelRequester}
  */
 class ChannelResponder extends RequesterResponderSupport implements Channel {
 
@@ -280,7 +280,7 @@ class ChannelResponder extends RequesterResponderSupport implements Channel {
         case LEASE:
         default:
           connection.sendFrame(streamId, ErrorFrameCodec.encode(
-                  allocator, streamId, new IllegalStateException("ServerRSocket: Unexpected frame type: " + frameType)));
+                  allocator, streamId, new IllegalStateException("ServerChannel: Unexpected frame type: " + frameType)));
           break;
       }
     }

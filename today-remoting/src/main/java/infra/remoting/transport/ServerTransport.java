@@ -21,7 +21,7 @@ import infra.remoting.Closeable;
 import reactor.core.publisher.Mono;
 
 /**
- * A server contract for writing transports of RSocket.
+ * A server contract for writing transports of protocol.
  */
 public interface ServerTransport<T extends Closeable> extends Transport {
 

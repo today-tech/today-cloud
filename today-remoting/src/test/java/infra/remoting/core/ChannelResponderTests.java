@@ -1223,7 +1223,7 @@ public class ChannelResponderTests {
     }
 
     @Override
-    protected ChannelResponder newRSocket() {
+    protected ChannelResponder newChannel() {
       onCloseSink = Sinks.empty();
       return new ChannelResponder(
               connection,

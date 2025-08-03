@@ -512,8 +512,8 @@ public class DefaultChannelClientTests {
     ClientSocketRule rule =
             new ClientSocketRule() {
               @Override
-              protected Channel newRSocket() {
-                return new ChannelDecorator(super.newRSocket()) {
+              protected Channel newChannel() {
+                return new ChannelDecorator(super.newChannel()) {
                   @Override
                   public Mono<Void> onClose() {
                     return super.onClose().and(onCloseDelayer.asMono());
@@ -630,7 +630,7 @@ public class DefaultChannelClientTests {
     Assertions.assertThat(rule.client.isDisposed()).isFalse();
 
     rule.connection = new TestDuplexConnection(rule.allocator);
-    rule.socket = rule.newRSocket();
+    rule.socket = rule.newChannel();
     rule.producer = Sinks.one();
 
     AssertSubscriber<Channel> assertSubscriber2 = AssertSubscriber.create();
@@ -754,7 +754,7 @@ public class DefaultChannelClientTests {
     }
 
     @Override
-    protected Channel newRSocket() {
+    protected Channel newChannel() {
       this.thisClosedSink = Sinks.empty();
       return new ChannelRequester(
               connection,

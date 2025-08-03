@@ -320,9 +320,9 @@ public class FireAndForgetRequesterMonoTest {
   }
 
   /**
-   * Ensures that frame will not be sent if we dont have availability for that. Options: 1. RSocket
+   * Ensures that frame will not be sent if we dont have availability for that. Options: 1. Channel
    * disposed / Connection Error, so all racing on existing interactions should be terminated as
-   * well 2. RSocket tries to use lease and end-ups with no available leases
+   * well 2. Channel tries to use lease and end-ups with no available leases
    */
   @ParameterizedTest
   @MethodSource("shouldErrorIfNoAvailabilitySource")

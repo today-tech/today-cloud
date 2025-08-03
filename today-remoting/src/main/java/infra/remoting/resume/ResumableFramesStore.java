@@ -42,14 +42,14 @@ public interface ResumableFramesStore extends Closeable {
    */
   Flux<ByteBuf> resumeStream();
 
-  /** @return Local frame position as defined by RSocket protocol */
+  /** @return Local frame position as defined by protocol */
   long framePosition();
 
-  /** @return Implied frame position as defined by RSocket protocol */
+  /** @return Implied frame position as defined by protocol */
   long frameImpliedPosition();
 
   /**
-   * Received resumable frame as defined by RSocket protocol. Implementation must increment frame
+   * Received resumable frame as defined by protocol. Implementation must increment frame
    * implied position
    *
    * @return {@code true} if information about the frame has been stored

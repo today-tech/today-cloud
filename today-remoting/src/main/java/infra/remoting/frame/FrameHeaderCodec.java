@@ -45,7 +45,7 @@ public final class FrameHeaderCodec {
   /** (N)ext: bit to indicate payload or metadata present ({@link Subscriber#onNext(Object)}) */
   public static final int FLAGS_N = 0b00_0010_0000;
 
-  public static final String DISABLE_FRAME_TYPE_CHECK = "io.rsocket.frames.disableFrameTypeCheck";
+  public static final String DISABLE_FRAME_TYPE_CHECK = "infra.remoting.frames.disableFrameTypeCheck";
   private static final int FRAME_FLAGS_MASK = 0b0000_0011_1111_1111;
   private static final int FRAME_TYPE_BITS = 6;
   private static final int FRAME_TYPE_SHIFT = 16 - FRAME_TYPE_BITS;

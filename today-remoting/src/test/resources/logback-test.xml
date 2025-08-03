@@ -24,7 +24,7 @@
     </encoder>
   </appender>
 
-  <logger name="io.rsocket.fragmentation" level="INFO" />
+  <logger name="infra.remoting.fragmentation" level="INFO" />
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />

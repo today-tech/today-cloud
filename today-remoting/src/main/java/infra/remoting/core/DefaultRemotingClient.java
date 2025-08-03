@@ -98,27 +98,27 @@ class DefaultRemotingClient extends ResolvingOperator<Channel>
 
   @Override
   public Mono<Void> fireAndForget(Mono<Payload> payloadMono) {
-    return new RSocketClientMonoOperator<>(this, FrameType.REQUEST_FNF, payloadMono);
+    return new ChannelClientMonoOperator<>(this, FrameType.REQUEST_FNF, payloadMono);
   }
 
   @Override
   public Mono<Payload> requestResponse(Mono<Payload> payloadMono) {
-    return new RSocketClientMonoOperator<>(this, FrameType.REQUEST_RESPONSE, payloadMono);
+    return new ChannelClientMonoOperator<>(this, FrameType.REQUEST_RESPONSE, payloadMono);
   }
 
   @Override
   public Flux<Payload> requestStream(Mono<Payload> payloadMono) {
-    return new RSocketClientFluxOperator<>(this, FrameType.REQUEST_STREAM, payloadMono);
+    return new ChannelClientFluxOperator<>(this, FrameType.REQUEST_STREAM, payloadMono);
   }
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return new RSocketClientFluxOperator<>(this, FrameType.REQUEST_CHANNEL, payloads);
+    return new ChannelClientFluxOperator<>(this, FrameType.REQUEST_CHANNEL, payloads);
   }
 
   @Override
   public Mono<Void> metadataPush(Mono<Payload> payloadMono) {
-    return new RSocketClientMonoOperator<>(this, FrameType.METADATA_PUSH, payloadMono);
+    return new ChannelClientMonoOperator<>(this, FrameType.METADATA_PUSH, payloadMono);
   }
 
   @Override
@@ -528,12 +528,12 @@ class DefaultRemotingClient extends ResolvingOperator<Channel>
     }
   }
 
-  static class RSocketClientMonoOperator<T> extends MonoOperator<Payload, T> {
+  static class ChannelClientMonoOperator<T> extends MonoOperator<Payload, T> {
 
     final DefaultRemotingClient parent;
     final FrameType requestType;
 
-    public RSocketClientMonoOperator(
+    public ChannelClientMonoOperator(
             DefaultRemotingClient parent, FrameType requestType, Mono<Payload> source) {
       super(source);
       this.parent = parent;
@@ -546,13 +546,13 @@ class DefaultRemotingClient extends ResolvingOperator<Channel>
     }
   }
 
-  static class RSocketClientFluxOperator<ST extends Publisher<Payload>> extends Flux<Payload> {
+  static class ChannelClientFluxOperator<ST extends Publisher<Payload>> extends Flux<Payload> {
 
     final DefaultRemotingClient parent;
     final FrameType requestType;
     final ST source;
 
-    public RSocketClientFluxOperator(
+    public ChannelClientFluxOperator(
             DefaultRemotingClient parent, FrameType requestType, ST source) {
       this.parent = parent;
       this.requestType = requestType;

@@ -54,18 +54,18 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
     return connection;
   }
 
-  public Channel decorateRequester(Channel rsocket) {
+  public Channel decorateRequester(Channel channel) {
     for (ChannelInterceptor interceptor : requesterChannelInterceptors) {
-      rsocket = interceptor.decorate(rsocket);
+      channel = interceptor.decorate(channel);
     }
-    return rsocket;
+    return channel;
   }
 
-  public Channel decorateResponder(Channel rsocket) {
+  public Channel decorateResponder(Channel channel) {
     for (ChannelInterceptor interceptor : responderChannelInterceptors) {
-      rsocket = interceptor.decorate(rsocket);
+      channel = interceptor.decorate(channel);
     }
-    return rsocket;
+    return channel;
   }
 
   public ChannelAcceptor decorateAcceptor(ChannelAcceptor acceptor) {

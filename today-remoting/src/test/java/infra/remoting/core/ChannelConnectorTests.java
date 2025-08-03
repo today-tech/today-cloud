@@ -148,7 +148,7 @@ public class ChannelConnectorTests {
   }
 
   @Test
-  public void ensuresThatMonoFromRSocketConnectorCanBeUsedForMultipleSubscriptions() {
+  public void ensuresThatMonoFromChannelConnectorCanBeUsedForMultipleSubscriptions() {
     Payload setupPayload = ByteBufPayload.create("TestData", "TestMetadata");
     assertThat(setupPayload.refCnt()).isOne();
 

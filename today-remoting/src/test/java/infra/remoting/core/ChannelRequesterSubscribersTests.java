@@ -186,24 +186,24 @@ class ChannelRequesterSubscribersTests {
     return Stream.of(
             Arguments.of(
                     (Function<Channel, Publisher<?>>)
-                            rSocket -> rSocket.fireAndForget(DefaultPayload.create("test")),
+                            channel -> channel.fireAndForget(DefaultPayload.create("test")),
                     FrameType.REQUEST_FNF),
             Arguments.of(
                     (Function<Channel, Publisher<?>>)
-                            rSocket -> rSocket.requestResponse(DefaultPayload.create("test")),
+                            channel -> channel.requestResponse(DefaultPayload.create("test")),
                     FrameType.REQUEST_RESPONSE),
             Arguments.of(
                     (Function<Channel, Publisher<?>>)
-                            rSocket -> rSocket.requestStream(DefaultPayload.create("test")),
+                            channel -> channel.requestStream(DefaultPayload.create("test")),
                     FrameType.REQUEST_STREAM),
             Arguments.of(
                     (Function<Channel, Publisher<?>>)
-                            rSocket -> rSocket.requestChannel(Mono.just(DefaultPayload.create("test"))),
+                            channel -> channel.requestChannel(Mono.just(DefaultPayload.create("test"))),
                     FrameType.REQUEST_CHANNEL),
             Arguments.of(
                     (Function<Channel, Publisher<?>>)
-                            rSocket ->
-                                    rSocket.metadataPush(
+                            channel ->
+                                    channel.metadataPush(
                                             DefaultPayload.create(new byte[0], "test".getBytes(CharsetUtil.UTF_8))),
                     FrameType.METADATA_PUSH));
   }

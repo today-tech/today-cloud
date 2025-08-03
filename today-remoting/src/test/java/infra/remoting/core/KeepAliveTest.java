@@ -25,22 +25,22 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import infra.remoting.FrameAssert;
 import infra.remoting.Channel;
+import infra.remoting.FrameAssert;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.exceptions.ConnectionErrorException;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
-import infra.remoting.resume.InMemoryResumableFramesStore;
 import infra.remoting.resume.ChannelSession;
+import infra.remoting.resume.InMemoryResumableFramesStore;
 import infra.remoting.resume.ResumableDuplexConnection;
 import infra.remoting.resume.ResumeStateHolder;
 import infra.remoting.test.util.TestDuplexConnection;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -69,12 +69,12 @@ public class KeepAliveTest {
     VirtualTimeScheduler.reset();
   }
 
-  static RSocketState requester(int tickPeriod, int timeout) {
+  static ChannelState requester(int tickPeriod, int timeout) {
     LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
     TestDuplexConnection connection = new TestDuplexConnection(allocator);
     Sinks.Empty<Void> empty = Sinks.empty();
-    ChannelRequester rSocket =
+    ChannelRequester channel =
             new ChannelRequester(
                     connection,
                     PayloadDecoder.ZERO_COPY,
@@ -89,10 +89,10 @@ public class KeepAliveTest {
                     null,
                     empty,
                     empty.asMono());
-    return new RSocketState(rSocket, allocator, connection, empty);
+    return new ChannelState(channel, allocator, connection, empty);
   }
 
-  static ResumableRSocketState resumableRequester(int tickPeriod, int timeout) {
+  static ResumableChannelState resumableRequester(int tickPeriod, int timeout) {
     LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
     TestDuplexConnection connection = new TestDuplexConnection(allocator);
@@ -104,7 +104,7 @@ public class KeepAliveTest {
                     new InMemoryResumableFramesStore("test", Unpooled.EMPTY_BUFFER, 10_000));
     Sinks.Empty<Void> onClose = Sinks.empty();
 
-    ChannelRequester rSocket =
+    ChannelRequester channel =
             new ChannelRequester(
                     resumableConnection,
                     PayloadDecoder.ZERO_COPY,
@@ -122,12 +122,12 @@ public class KeepAliveTest {
                     null,
                     onClose,
                     onClose.asMono());
-    return new ResumableRSocketState(rSocket, connection, resumableConnection, onClose, allocator);
+    return new ResumableChannelState(channel, connection, resumableConnection, onClose, allocator);
   }
 
   @Test
-  void rSocketNotDisposedOnPresentKeepAlives() {
-    RSocketState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
+  void channelNotDisposedOnPresentKeepAlives() {
+    ChannelState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
 
     TestDuplexConnection connection = requesterState.connection();
 
@@ -141,7 +141,7 @@ public class KeepAliveTest {
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(KEEP_ALIVE_TIMEOUT * 2));
 
-    Channel channel = requesterState.rSocket();
+    Channel channel = requesterState.channel();
 
     Assertions.assertThat(channel.isDisposed()).isFalse();
 
@@ -156,10 +156,10 @@ public class KeepAliveTest {
   }
 
   @Test
-  void noKeepAlivesSentAfterRSocketDispose() {
-    RSocketState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
+  void noKeepAlivesSentAfterChannelDispose() {
+    ChannelState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
 
-    requesterState.rSocket().dispose();
+    requesterState.channel().dispose();
 
     Duration duration = Duration.ofMillis(500);
 
@@ -174,10 +174,10 @@ public class KeepAliveTest {
   }
 
   @Test
-  void rSocketDisposedOnMissingKeepAlives() {
-    RSocketState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
+  void channelDisposedOnMissingKeepAlives() {
+    ChannelState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
 
-    Channel channel = requesterState.rSocket();
+    Channel channel = requesterState.channel();
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(KEEP_ALIVE_TIMEOUT * 2));
 
@@ -195,8 +195,8 @@ public class KeepAliveTest {
 
   @Test
   void clientRequesterSendsKeepAlives() {
-    RSocketState RSocketState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    TestDuplexConnection connection = RSocketState.connection();
+    ChannelState channelState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
+    TestDuplexConnection connection = channelState.connection();
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(KEEP_ALIVE_INTERVAL));
     this.keepAliveFrameWithRespondFlag(connection.pollFrame());
@@ -205,50 +205,50 @@ public class KeepAliveTest {
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(KEEP_ALIVE_INTERVAL));
     this.keepAliveFrameWithRespondFlag(connection.pollFrame());
 
-    RSocketState.channel.dispose();
+    channelState.channel.dispose();
     FrameAssert.assertThat(connection.pollFrame())
             .typeOf(FrameType.ERROR)
             .hasData("Disposed")
             .hasNoLeaks();
-    RSocketState.connection.dispose();
+    channelState.connection.dispose();
 
-    RSocketState.allocator.assertHasNoLeaks();
+    channelState.allocator.assertHasNoLeaks();
   }
 
   @Test
   void requesterRespondsToKeepAlives() {
-    RSocketState rSocketState = requester(100_000, 100_000);
-    TestDuplexConnection connection = rSocketState.connection();
+    ChannelState channelState = requester(100_000, 100_000);
+    TestDuplexConnection connection = channelState.connection();
     Duration duration = Duration.ofMillis(100);
     Mono.delay(duration)
             .subscribe(
                     l ->
                             connection.addToReceivedBuffer(
                                     KeepAliveFrameCodec.encode(
-                                            rSocketState.allocator, true, 0, Unpooled.EMPTY_BUFFER)));
+                                            channelState.allocator, true, 0, Unpooled.EMPTY_BUFFER)));
 
     virtualTimeScheduler.advanceTimeBy(duration);
     FrameAssert.assertThat(connection.awaitFrame())
             .typeOf(FrameType.KEEPALIVE)
             .matches(this::keepAliveFrameWithoutRespondFlag);
 
-    rSocketState.channel.dispose();
-    FrameAssert.assertThat(rSocketState.connection.pollFrame())
+    channelState.channel.dispose();
+    FrameAssert.assertThat(channelState.connection.pollFrame())
             .typeOf(FrameType.ERROR)
             .hasStreamIdZero()
             .hasData("Disposed")
             .hasNoLeaks();
-    rSocketState.connection.dispose();
+    channelState.connection.dispose();
 
-    rSocketState.allocator.assertHasNoLeaks();
+    channelState.allocator.assertHasNoLeaks();
   }
 
   @Test
   void resumableRequesterNoKeepAlivesAfterDisconnect() {
-    ResumableRSocketState rSocketState =
+    ResumableChannelState channelState =
             resumableRequester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    TestDuplexConnection testConnection = rSocketState.connection();
-    ResumableDuplexConnection resumableDuplexConnection = rSocketState.resumableDuplexConnection();
+    TestDuplexConnection testConnection = channelState.connection();
+    ResumableDuplexConnection resumableDuplexConnection = channelState.resumableDuplexConnection();
 
     resumableDuplexConnection.disconnect();
 
@@ -256,19 +256,19 @@ public class KeepAliveTest {
     virtualTimeScheduler.advanceTimeBy(duration);
     Assertions.assertThat(testConnection.pollFrame()).isNull();
 
-    rSocketState.channel.dispose();
-    rSocketState.connection.dispose();
+    channelState.channel.dispose();
+    channelState.connection.dispose();
 
-    rSocketState.allocator.assertHasNoLeaks();
+    channelState.allocator.assertHasNoLeaks();
   }
 
   @Test
   void resumableRequesterKeepAlivesAfterReconnect() {
-    ResumableRSocketState rSocketState =
+    ResumableChannelState channelState =
             resumableRequester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    ResumableDuplexConnection resumableDuplexConnection = rSocketState.resumableDuplexConnection();
+    ResumableDuplexConnection resumableDuplexConnection = channelState.resumableDuplexConnection();
     resumableDuplexConnection.disconnect();
-    TestDuplexConnection newTestConnection = new TestDuplexConnection(rSocketState.alloc());
+    TestDuplexConnection newTestConnection = new TestDuplexConnection(channelState.alloc());
     resumableDuplexConnection.connect(newTestConnection);
     //    resumableDuplexConnection.(0, 0, ignored -> Mono.empty());
 
@@ -279,7 +279,7 @@ public class KeepAliveTest {
             .hasStreamIdZero()
             .hasNoLeaks();
 
-    rSocketState.channel.dispose();
+    channelState.channel.dispose();
     FrameAssert.assertThat(newTestConnection.pollFrame())
             .typeOf(FrameType.ERROR)
             .hasStreamIdZero()
@@ -292,41 +292,41 @@ public class KeepAliveTest {
             .hasNoLeaks();
     newTestConnection.dispose();
 
-    rSocketState.allocator.assertHasNoLeaks();
+    channelState.allocator.assertHasNoLeaks();
   }
 
   @Test
   void resumableRequesterNoKeepAlivesAfterDispose() {
-    ResumableRSocketState rSocketState =
+    ResumableChannelState channelState =
             resumableRequester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    rSocketState.rSocket().dispose();
+    channelState.channel().dispose();
     Duration duration = Duration.ofMillis(500);
-    StepVerifier.create(Flux.from(rSocketState.connection().getSentAsPublisher()).take(duration))
+    StepVerifier.create(Flux.from(channelState.connection().getSentAsPublisher()).take(duration))
             .then(() -> virtualTimeScheduler.advanceTimeBy(duration))
             .expectComplete()
             .verify(Duration.ofSeconds(5));
 
-    rSocketState.channel.dispose();
-    FrameAssert.assertThat(rSocketState.connection.pollFrame())
+    channelState.channel.dispose();
+    FrameAssert.assertThat(channelState.connection.pollFrame())
             .typeOf(FrameType.ERROR)
             .hasStreamIdZero()
             .hasData("Disposed")
             .hasNoLeaks();
-    rSocketState.connection.dispose();
-    FrameAssert.assertThat(rSocketState.connection.pollFrame())
+    channelState.connection.dispose();
+    FrameAssert.assertThat(channelState.connection.pollFrame())
             .typeOf(FrameType.ERROR)
             .hasStreamIdZero()
             .hasData("Connection Closed Unexpectedly")
             .hasNoLeaks();
 
-    rSocketState.allocator.assertHasNoLeaks();
+    channelState.allocator.assertHasNoLeaks();
   }
 
   @Test
-  void resumableRSocketsNotDisposedOnMissingKeepAlives() throws InterruptedException {
-    ResumableRSocketState resumableRequesterState =
+  void resumableChannelsNotDisposedOnMissingKeepAlives() throws InterruptedException {
+    ResumableChannelState resumableRequesterState =
             resumableRequester(KEEP_ALIVE_INTERVAL, RESUMABLE_KEEP_ALIVE_TIMEOUT);
-    Channel channel = resumableRequesterState.rSocket();
+    Channel channel = resumableRequesterState.channel();
     TestDuplexConnection connection = resumableRequesterState.connection();
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(500));
@@ -354,14 +354,13 @@ public class KeepAliveTest {
     return keepAliveFrame(frame) && !KeepAliveFrameCodec.respondFlag(frame) && frame.release();
   }
 
-  static class RSocketState {
+  static class ChannelState {
     private final Channel channel;
     private final TestDuplexConnection connection;
     private final LeaksTrackingByteBufAllocator allocator;
     private final Sinks.Empty<Void> onClose;
 
-    public RSocketState(
-            Channel channel,
+    public ChannelState(Channel channel,
             LeaksTrackingByteBufAllocator allocator,
             TestDuplexConnection connection,
             Sinks.Empty<Void> onClose) {
@@ -375,7 +374,7 @@ public class KeepAliveTest {
       return connection;
     }
 
-    public Channel rSocket() {
+    public Channel channel() {
       return channel;
     }
 
@@ -384,14 +383,14 @@ public class KeepAliveTest {
     }
   }
 
-  static class ResumableRSocketState {
+  static class ResumableChannelState {
     private final Channel channel;
     private final TestDuplexConnection connection;
     private final ResumableDuplexConnection resumableDuplexConnection;
     private final LeaksTrackingByteBufAllocator allocator;
     private final Sinks.Empty<Void> onClose;
 
-    public ResumableRSocketState(
+    public ResumableChannelState(
             Channel channel,
             TestDuplexConnection connection,
             ResumableDuplexConnection resumableDuplexConnection,
@@ -412,7 +411,7 @@ public class KeepAliveTest {
       return resumableDuplexConnection;
     }
 
-    public Channel rSocket() {
+    public Channel channel() {
       return channel;
     }
 

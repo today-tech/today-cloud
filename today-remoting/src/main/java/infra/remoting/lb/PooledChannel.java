@@ -40,7 +40,7 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
   final ChannelPool parent;
 
-  final Mono<Channel> rSocketSource;
+  final Mono<Channel> channelSource;
 
   final LoadBalanceTarget loadbalanceTarget;
 
@@ -51,9 +51,9 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
   static final AtomicReferenceFieldUpdater<PooledChannel, Subscription> S =
           AtomicReferenceFieldUpdater.newUpdater(PooledChannel.class, Subscription.class, "s");
 
-  PooledChannel(ChannelPool parent, Mono<Channel> rSocketSource, LoadBalanceTarget loadbalanceTarget) {
+  PooledChannel(ChannelPool parent, Mono<Channel> channelSource, LoadBalanceTarget loadbalanceTarget) {
     this.parent = parent;
-    this.rSocketSource = rSocketSource;
+    this.channelSource = channelSource;
     this.loadbalanceTarget = loadbalanceTarget;
     this.onCloseSink = Sinks.unsafe().empty();
   }
@@ -114,7 +114,7 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
   @Override
   protected void doSubscribe() {
-    this.rSocketSource.subscribe(this);
+    this.channelSource.subscribe(this);
   }
 
   @Override

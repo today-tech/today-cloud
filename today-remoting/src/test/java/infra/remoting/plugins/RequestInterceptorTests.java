@@ -172,28 +172,28 @@ public class RequestInterceptorTests {
     CountDownLatch latch = new CountDownLatch(1);
     final Closeable closeable =
             RemotingServer.create(
-                            (setup, rSocket) ->
+                            (setup, channel) ->
                                     Mono.<Channel>just(new Channel() { })
                                             .doAfterTerminate(
                                                     () -> {
                                                       new Thread(
                                                               () -> {
-                                                                rSocket
+                                                                channel
                                                                         .fireAndForget(DefaultPayload.create("test"))
                                                                         .onErrorResume(__ -> Mono.empty())
                                                                         .block();
 
-                                                                rSocket
+                                                                channel
                                                                         .requestResponse(DefaultPayload.create("test"))
                                                                         .onErrorResume(__ -> Mono.empty())
                                                                         .block();
 
-                                                                rSocket
+                                                                channel
                                                                         .requestStream(DefaultPayload.create("test"))
                                                                         .onErrorResume(__ -> Mono.empty())
                                                                         .blockLast();
 
-                                                                rSocket
+                                                                channel
                                                                         .requestChannel(
                                                                                 Flux.just(DefaultPayload.create("test")))
                                                                         .onErrorResume(__ -> Mono.empty())
@@ -412,25 +412,25 @@ public class RequestInterceptorTests {
 
     CountDownLatch latch = new CountDownLatch(1);
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
-    final Closeable closeable = RemotingServer.create((setup, rSocket) -> Mono.<Channel>just(new Channel() { })
+    final Closeable closeable = RemotingServer.create((setup, channel) -> Mono.<Channel>just(new Channel() { })
                     .doAfterTerminate(() -> {
                       new Thread(() -> {
-                        rSocket
+                        channel
                                 .fireAndForget(DefaultPayload.create("test"))
                                 .onErrorResume(__ -> Mono.empty())
                                 .block();
 
-                        rSocket
+                        channel
                                 .requestResponse(DefaultPayload.create("test"))
                                 .onErrorResume(__ -> Mono.empty())
                                 .block();
 
-                        rSocket
+                        channel
                                 .requestStream(DefaultPayload.create("test"))
                                 .onErrorResume(__ -> Mono.empty())
                                 .blockLast();
 
-                        rSocket
+                        channel
                                 .requestChannel(
                                         Flux.just(DefaultPayload.create("test")))
                                 .onErrorResume(__ -> Mono.empty())

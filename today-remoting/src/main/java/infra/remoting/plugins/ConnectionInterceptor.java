@@ -21,7 +21,7 @@ import infra.remoting.DuplexConnection;
 
 /**
  * Contract to decorate a {@link DuplexConnection} and intercept the sending and receiving of
- * RSocket frames at the transport level.
+ * protocol frames at the transport level.
  */
 @FunctionalInterface
 public interface ConnectionInterceptor {

@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import infra.remoting.RaceTestConstants;
 import infra.remoting.frame.ErrorFrameCodec;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 
 import static infra.remoting.frame.ErrorFrameCodec.APPLICATION_ERROR;
 import static infra.remoting.frame.ErrorFrameCodec.CANCELED;
@@ -256,9 +256,8 @@ final class ExceptionsTests {
     }
   }
 
-  @DisplayName("from returns CustomRSocketException")
   @Test
-  void fromCustomRSocketException() {
+  void fromCustomChannelException() {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       int randomCode =
               ThreadLocalRandom.current().nextBoolean()

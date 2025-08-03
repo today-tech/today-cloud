@@ -54,11 +54,11 @@ abstract class ServerSetup {
             .or(connection.onClose().then(Mono.error(ClosedChannelException::new)));
   }
 
-  abstract Mono<Void> acceptRSocketSetup(ByteBuf frame,
+  abstract Mono<Void> acceptChannelSetup(ByteBuf frame,
           DuplexConnection clientServerConnection,
           BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then);
 
-  abstract Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection connection);
+  abstract Mono<Void> acceptChannelResume(ByteBuf frame, DuplexConnection connection);
 
   void dispose() { }
 
@@ -74,7 +74,7 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptRSocketSetup(ByteBuf frame, DuplexConnection duplexConnection,
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, DuplexConnection duplexConnection,
             BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then) {
 
       if (SetupFrameCodec.resumeEnabled(frame)) {
@@ -87,7 +87,7 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection duplexConnection) {
+    public Mono<Void> acceptChannelResume(ByteBuf frame, DuplexConnection duplexConnection) {
       sendError(duplexConnection, new RejectedResumeException("resume not supported"));
       return duplexConnection.onClose();
     }
@@ -112,7 +112,7 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptRSocketSetup(ByteBuf frame, DuplexConnection duplexConnection,
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, DuplexConnection duplexConnection,
             BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then) {
 
       if (SetupFrameCodec.resumeEnabled(frame)) {
@@ -122,7 +122,7 @@ abstract class ServerSetup {
         final ResumableDuplexConnection resumableDuplexConnection =
                 new ResumableDuplexConnection(
                         "server", resumeToken, duplexConnection, resumableFramesStore);
-        final ServerChannelSession serverRSocketSession =
+        final ServerChannelSession serverChannelSession =
                 new ServerChannelSession(
                         resumeToken,
                         resumableDuplexConnection,
@@ -131,10 +131,10 @@ abstract class ServerSetup {
                         resumeSessionDuration,
                         cleanupStoreOnKeepAlive);
 
-        sessionManager.save(serverRSocketSession, resumeToken);
+        sessionManager.save(serverChannelSession, resumeToken);
 
         return then.apply(new ResumableKeepAliveHandler(
-                        resumableDuplexConnection, serverRSocketSession, serverRSocketSession),
+                        resumableDuplexConnection, serverChannelSession, serverChannelSession),
                 resumableDuplexConnection);
       }
       else {
@@ -143,7 +143,7 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection duplexConnection) {
+    public Mono<Void> acceptChannelResume(ByteBuf frame, DuplexConnection duplexConnection) {
       ServerChannelSession session = sessionManager.get(ResumeFrameCodec.token(frame));
       if (session != null) {
         session.resumeWith(frame, duplexConnection);

@@ -54,7 +54,7 @@ public abstract class AbstractSocketRule<T extends Channel> {
       socket.dispose();
     }
     connection = new TestDuplexConnection(allocator);
-    socket = newRSocket();
+    socket = newChannel();
   }
 
   public void setMaxInboundPayloadSize(int maxInboundPayloadSize) {
@@ -67,7 +67,7 @@ public abstract class AbstractSocketRule<T extends Channel> {
     doInit();
   }
 
-  protected abstract T newRSocket();
+  protected abstract T newChannel();
 
   public LeaksTrackingByteBufAllocator alloc() {
     return allocator;

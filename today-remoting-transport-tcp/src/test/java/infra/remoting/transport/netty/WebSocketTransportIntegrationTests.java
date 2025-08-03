@@ -49,10 +49,10 @@ public class WebSocketTransportIntegrationTests {
             .route(router -> router.ws("/test", WebsocketRouteTransport.newHandler(acceptor)))
             .bindNow();
 
-    Channel rsocket = ChannelConnector.connectWith(WebsocketClientTransport.create(URI.create("ws://" + server.host() + ":" + server.port() + "/test")))
+    Channel channel = ChannelConnector.connectWith(WebsocketClientTransport.create(URI.create("ws://" + server.host() + ":" + server.port() + "/test")))
             .block();
 
-    StepVerifier.create(rsocket.requestStream(EmptyPayload.INSTANCE))
+    StepVerifier.create(channel.requestStream(EmptyPayload.INSTANCE))
             .expectSubscription()
             .expectNextCount(10)
             .expectComplete()

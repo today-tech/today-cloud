@@ -72,7 +72,7 @@ public class TestDuplexConnection implements DuplexConnection {
   @Override
   public void sendFrame(int streamId, ByteBuf frame) {
     if (availability <= 0) {
-      throw new IllegalStateException("RSocket not available. Availability: " + availability);
+      throw new IllegalStateException("Channel not available. Availability: " + availability);
     }
 
     sendSink.next(frame);

@@ -65,7 +65,7 @@ public interface DuplexConnection extends Availability, Closeable {
    * <p><strong>Multiple Subscriptions</strong>
    *
    * <p>Returned {@code Publisher} is not required to support multiple concurrent subscriptions.
-   * RSocket will never have multiple subscriptions to this source. Implementations <em>MUST</em>
+   * Channel will never have multiple subscriptions to this source. Implementations <em>MUST</em>
    * emit an {@link IllegalStateException} for subsequent concurrent subscriptions, if they do not
    * support multiple concurrent subscriptions.
    *

@@ -28,7 +28,7 @@ public abstract class SetupException extends ProtocolErrorException {
   /**
    * Constructs a new exception with the specified error code, message and cause.
    *
-   * @param errorCode the RSocket protocol code
+   * @param errorCode the protocol code
    * @param message the message
    * @param cause the cause of this exception
    */

@@ -130,7 +130,7 @@ public class ChannelRequesterTests {
 
   @Test
   @Timeout(2_000)
-  public void testInvalidFrameOnStream0ShouldNotTerminateRSocket() {
+  public void testInvalidFrameOnStream0ShouldNotTerminateChannel() {
     rule.connection.addToReceivedBuffer(RequestNFrameCodec.encode(rule.alloc(), 0, 10));
     assertThat(rule.socket.isDisposed()).isFalse();
     rule.assertHasNoLeaks();
@@ -443,7 +443,7 @@ public class ChannelRequesterTests {
             Channel::fireAndForget,
             Channel::requestResponse,
             Channel::requestStream,
-            (rSocket, payload) -> rSocket.requestChannel(Flux.just(payload)),
+            (channel, payload) -> channel.requestChannel(Flux.just(payload)),
             Channel::metadataPush);
   }
 
@@ -1485,7 +1485,7 @@ public class ChannelRequesterTests {
     protected Sinks.Empty<Void> otherClosedSink;
 
     @Override
-    protected ChannelRequester newRSocket() {
+    protected ChannelRequester newChannel() {
       this.thisClosedSink = Sinks.empty();
       this.otherClosedSink = Sinks.empty();
       return new ChannelRequester(

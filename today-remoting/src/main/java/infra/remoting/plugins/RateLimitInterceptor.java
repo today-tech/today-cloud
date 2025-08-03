@@ -61,7 +61,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
   }
 
   /**
-   * Create an interceptor for an {@code RSocket} that handles request-stream and/or request-channel
+   * Create an interceptor for an {@code Channel} that handles request-stream and/or request-channel
    * interactions.
    *
    * @param prefetchRate the prefetch rate to pass to {@link Flux#limitRate(int)}
@@ -72,7 +72,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
   }
 
   /**
-   * Create an interceptor for an {@code RSocket} that handles request-stream and/or request-channel
+   * Create an interceptor for an {@code Channel} that handles request-stream and/or request-channel
    * interactions with more control over the overall prefetch rate and replenish threshold.
    *
    * @param highTide the high tide value to pass to {@link Flux#limitRate(int, int)}
@@ -84,7 +84,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
   }
 
   /**
-   * Create an interceptor for an {@code RSocket} that performs request-channel interactions.
+   * Create an interceptor for an {@code Channel} that performs request-channel interactions.
    *
    * @param prefetchRate the prefetch rate to pass to {@link Flux#limitRate(int)}
    * @return the created interceptor
@@ -94,7 +94,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
   }
 
   /**
-   * Create an interceptor for an {@code RSocket} that performs request-channel interactions with
+   * Create an interceptor for an {@code Channel} that performs request-channel interactions with
    * more control over the overall prefetch rate and replenish threshold.
    *
    * @param highTide the high tide value to pass to {@link Flux#limitRate(int, int)}

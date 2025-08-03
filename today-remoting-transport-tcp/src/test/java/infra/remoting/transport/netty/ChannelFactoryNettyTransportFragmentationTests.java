@@ -71,12 +71,12 @@ class ChannelFactoryNettyTransportFragmentationTests {
     CloseableChannel server =
             RemotingServer.create(mockAcceptor()).fragment(100).bind(serverTransport).block();
 
-    Mono<Channel> rSocket =
+    Mono<Channel> channel =
             ChannelConnector.create()
                     .fragment(100)
                     .connect(TcpClientTransport.create(server.address()))
                     .doFinally(s -> server.dispose());
-    StepVerifier.create(rSocket).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
+    StepVerifier.create(channel).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
   }
 
   @ParameterizedTest
@@ -84,10 +84,10 @@ class ChannelFactoryNettyTransportFragmentationTests {
   void clientSucceedsWithDisabledFragmentation(ServerTransport<CloseableChannel> serverTransport) {
     CloseableChannel server = RemotingServer.create(mockAcceptor()).bind(serverTransport).block();
 
-    Mono<Channel> rSocket =
+    Mono<Channel> channel =
             ChannelConnector.connectWith(TcpClientTransport.create(server.address()))
                     .doFinally(s -> server.dispose());
-    StepVerifier.create(rSocket).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
+    StepVerifier.create(channel).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
   }
 
   private ChannelAcceptor mockAcceptor() {

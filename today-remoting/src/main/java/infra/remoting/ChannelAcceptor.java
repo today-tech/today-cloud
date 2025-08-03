@@ -47,8 +47,8 @@ public interface ChannelAcceptor {
   /**
    * Create a {@code SocketAcceptor} that handles requests with the given {@code Channel}.
    */
-  static ChannelAcceptor with(Channel rsocket) {
-    return (setup, sendingChannel) -> Mono.just(rsocket);
+  static ChannelAcceptor with(Channel channel) {
+    return (setup, sendingChannel) -> Mono.just(channel);
   }
 
   /** Create a {@code SocketAcceptor} for fire-and-forget interactions with the given handler. */

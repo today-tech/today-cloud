@@ -44,16 +44,16 @@ public class ChannelReconnectTests {
   private Queue<Retry.RetrySignal> retries = new ConcurrentLinkedQueue<>();
 
   @Test
-  public void shouldBeASharedReconnectableInstanceOfRSocketMono() throws InterruptedException {
+  public void shouldBeASharedReconnectableInstanceOfChannelMono() throws InterruptedException {
     TestClientTransport[] testClientTransport =
             new TestClientTransport[] { new TestClientTransport() };
-    Mono<Channel> rSocketMono =
+    Mono<Channel> channelMono =
             ChannelConnector.create()
                     .reconnect(Retry.indefinitely())
                     .connect(() -> testClientTransport[0]);
 
-    Channel channel1 = rSocketMono.block();
-    Channel channel2 = rSocketMono.block();
+    Channel channel1 = channelMono.block();
+    Channel channel2 = channelMono.block();
 
     FrameAssert.assertThat(testClientTransport[0].testConnection().awaitFrame())
             .typeOf(FrameType.SETUP)
@@ -67,8 +67,8 @@ public class ChannelReconnectTests {
     testClientTransport[0].alloc().assertHasNoLeaks();
     testClientTransport[0] = new TestClientTransport();
 
-    Channel channel3 = rSocketMono.block();
-    Channel channel4 = rSocketMono.block();
+    Channel channel3 = channelMono.block();
+    Channel channel4 = channelMono.block();
 
     FrameAssert.assertThat(testClientTransport[0].testConnection().awaitFrame())
             .typeOf(FrameType.SETUP)
@@ -84,7 +84,7 @@ public class ChannelReconnectTests {
 
   @Test
   @SuppressWarnings({ "rawtype" })
-  public void shouldBeRetrieableConnectionSharedReconnectableInstanceOfRSocketMono() {
+  public void shouldBeRetrieableConnectionSharedReconnectableInstanceOfChannelMono() {
     ClientTransport transport = Mockito.mock(ClientTransport.class);
     TestClientTransport transport1 = new TestClientTransport();
     Mockito.when(transport.connect())
@@ -93,7 +93,7 @@ public class ChannelReconnectTests {
             .thenThrow(UncheckedIOException.class)
             .thenThrow(UncheckedIOException.class)
             .thenReturn(transport1.connect());
-    Mono<Channel> rSocketMono =
+    Mono<Channel> channelMono =
             ChannelConnector.create()
                     .reconnect(
                             Retry.backoff(4, Duration.ofMillis(100))
@@ -101,8 +101,8 @@ public class ChannelReconnectTests {
                                     .doAfterRetry(onRetry()))
                     .connect(transport);
 
-    Channel channel1 = rSocketMono.block();
-    Channel channel2 = rSocketMono.block();
+    Channel channel1 = channelMono.block();
+    Channel channel2 = channelMono.block();
 
     assertThat(channel1).isEqualTo(channel2);
     assertRetries(
@@ -123,7 +123,7 @@ public class ChannelReconnectTests {
 
   @Test
   @SuppressWarnings({ "rawtype" })
-  public void shouldBeExaustedRetrieableConnectionSharedReconnectableInstanceOfRSocketMono() {
+  public void shouldBeExaustedRetrieableConnectionSharedReconnectableInstanceOfChannelMono() {
     ClientTransport transport = Mockito.mock(ClientTransport.class);
     TestClientTransport transport1 = new TestClientTransport();
     Mockito.when(transport.connect())
@@ -133,7 +133,7 @@ public class ChannelReconnectTests {
             .thenThrow(UncheckedIOException.class)
             .thenThrow(UncheckedIOException.class)
             .thenReturn(transport1.connect());
-    Mono<Channel> rSocketMono =
+    Mono<Channel> channelMono =
             ChannelConnector.create()
                     .reconnect(
                             Retry.backoff(4, Duration.ofMillis(100))
@@ -141,11 +141,11 @@ public class ChannelReconnectTests {
                                     .doAfterRetry(onRetry()))
                     .connect(transport);
 
-    Assertions.assertThatThrownBy(rSocketMono::block)
+    Assertions.assertThatThrownBy(channelMono::block)
             .matches(Exceptions::isRetryExhausted)
             .hasCauseInstanceOf(UncheckedIOException.class);
 
-    Assertions.assertThatThrownBy(rSocketMono::block)
+    Assertions.assertThatThrownBy(channelMono::block)
             .matches(Exceptions::isRetryExhausted)
             .hasCauseInstanceOf(UncheckedIOException.class);
 
@@ -159,11 +159,11 @@ public class ChannelReconnectTests {
   }
 
   @Test
-  public void shouldBeNotBeASharedReconnectableInstanceOfRSocketMono() {
+  public void shouldBeNotBeASharedReconnectableInstanceOfChannelMono() {
     TestClientTransport transport = new TestClientTransport();
-    Mono<Channel> rSocketMono = ChannelConnector.connectWith(transport);
+    Mono<Channel> channelMono = ChannelConnector.connectWith(transport);
 
-    Channel channel1 = rSocketMono.block();
+    Channel channel1 = channelMono.block();
     TestDuplexConnection connection1 = transport.testConnection();
 
     FrameAssert.assertThat(connection1.awaitFrame())
@@ -171,7 +171,7 @@ public class ChannelReconnectTests {
             .hasStreamIdZero()
             .hasNoLeaks();
 
-    Channel channel2 = rSocketMono.block();
+    Channel channel2 = channelMono.block();
     TestDuplexConnection connection2 = transport.testConnection();
 
     assertThat(channel1).isNotEqualTo(channel2);

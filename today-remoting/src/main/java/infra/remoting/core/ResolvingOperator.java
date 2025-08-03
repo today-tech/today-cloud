@@ -33,8 +33,6 @@ import reactor.core.Scannable;
 import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 
-// A copy of this class exists in io.rsocket.loadbalance
-
 class ResolvingOperator<T> implements Disposable {
 
   static final CancellationException ON_DISPOSE = new CancellationException("Disposed");

@@ -16,7 +16,7 @@
  */
 
 /**
- * Contains support classes for the Lease feature of the RSocket protocol.
+ * Contains support classes for the Lease feature of the protocol.
  *
  * @see <a
  * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming

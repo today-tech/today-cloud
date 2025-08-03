@@ -51,7 +51,7 @@ import reactor.core.publisher.Sinks;
 import static infra.remoting.keepalive.KeepAliveSupport.ClientKeepAliveSupport;
 
 /**
- * Requester Side of a RSocket socket. Sends {@link ByteBuf}s to a {@link ChannelResponder} of peer
+ * Requester Side of a Channel socket. Sends {@link ByteBuf}s to a {@link ChannelResponder} of peer
  */
 class ChannelRequester extends RequesterResponderSupport implements Channel {
 

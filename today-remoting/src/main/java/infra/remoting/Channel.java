@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * A contract providing different interaction models for <a
- * href="https://github.com/RSocket/reactivesocket/blob/master/Protocol.md">RSocket protocol</a>.
+ * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md">protocol</a>.
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */

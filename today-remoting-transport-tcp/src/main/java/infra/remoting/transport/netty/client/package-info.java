@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-/** The Netty-based RSocket client transport implementations. */
+/** The Netty-based client transport implementations. */
 @NonNullApi
 package infra.remoting.transport.netty.client;
 

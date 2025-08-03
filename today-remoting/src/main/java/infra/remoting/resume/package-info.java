@@ -16,7 +16,7 @@
  */
 
 /**
- * Contains support classes for the RSocket resume capability.
+ * Contains support classes for the protocol resume capability.
  *
  * @see <a
  * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming

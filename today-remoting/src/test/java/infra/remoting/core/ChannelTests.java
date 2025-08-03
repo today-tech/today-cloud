@@ -66,7 +66,7 @@ public class ChannelTests {
   }
 
   @Test
-  public void rsocketDisposalShouldEndupWithNoErrorsOnClose() {
+  public void channelDisposalShouldEndupWithNoErrorsOnClose() {
     Channel requestHandlingChannel =
             new Channel() {
               final Disposable disposable = Disposables.single();

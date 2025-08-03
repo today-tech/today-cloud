@@ -1077,7 +1077,7 @@ public class RequestStreamRequesterFluxTest {
   }
 
   /**
-   * Ensures that the interactions check and respect rsocket availability (such as leasing) and
+   * Ensures that the interactions check and respect channel availability (such as leasing) and
    * propagate an error to the final subscriber. No frame should be sent. Check should happens
    * exactly on the first request.
    */

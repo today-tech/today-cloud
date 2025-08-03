@@ -429,7 +429,7 @@ class ChannelResponder extends RequesterResponderSupport implements Channel {
   }
 
   private void sendLeaseRejection(int streamId, Throwable leaseError) {
-    connection.sendFrame(streamId, ErrorFrameCodec.encode(getAllocator(), streamId, leaseError));
+    connection.sendFrame(streamId, ErrorFrameCodec.encode(allocator, streamId, leaseError));
   }
 
   private void handleMetadataPush(Mono<Void> result) {

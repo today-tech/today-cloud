@@ -73,9 +73,8 @@ import static infra.remoting.core.ReassemblyUtils.assertInboundPayloadSize;
  * <p>To customize connection settings before connecting:
  *
  * <pre>{@code
- * Mono<Channel> source =
- *        ChannelConnector.create()
- *                 .connect(TcpClientTransport.create("localhost", 7000));
+ * Mono<Channel> source = ChannelConnector.create()
+ *      .connect(TcpClientTransport.create("localhost", 7000));
  * RemotingClient client = RemotingClient.from(source);
  * }</pre>
  */

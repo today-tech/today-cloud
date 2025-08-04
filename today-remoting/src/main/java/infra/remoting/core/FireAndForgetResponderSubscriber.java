@@ -25,10 +25,8 @@ import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
-import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.RequestInterceptor;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import reactor.core.CoreSubscriber;
@@ -41,13 +39,10 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
   static final FireAndForgetResponderSubscriber INSTANCE = new FireAndForgetResponderSubscriber();
 
   final int streamId;
-  final ByteBufAllocator allocator;
-  final PayloadDecoder payloadDecoder;
 
   final ChannelSupport channel;
 
   final Channel handler;
-  final int maxInboundPayloadSize;
 
   @Nullable
   final RequestInterceptor requestInterceptor;
@@ -56,9 +51,6 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
 
   private FireAndForgetResponderSubscriber() {
     this.streamId = 0;
-    this.allocator = null;
-    this.payloadDecoder = null;
-    this.maxInboundPayloadSize = 0;
     this.channel = null;
     this.handler = null;
     this.requestInterceptor = null;
@@ -67,9 +59,6 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
 
   FireAndForgetResponderSubscriber(int streamId, ChannelSupport channel) {
     this.streamId = streamId;
-    this.allocator = null;
-    this.payloadDecoder = null;
-    this.maxInboundPayloadSize = 0;
     this.channel = null;
     this.handler = null;
     this.requestInterceptor = channel.getRequestInterceptor();
@@ -78,15 +67,12 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
 
   FireAndForgetResponderSubscriber(int streamId, ByteBuf firstFrame, ChannelSupport channel, Channel handler) {
     this.streamId = streamId;
-    this.allocator = channel.getAllocator();
-    this.payloadDecoder = channel.getPayloadDecoder();
-    this.maxInboundPayloadSize = channel.getMaxInboundPayloadSize();
     this.channel = channel;
     this.handler = handler;
     this.requestInterceptor = channel.getRequestInterceptor();
 
     this.frames = ReassemblyUtils.addFollowingFrame(
-            allocator.compositeBuffer(), firstFrame, true, maxInboundPayloadSize);
+            channel.allocator.compositeBuffer(), firstFrame, true, channel.maxInboundPayloadSize);
   }
 
   @Override
@@ -118,14 +104,14 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
   @Override
   public void handleNext(ByteBuf followingFrame, boolean hasFollows, boolean isLastPayload) {
     final CompositeByteBuf frames = this.frames;
-
+    final ChannelSupport channel = this.channel;
     try {
       ReassemblyUtils.addFollowingFrame(
-              frames, followingFrame, hasFollows, this.maxInboundPayloadSize);
+              frames, followingFrame, hasFollows, channel.maxInboundPayloadSize);
     }
     catch (IllegalStateException t) {
       final int streamId = this.streamId;
-      this.channel.remove(streamId, this);
+      channel.remove(streamId, this);
 
       this.frames = null;
       frames.release();
@@ -140,12 +126,12 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
     }
 
     if (!hasFollows) {
-      this.channel.remove(this.streamId, this);
+      channel.remove(this.streamId, this);
       this.frames = null;
 
       Payload payload;
       try {
-        payload = this.payloadDecoder.decode(frames);
+        payload = channel.payloadDecoder.decode(frames);
         frames.release();
       }
       catch (Throwable t) {

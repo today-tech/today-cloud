@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import infra.remoting.ChannelAcceptor;
+import infra.remoting.Payload;
 import infra.remoting.core.RemotingClient;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.lb.LoadBalanceTarget;
@@ -35,52 +36,40 @@ import reactor.core.publisher.Mono;
 public class RoundRobinLoadbalancerExample {
 
   public static void main(String[] args) {
-    CloseableChannel server1 =
-            RemotingServer.create(
-                            ChannelAcceptor.forRequestResponse(
-                                    p -> {
-                                      System.out.println("Server 1 got fnf " + p.getDataUtf8());
-                                      return Mono.just(DefaultPayload.create("Server 1 response"))
-                                              .delayElement(Duration.ofMillis(100));
-                                    }))
-                    .bindNow(TcpServerTransport.create(8080));
+    CloseableChannel server1 = RemotingServer.create(ChannelAcceptor.forRequestResponse(p -> {
+              System.out.println("Server 1 got fnf " + p.getDataUtf8());
+              return Mono.just(DefaultPayload.create("Server 1 response"))
+                      .delayElement(Duration.ofMillis(1));
+            }))
+            .bindNow(TcpServerTransport.create(8080));
 
-    CloseableChannel server2 =
-            RemotingServer.create(
-                            ChannelAcceptor.forRequestResponse(
-                                    p -> {
-                                      System.out.println("Server 2 got fnf " + p.getDataUtf8());
-                                      return Mono.just(DefaultPayload.create("Server 2 response"))
-                                              .delayElement(Duration.ofMillis(100));
-                                    }))
-                    .bindNow(TcpServerTransport.create(8081));
+    CloseableChannel server2 = RemotingServer.create(ChannelAcceptor.forRequestResponse(p -> {
+              System.out.println("Server 2 got fnf " + p.getDataUtf8());
+              return Mono.just(DefaultPayload.create("Server 2 response"));
+            }))
+            .bindNow(TcpServerTransport.create(8081));
 
-    CloseableChannel server3 =
-            RemotingServer.create(
-                            ChannelAcceptor.forRequestResponse(
-                                    p -> {
-                                      System.out.println("Server 3 got fnf " + p.getDataUtf8());
-                                      return Mono.just(DefaultPayload.create("Server 3 response"))
-                                              .delayElement(Duration.ofMillis(100));
-                                    }))
-                    .bindNow(TcpServerTransport.create(8082));
+    CloseableChannel server3 = RemotingServer.create(ChannelAcceptor.forRequestResponse(p -> {
+              System.out.println("Server 3 got fnf " + p.getDataUtf8());
+              return Mono.just(DefaultPayload.create("Server 3 response"));
+            }))
+            .bindNow(TcpServerTransport.create(8082));
 
     LoadBalanceTarget target8080 = LoadBalanceTarget.of("8080", TcpClientTransport.create(8080));
     LoadBalanceTarget target8081 = LoadBalanceTarget.of("8081", TcpClientTransport.create(8081));
     LoadBalanceTarget target8082 = LoadBalanceTarget.of("8082", TcpClientTransport.create(8082));
 
-    Flux<List<LoadBalanceTarget>> producer =
-            Flux.interval(Duration.ofSeconds(5)).log().map(i -> {
-              int val = i.intValue();
-              return switch (val) {
-                case 0, 6, 7 -> Collections.emptyList();
-                case 1 -> Collections.singletonList(target8080);
-                case 2 -> Arrays.asList(target8080, target8081);
-                case 3 -> Arrays.asList(target8080, target8082);
-                case 4 -> Arrays.asList(target8081, target8082);
-                default -> Arrays.asList(target8080, target8081, target8082);
-              };
-            });
+    Flux<List<LoadBalanceTarget>> producer = Flux.interval(Duration.ofSeconds(5)).log().map(i -> {
+      int val = i.intValue();
+      return switch (val) {
+        case 0, 6, 7 -> Collections.emptyList();
+        case 1 -> Collections.singletonList(target8080);
+        case 2 -> Arrays.asList(target8080, target8081);
+        case 3 -> Arrays.asList(target8080, target8082);
+        case 4 -> Arrays.asList(target8081, target8082);
+        default -> Arrays.asList(target8080, target8081, target8082);
+      };
+    });
 
     RemotingClient client = RemotingClient.forLoadBalance(producer)
             .roundRobinLoadBalanceStrategy()
@@ -88,11 +77,16 @@ public class RoundRobinLoadbalancerExample {
 
     for (int i = 0; i < 10000; i++) {
       try {
-        client.requestResponse(Mono.just(DefaultPayload.create("test" + i))).block();
+        Payload block = client.requestResponse(Mono.just(DefaultPayload.create("test-" + i))).block();
+        System.out.println(block.getDataUtf8());
       }
       catch (Throwable t) {
         // no ops
       }
     }
+
+    server1.dispose();
+    server2.dispose();
+    server3.dispose();
   }
 }

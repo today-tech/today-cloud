@@ -87,27 +87,6 @@ public final class RemotingServer {
   private RemotingServer() {
   }
 
-  /** Static factory method to create an {@code RemotingServer}. */
-  public static RemotingServer create() {
-    return new RemotingServer();
-  }
-
-  /**
-   * Static factory method to create an {@code RemotingServer} instance with the given {@code
-   * ChannelAcceptor}. Effectively a shortcut for:
-   *
-   * <pre class="code">
-   * RemotingServer.create().acceptor(...);
-   * </pre>
-   *
-   * @param acceptor the acceptor to handle connections with
-   * @return the same instance for method chaining
-   * @see #acceptor(ChannelAcceptor)
-   */
-  public static RemotingServer create(ChannelAcceptor acceptor) {
-    return RemotingServer.create().acceptor(acceptor);
-  }
-
   /**
    * Set the acceptor to handle incoming connections and handle requests.
    *
@@ -456,6 +435,33 @@ public final class RemotingServer {
   private ProtocolErrorException rejectedSetupError(Throwable err) {
     String msg = err.getMessage();
     return new RejectedSetupException(msg == null ? "rejected by server acceptor" : msg);
+  }
+
+  //---------------------------------------------------------------------
+  // Static Factory Methods
+  //---------------------------------------------------------------------
+
+  /**
+   * Static factory method to create an {@code RemotingServer}.
+   */
+  public static RemotingServer create() {
+    return new RemotingServer();
+  }
+
+  /**
+   * Static factory method to create an {@code RemotingServer} instance with the given {@code
+   * ChannelAcceptor}. Effectively a shortcut for:
+   *
+   * <pre>{@code
+   * RemotingServer.create().acceptor(...);
+   * }</pre>
+   *
+   * @param acceptor the acceptor to handle connections with
+   * @return the same instance for method chaining
+   * @see #acceptor(ChannelAcceptor)
+   */
+  public static RemotingServer create(ChannelAcceptor acceptor) {
+    return RemotingServer.create().acceptor(acceptor);
   }
 
 }

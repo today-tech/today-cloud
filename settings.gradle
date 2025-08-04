@@ -30,7 +30,6 @@ include 'today-cloud-dependencies'
 include 'today-cloud-core'
 include 'today-cloud-gateway'
 include 'today-cloud-config-server'
-include 'today-cloud-config-server-etcd'
 
 include 'today-service-client'
 include 'today-service-provider'
@@ -48,5 +47,4 @@ include 'today-cloud-samples:demo-tests:demo-user-api'
 include 'today-cloud-samples:demo-tests:demo-user-rest'
 include 'today-cloud-samples:demo-tests:demo-user-service'
 include 'today-cloud-samples:today-petclinic'
-include 'today-service-registry-etcd'
 

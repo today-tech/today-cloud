@@ -33,10 +33,10 @@ import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.keepalive.KeepAliveHandler;
 import infra.remoting.lease.TrackingLeaseSender;
-import infra.remoting.plugins.ConnectionInterceptor;
+import infra.remoting.plugins.ConnectionDecorator;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.plugins.InterceptorRegistry;
-import infra.remoting.plugins.RateLimitInterceptor;
+import infra.remoting.plugins.RateLimitDecorator;
 import infra.remoting.resume.ClientChannelSession;
 import infra.remoting.resume.ResumableDuplexConnection;
 import infra.remoting.resume.ResumableFramesStore;
@@ -116,28 +116,6 @@ public class ChannelConnector {
   private PayloadDecoder payloadDecoder = PayloadDecoder.DEFAULT;
 
   private ChannelConnector() {
-  }
-
-  /**
-   * Static factory method to create an {@code ChannelConnector} instance and customize default
-   * settings before connecting. To connect only, use {@link #connectWith(ClientTransport)}.
-   */
-  public static ChannelConnector create() {
-    return new ChannelConnector();
-  }
-
-  /**
-   * Static factory method to connect with default settings, effectively a shortcut for:
-   *
-   * <pre class="code">
-   * ChannelConnector.create().connect(transport);
-   * </pre>
-   *
-   * @param transport the transport of choice to connect with
-   * @return a {@code Mono} with the connected Channel
-   */
-  public static Mono<Channel> connectWith(ClientTransport transport) {
-    return ChannelConnector.create().connect(() -> transport);
   }
 
   /**
@@ -256,7 +234,7 @@ public class ChannelConnector {
    *
    * @param configurer a configurer to customize interception with.
    * @return the same instance for method chaining
-   * @see RateLimitInterceptor
+   * @see RateLimitDecorator
    */
   public ChannelConnector interceptors(Consumer<InterceptorRegistry> configurer) {
     configurer.accept(this.interceptors);
@@ -300,7 +278,7 @@ public class ChannelConnector {
    * @param acceptor the acceptor to use for responding to server requests
    * @return the same instance for method chaining
    */
-  public ChannelConnector acceptor(ChannelAcceptor acceptor) {
+  public ChannelConnector acceptor(@Nullable ChannelAcceptor acceptor) {
     this.acceptor = acceptor;
     return this;
   }
@@ -537,7 +515,7 @@ public class ChannelConnector {
                 return ct;
               })
               .flatMap(transport -> transport.connect())
-              .map(sourceConnection -> interceptors.initConnection(ConnectionInterceptor.Type.SOURCE, sourceConnection))
+              .map(sourceConnection -> interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection))
               .map(con -> LoggingDuplexConnection.wrapIfEnabled(con));
 
       return connectionMono
@@ -652,4 +630,27 @@ public class ChannelConnector {
       }
     });
   }
+
+  /**
+   * Static factory method to create an {@code ChannelConnector} instance and customize default
+   * settings before connecting. To connect only, use {@link #connectWith(ClientTransport)}.
+   */
+  public static ChannelConnector create() {
+    return new ChannelConnector();
+  }
+
+  /**
+   * Static factory method to connect with default settings, effectively a shortcut for:
+   *
+   * <pre>{@code
+   * ChannelConnector.create().connect(transport);
+   * }</pre>
+   *
+   * @param transport the transport of choice to connect with
+   * @return a {@code Mono} with the connected Channel
+   */
+  public static Mono<Channel> connectWith(ClientTransport transport) {
+    return ChannelConnector.create().connect(() -> transport);
+  }
+
 }

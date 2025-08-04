@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
+
 package infra.remoting.core;
 
 import org.reactivestreams.Publisher;
@@ -70,11 +71,7 @@ import static infra.remoting.core.StateUtils.markSubscribed;
 import static infra.remoting.core.StateUtils.markTerminated;
 
 final class RequestChannelRequesterFlux extends Flux<Payload>
-        implements RequesterFrameHandler,
-        LeasePermitHandler,
-        CoreSubscriber<Payload>,
-        Subscription,
-        Scannable {
+        implements RequesterFrameHandler, LeasePermitHandler, CoreSubscriber<Payload>, Subscription, Scannable {
 
   final ChannelSupport channel;
 

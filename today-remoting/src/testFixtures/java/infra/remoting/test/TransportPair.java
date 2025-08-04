@@ -38,7 +38,7 @@ import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.core.Resume;
 import infra.remoting.frame.decoder.PayloadDecoder;
-import infra.remoting.plugins.ConnectionInterceptor;
+import infra.remoting.plugins.ConnectionDecorator;
 import infra.remoting.resume.InMemoryResumableFramesStore;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
@@ -121,7 +121,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
       allocatorToSupply2 = ByteBufAllocator.DEFAULT;
     }
     responder = new TestChannel(TransportPair.data, metadata);
-    final RemotingServer remotingServer = RemotingServer.create((setup, sendingSocket) -> Mono.just(responder))
+    final RemotingServer remotingServer = RemotingServer.create((setup, channel) -> Mono.just(responder))
             .payloadDecoder(PayloadDecoder.ZERO_COPY)
             .interceptors(registry -> {
               if (runServerWithAsyncInterceptors && !withResumability) {
@@ -133,7 +133,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
               if (withResumability) {
                 registry.forConnection((type, duplexConnection) ->
-                        type == ConnectionInterceptor.Type.SOURCE
+                        type == ConnectionDecorator.Type.SOURCE
                                 ? new DisconnectingDuplexConnection(
                                 "Server",
                                 duplexConnection,
@@ -170,7 +170,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
                       if (withResumability) {
                         registry.forConnection((type, duplexConnection) ->
-                                type == ConnectionInterceptor.Type.SOURCE
+                                type == ConnectionDecorator.Type.SOURCE
                                         ? new DisconnectingDuplexConnection(
                                         "Client",
                                         duplexConnection,

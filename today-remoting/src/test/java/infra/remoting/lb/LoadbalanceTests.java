@@ -38,7 +38,7 @@ import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.TestClientTransport;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.util.EmptyPayload;
-import infra.remoting.util.ChannelDecorator;
+import infra.remoting.util.ChannelWrapper;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
@@ -405,7 +405,7 @@ public class LoadbalanceTests {
     Assertions.assertThat(counter.get()).isOne();
   }
 
-  static class TestChannel extends ChannelDecorator {
+  static class TestChannel extends ChannelWrapper {
 
     final Sinks.Empty<Void> sink = Sinks.empty();
 

@@ -10,8 +10,11 @@ dependencies {
 
 
   testImplementation(project(":today-remoting-transport-local"))
+  testImplementation(project(":today-remoting-transport-tcp"))
+
   testImplementation 'io.projectreactor:reactor-test'
   testImplementation 'org.awaitility:awaitility'
+  testImplementation 'com.netflix.concurrency-limits:concurrency-limits-core:0.3.6'
 
   testFixturesApi "cn.taketoday:today-core"
   testFixturesApi 'org.assertj:assertj-core'

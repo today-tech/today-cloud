@@ -25,6 +25,9 @@
   </appender>
 
   <logger name="infra.remoting.fragmentation" level="INFO" />
+  <logger name="infra.remoting.examples" level="DEBUG"/>
+  <logger name="infra.remoting.FrameLogger" level="INFO"/>
+  <logger name="reactor.netty" level="INFO"/>
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />

@@ -157,8 +157,8 @@ public class SetupRejectionTest {
     }
 
     @Override
-    public Mono<Channel> accept(ConnectionSetupPayload setup, Channel sendingSocket) {
-      senderChannels.tryEmitNext(sendingSocket);
+    public Mono<Channel> accept(ConnectionSetupPayload setup, Channel channel) {
+      senderChannels.tryEmitNext(channel);
       return Mono.error(new RuntimeException(errorMessage));
     }
 

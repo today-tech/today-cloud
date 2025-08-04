@@ -145,7 +145,7 @@ final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, Re
 
       Payload payload;
       try {
-        payload = this.payloadDecoder.apply(frames);
+        payload = this.payloadDecoder.decode(frames);
         frames.release();
       }
       catch (Throwable t) {

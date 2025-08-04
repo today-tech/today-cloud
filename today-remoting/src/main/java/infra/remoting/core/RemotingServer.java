@@ -35,10 +35,10 @@ import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.lease.TrackingLeaseSender;
-import infra.remoting.plugins.ConnectionInterceptor;
+import infra.remoting.plugins.ConnectionDecorator;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.plugins.InterceptorRegistry;
-import infra.remoting.plugins.RateLimitInterceptor;
+import infra.remoting.plugins.RateLimitDecorator;
 import infra.remoting.resume.SessionManager;
 import infra.remoting.transport.ConnectionAcceptor;
 import infra.remoting.transport.ServerTransport;
@@ -59,7 +59,7 @@ import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
  *
  * <pre>{@code
  * CloseableChannel closeable =
- *         RemotingServer.create(SocketAcceptor.with(new Channel() {...}))
+ *         RemotingServer.create(ChannelAcceptor.with(new Channel() {...}))
  *                 .bind(TcpServerTransport.create("localhost", 7000))
  *                 .block();
  * }</pre>
@@ -94,7 +94,7 @@ public final class RemotingServer {
 
   /**
    * Static factory method to create an {@code RemotingServer} instance with the given {@code
-   * SocketAcceptor}. Effectively a shortcut for:
+   * ChannelAcceptor}. Effectively a shortcut for:
    *
    * <pre class="code">
    * RemotingServer.create().acceptor(...);
@@ -123,7 +123,7 @@ public final class RemotingServer {
    * <p>A shortcut to provide the handling Channel only:
    *
    * <pre>{@code
-   * RemotingServer.create(SocketAcceptor.with(new Channel() {...}))
+   * RemotingServer.create(ChannelAcceptor.with(new Channel() {...}))
    *         .bind(TcpServerTransport.create("localhost", 7000))
    *         .subscribe();
    * }</pre>
@@ -131,7 +131,7 @@ public final class RemotingServer {
    * <p>A shortcut to handle request-response interactions only:
    *
    * <pre>{@code
-   * RemotingServer.create(SocketAcceptor.forRequestResponse(payload -> ...))
+   * RemotingServer.create(ChannelAcceptor.forRequestResponse(payload -> ...))
    *         .bind(TcpServerTransport.create("localhost", 7000))
    *         .subscribe();
    * }</pre>
@@ -160,7 +160,7 @@ public final class RemotingServer {
    *
    * @param configurer a configurer to customize interception with.
    * @return the same instance for method chaining
-   * @see RateLimitInterceptor
+   * @see RateLimitDecorator
    */
   public RemotingServer interceptors(Consumer<InterceptorRegistry> configurer) {
     configurer.accept(this.interceptors);
@@ -196,7 +196,7 @@ public final class RemotingServer {
    * <p>Example usage:
    *
    * <pre>{@code
-   * RemotingServer.create(SocketAcceptor.with(new Channel() {...}))
+   * RemotingServer.create(ChannelAcceptor.with(new Channel() {...}))
    *         .lease(spec ->
    *            spec.sender(() -> Flux.interval(ofSeconds(1))
    *                                  .map(__ -> Lease.create(ofSeconds(1), 1)))
@@ -353,7 +353,7 @@ public final class RemotingServer {
   }
 
   private Mono<Void> acceptor(ServerSetup serverSetup, DuplexConnection sourceConnection, int maxFrameLength) {
-    final DuplexConnection interceptedConnection = interceptors.initConnection(ConnectionInterceptor.Type.SOURCE, sourceConnection);
+    final DuplexConnection interceptedConnection = interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection);
     return serverSetup
             .init(LoggingDuplexConnection.wrapIfEnabled(interceptedConnection))
             .flatMap(tuple2 -> {

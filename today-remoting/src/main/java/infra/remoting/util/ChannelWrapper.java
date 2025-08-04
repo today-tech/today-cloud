@@ -27,11 +27,11 @@ import reactor.core.publisher.Mono;
 /**
  * Wrapper for a Channel. This is useful when we want to override a specific method.
  */
-public class ChannelDecorator implements Channel {
+public class ChannelWrapper implements Channel {
 
   protected final Channel delegate;
 
-  public ChannelDecorator(Channel delegate) {
+  public ChannelWrapper(Channel delegate) {
     this.delegate = delegate;
   }
 
@@ -79,4 +79,5 @@ public class ChannelDecorator implements Channel {
   public Mono<Void> onClose() {
     return delegate.onClose();
   }
+
 }

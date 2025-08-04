@@ -15,19 +15,31 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.remoting.plugins;
+package infra.remoting.examples.tcp.lease.advanced.controller;
 
-import infra.remoting.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Contract to decorate an {@link Channel}, providing a way to intercept interactions. This can be
- * applied to a {@link InterceptorRegistry#forRequester(ChannelInterceptor) requester} or {@link
- * InterceptorRegistry#forResponder(ChannelInterceptor) responder} {@code Channel} of a client or
- * server.
- */
-@FunctionalInterface
-public interface ChannelInterceptor {
+// emulating a worker that process data from the queue
+public class Task implements Runnable {
+  private static final Logger logger = LoggerFactory.getLogger(Task.class);
 
-  Channel decorate(Channel channel);
+  final String message;
+  final int processingTime;
 
+  Task(String message, int processingTime) {
+    this.message = message;
+    this.processingTime = processingTime;
+  }
+
+  @Override
+  public void run() {
+    logger.info("Processing Task[{}]", message);
+    try {
+      Thread.sleep(processingTime); // emulating processing
+    }
+    catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

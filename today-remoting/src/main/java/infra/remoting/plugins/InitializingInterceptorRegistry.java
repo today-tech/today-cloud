@@ -47,22 +47,22 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
                     .collect(Collectors.toList()));
   }
 
-  public DuplexConnection initConnection(ConnectionInterceptor.Type type, DuplexConnection connection) {
-    for (ConnectionInterceptor interceptor : connectionInterceptors) {
-      connection = interceptor.intercept(type, connection);
+  public DuplexConnection initConnection(ConnectionDecorator.Type type, DuplexConnection connection) {
+    for (ConnectionDecorator interceptor : connectionDecorators) {
+      connection = interceptor.decorate(type, connection);
     }
     return connection;
   }
 
   public Channel decorateRequester(Channel channel) {
-    for (ChannelInterceptor interceptor : requesterChannelInterceptors) {
+    for (ChannelDecorator interceptor : requesterChannelDecorators) {
       channel = interceptor.decorate(channel);
     }
     return channel;
   }
 
   public Channel decorateResponder(Channel channel) {
-    for (ChannelInterceptor interceptor : responderChannelInterceptors) {
+    for (ChannelDecorator interceptor : responderChannelDecorators) {
       channel = interceptor.decorate(channel);
     }
     return channel;

@@ -26,7 +26,7 @@ import infra.remoting.Closeable;
 import infra.remoting.DuplexConnection;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.FrameHeaderCodec;
-import infra.remoting.plugins.ConnectionInterceptor.Type;
+import infra.remoting.plugins.ConnectionDecorator.Type;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;

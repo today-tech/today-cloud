@@ -230,7 +230,7 @@ class ResponderChannel extends ChannelSupport implements Channel {
                   streamId, frame, channelInitialRequestN, FrameHeaderCodec.hasComplete(frame));
           break;
         case METADATA_PUSH:
-          handleMetadataPush(metadataPush(getPayloadDecoder().apply(frame)));
+          handleMetadataPush(metadataPush(payloadDecoder.decode(frame)));
           break;
         case CANCEL:
           receiver = get(streamId);
@@ -313,11 +313,11 @@ class ResponderChannel extends ChannelSupport implements Channel {
           requestInterceptor.onStart(
                   streamId, FrameType.REQUEST_FNF, RequestFireAndForgetFrameCodec.metadata(frame));
 
-          fireAndForget(getPayloadDecoder().apply(frame))
+          fireAndForget(payloadDecoder.decode(frame))
                   .subscribe(new FireAndForgetResponderSubscriber(streamId, this));
         }
         else {
-          fireAndForget(getPayloadDecoder().apply(frame))
+          fireAndForget(payloadDecoder.decode(frame))
                   .subscribe(FireAndForgetResponderSubscriber.INSTANCE);
         }
       }
@@ -346,7 +346,7 @@ class ResponderChannel extends ChannelSupport implements Channel {
       else {
         var subscriber = new RequestResponseResponderSubscriber(streamId, this);
         if (add(streamId, subscriber)) {
-          requestResponse(getPayloadDecoder().apply(frame)).subscribe(subscriber);
+          requestResponse(payloadDecoder.decode(frame)).subscribe(subscriber);
         }
       }
     }
@@ -377,7 +377,7 @@ class ResponderChannel extends ChannelSupport implements Channel {
                 new RequestStreamResponderSubscriber(streamId, initialRequestN, this);
 
         if (add(streamId, subscriber)) {
-          requestStream(getPayloadDecoder().apply(frame)).subscribe(subscriber);
+          requestStream(payloadDecoder.decode(frame)).subscribe(subscriber);
         }
       }
     }
@@ -407,7 +407,7 @@ class ResponderChannel extends ChannelSupport implements Channel {
         add(streamId, subscriber);
       }
       else {
-        final Payload firstPayload = getPayloadDecoder().apply(frame);
+        final Payload firstPayload = payloadDecoder.decode(frame);
         RequestChannelResponderSubscriber subscriber =
                 new RequestChannelResponderSubscriber(streamId, initialRequestN, firstPayload, this);
 

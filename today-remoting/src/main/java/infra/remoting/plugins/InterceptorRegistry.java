@@ -28,10 +28,10 @@ import infra.remoting.Channel;
  * Provides support for registering interceptors at the following levels:
  *
  * <ul>
- *   <li>{@link #forConnection(ConnectionInterceptor)} -- transport level
+ *   <li>{@link #forConnection(ConnectionDecorator)} -- transport level
  *   <li>{@link #forChannelAcceptor(ChannelAcceptorInterceptor)} -- for accepting new connections
- *   <li>{@link #forRequester(ChannelInterceptor)} -- for performing of requests
- *   <li>{@link #forResponder(ChannelInterceptor)} -- for responding to requests
+ *   <li>{@link #forRequester(ChannelDecorator)} -- for performing of requests
+ *   <li>{@link #forResponder(ChannelDecorator)} -- for responding to requests
  * </ul>
  */
 public class InterceptorRegistry {
@@ -40,13 +40,13 @@ public class InterceptorRegistry {
 
   protected final ArrayList<Function<Channel, ? extends RequestInterceptor>> responderRequestInterceptors = new ArrayList<>();
 
-  protected final ArrayList<ChannelInterceptor> requesterChannelInterceptors = new ArrayList<>();
+  protected final ArrayList<ChannelDecorator> requesterChannelDecorators = new ArrayList<>();
 
-  protected final ArrayList<ChannelInterceptor> responderChannelInterceptors = new ArrayList<>();
+  protected final ArrayList<ChannelDecorator> responderChannelDecorators = new ArrayList<>();
 
   protected final ArrayList<ChannelAcceptorInterceptor> channelAcceptorInterceptors = new ArrayList<>();
 
-  protected final ArrayList<ConnectionInterceptor> connectionInterceptors = new ArrayList<>();
+  protected final ArrayList<ConnectionDecorator> connectionDecorators = new ArrayList<>();
 
   /**
    * Add an {@link RequestInterceptor} that will hook into Requester Channel requests' phases.
@@ -71,37 +71,37 @@ public class InterceptorRegistry {
   }
 
   /**
-   * Add an {@link ChannelInterceptor} that will decorate the Channel used for performing requests.
+   * Add an {@link ChannelDecorator} that will decorate the Channel used for performing requests.
    */
-  public InterceptorRegistry forRequester(ChannelInterceptor interceptor) {
-    requesterChannelInterceptors.add(interceptor);
+  public InterceptorRegistry forRequester(ChannelDecorator interceptor) {
+    requesterChannelDecorators.add(interceptor);
     return this;
   }
 
   /**
-   * Variant of {@link #forRequester(ChannelInterceptor)} with access to the list of existing
+   * Variant of {@link #forRequester(ChannelDecorator)} with access to the list of existing
    * registrations.
    */
-  public InterceptorRegistry forRequester(Consumer<List<ChannelInterceptor>> consumer) {
-    consumer.accept(requesterChannelInterceptors);
+  public InterceptorRegistry forRequester(Consumer<List<ChannelDecorator>> consumer) {
+    consumer.accept(requesterChannelDecorators);
     return this;
   }
 
   /**
-   * Add an {@link ChannelInterceptor} that will decorate the Channel used for responding to
+   * Add an {@link ChannelDecorator} that will decorate the Channel used for responding to
    * requests.
    */
-  public InterceptorRegistry forResponder(ChannelInterceptor interceptor) {
-    responderChannelInterceptors.add(interceptor);
+  public InterceptorRegistry forResponder(ChannelDecorator interceptor) {
+    responderChannelDecorators.add(interceptor);
     return this;
   }
 
   /**
-   * Variant of {@link #forResponder(ChannelInterceptor)} with access to the list of existing
+   * Variant of {@link #forResponder(ChannelDecorator)} with access to the list of existing
    * registrations.
    */
-  public InterceptorRegistry forResponder(Consumer<List<ChannelInterceptor>> consumer) {
-    consumer.accept(responderChannelInterceptors);
+  public InterceptorRegistry forResponder(Consumer<List<ChannelDecorator>> consumer) {
+    consumer.accept(responderChannelDecorators);
     return this;
   }
 
@@ -122,18 +122,18 @@ public class InterceptorRegistry {
     return this;
   }
 
-  /** Add a {@link ConnectionInterceptor}. */
-  public InterceptorRegistry forConnection(ConnectionInterceptor interceptor) {
-    connectionInterceptors.add(interceptor);
+  /** Add a {@link ConnectionDecorator}. */
+  public InterceptorRegistry forConnection(ConnectionDecorator interceptor) {
+    connectionDecorators.add(interceptor);
     return this;
   }
 
   /**
-   * Variant of {@link #forConnection(ConnectionInterceptor)} with access to the list of
+   * Variant of {@link #forConnection(ConnectionDecorator)} with access to the list of
    * existing registrations.
    */
-  public InterceptorRegistry forConnection(Consumer<List<ConnectionInterceptor>> consumer) {
-    consumer.accept(connectionInterceptors);
+  public InterceptorRegistry forConnection(Consumer<List<ConnectionDecorator>> consumer) {
+    consumer.accept(connectionDecorators);
     return this;
   }
 

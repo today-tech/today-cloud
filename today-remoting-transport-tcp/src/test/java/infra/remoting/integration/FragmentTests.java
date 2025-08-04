@@ -33,7 +33,7 @@ import infra.remoting.transport.netty.client.TcpClientTransport;
 import infra.remoting.transport.netty.server.CloseableChannel;
 import infra.remoting.transport.netty.server.TcpServerTransport;
 import infra.remoting.util.DefaultPayload;
-import infra.remoting.util.ChannelDecorator;
+import infra.remoting.util.ChannelWrapper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -66,7 +66,7 @@ public class FragmentTests {
 
     TcpServerTransport serverTransport = TcpServerTransport.create("localhost", randomPort);
     server =
-            RemotingServer.create((setup, sendingSocket) -> Mono.just(new ChannelDecorator(handler)))
+            RemotingServer.create((setup, channel) -> Mono.just(new ChannelWrapper(handler)))
                     .fragment(frameSize)
                     .bind(serverTransport)
                     .block();

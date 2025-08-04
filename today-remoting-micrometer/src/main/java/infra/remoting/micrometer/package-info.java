@@ -15,23 +15,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.remoting.plugins;
-
-import infra.remoting.DuplexConnection;
-
 /**
- * Contract to decorate a {@link DuplexConnection} and intercept the sending and receiving of
- * protocol frames at the transport level.
+ * Transparent metrics exposure for Micrometer.
+ *
+ * @see <a href="https://micrometer.io">Micrometer</a>
  */
-@FunctionalInterface
-public interface ConnectionInterceptor {
+@NonNullApi
+@NonNullFields
+package infra.remoting.micrometer;
 
-  enum Type {
-    CLIENT,
-    SERVER,
-    SOURCE
-  }
-
-  DuplexConnection intercept(Type type, DuplexConnection duplexConnection);
-
-}
+import infra.lang.NonNullFields;
+import reactor.util.annotation.NonNullApi;

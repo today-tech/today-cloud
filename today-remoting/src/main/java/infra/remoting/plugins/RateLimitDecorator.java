@@ -21,7 +21,7 @@ import org.reactivestreams.Publisher;
 
 import infra.remoting.Channel;
 import infra.remoting.Payload;
-import infra.remoting.util.ChannelDecorator;
+import infra.remoting.util.ChannelWrapper;
 import reactor.core.publisher.Flux;
 
 /**
@@ -41,7 +41,7 @@ import reactor.core.publisher.Flux;
  *
  * @since 1.0
  */
-public class RateLimitInterceptor implements ChannelInterceptor {
+public class RateLimitDecorator implements ChannelDecorator {
 
   private final int highTide;
 
@@ -49,7 +49,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
 
   private final boolean requesterProxy;
 
-  private RateLimitInterceptor(int highTide, int lowTide, boolean requesterProxy) {
+  private RateLimitDecorator(int highTide, int lowTide, boolean requesterProxy) {
     this.highTide = highTide;
     this.lowTide = lowTide;
     this.requesterProxy = requesterProxy;
@@ -67,7 +67,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
    * @param prefetchRate the prefetch rate to pass to {@link Flux#limitRate(int)}
    * @return the created interceptor
    */
-  public static RateLimitInterceptor forResponder(int prefetchRate) {
+  public static RateLimitDecorator forResponder(int prefetchRate) {
     return forResponder(prefetchRate, prefetchRate);
   }
 
@@ -79,8 +79,8 @@ public class RateLimitInterceptor implements ChannelInterceptor {
    * @param lowTide the low tide value to pass to {@link Flux#limitRate(int, int)}
    * @return the created interceptor
    */
-  public static RateLimitInterceptor forResponder(int highTide, int lowTide) {
-    return new RateLimitInterceptor(highTide, lowTide, false);
+  public static RateLimitDecorator forResponder(int highTide, int lowTide) {
+    return new RateLimitDecorator(highTide, lowTide, false);
   }
 
   /**
@@ -89,7 +89,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
    * @param prefetchRate the prefetch rate to pass to {@link Flux#limitRate(int)}
    * @return the created interceptor
    */
-  public static RateLimitInterceptor forRequester(int prefetchRate) {
+  public static RateLimitDecorator forRequester(int prefetchRate) {
     return forRequester(prefetchRate, prefetchRate);
   }
 
@@ -101,14 +101,14 @@ public class RateLimitInterceptor implements ChannelInterceptor {
    * @param lowTide the low tide value to pass to {@link Flux#limitRate(int, int)}
    * @return the created interceptor
    */
-  public static RateLimitInterceptor forRequester(int highTide, int lowTide) {
-    return new RateLimitInterceptor(highTide, lowTide, true);
+  public static RateLimitDecorator forRequester(int highTide, int lowTide) {
+    return new RateLimitDecorator(highTide, lowTide, true);
   }
 
   /**
    * Responder side proxy, limits response streams.
    */
-  private class ResponderChannel extends ChannelDecorator {
+  private class ResponderChannel extends ChannelWrapper {
 
     ResponderChannel(Channel source) {
       super(source);
@@ -128,7 +128,7 @@ public class RateLimitInterceptor implements ChannelInterceptor {
   /**
    * Requester side proxy, limits channel request stream.
    */
-  private class RequesterChannel extends ChannelDecorator {
+  private class RequesterChannel extends ChannelWrapper {
 
     RequesterChannel(Channel source) {
       super(source);

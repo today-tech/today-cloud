@@ -37,6 +37,7 @@ include 'today-service-provider'
 include 'today-service-registry'
 
 include 'today-remoting'
+include 'today-remoting-micrometer'
 include 'today-remoting-transport-tcp'
 include 'today-remoting-transport-local'
 

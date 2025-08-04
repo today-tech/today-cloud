@@ -16,6 +16,8 @@ dependencies {
   testImplementation 'org.awaitility:awaitility'
   testImplementation 'com.netflix.concurrency-limits:concurrency-limits-core:0.3.6'
 
+  testRuntimeOnly 'ch.qos.logback:logback-classic'
+
   testFixturesApi "cn.taketoday:today-core"
   testFixturesApi 'org.assertj:assertj-core'
   testFixturesApi 'org.junit.jupiter:junit-jupiter-api'

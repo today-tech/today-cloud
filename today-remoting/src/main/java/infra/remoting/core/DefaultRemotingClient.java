@@ -61,12 +61,8 @@ class DefaultRemotingClient extends ResolvingOperator<Channel>
     }
   };
 
-  static final Object ON_DISCARD_KEY;
-
-  static {
-    Context discardAwareContext = Operators.enableOnDiscard(null, DISCARD_ELEMENTS_CONSUMER);
-    ON_DISCARD_KEY = discardAwareContext.stream().findFirst().get().getKey();
-  }
+  static final Object ON_DISCARD_KEY = Operators.enableOnDiscard(null, DISCARD_ELEMENTS_CONSUMER)
+          .stream().findFirst().get().getKey();
 
   final Mono<Channel> source;
 

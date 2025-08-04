@@ -91,24 +91,6 @@ public class LoadBalanceRemotingClient implements RemotingClient {
   }
 
   /**
-   * Shortcut to create an {@link LoadBalanceRemotingClient} with round-robin load balancing.
-   * Effectively a shortcut for:
-   *
-   * <pre class="cdoe">
-   * LoadBalanceRemotingClient.builder(targetPublisher)
-   *    .connector(ChannelConnector.create())
-   *    .build();
-   * </pre>
-   *
-   * @param connector a "template" for connecting to load balance targets
-   * @param targetPublisher refreshes the list of load balance targets periodically
-   * @return the created client instance
-   */
-  public static LoadBalanceRemotingClient create(ChannelConnector connector, Publisher<List<LoadBalanceTarget>> targetPublisher) {
-    return builder(targetPublisher).connector(connector).build();
-  }
-
-  /**
    * Return a builder for a {@link LoadBalanceRemotingClient}.
    *
    * @param targetPublisher refreshes the list of load balance targets periodically
@@ -181,13 +163,10 @@ public class LoadBalanceRemotingClient implements RemotingClient {
 
     /** Build the {@link LoadBalanceRemotingClient} instance. */
     public LoadBalanceRemotingClient build() {
-      final ChannelConnector connector =
-              (this.connector != null ? this.connector : ChannelConnector.create());
-
-      final LoadBalanceStrategy strategy =
-              (this.loadbalanceStrategy != null
-                      ? this.loadbalanceStrategy
-                      : new RoundRobinLoadBalanceStrategy());
+      final ChannelConnector connector = this.connector != null ? this.connector : ChannelConnector.create();
+      final LoadBalanceStrategy strategy = loadbalanceStrategy != null
+              ? loadbalanceStrategy
+              : new RoundRobinLoadBalanceStrategy();
 
       if (strategy instanceof ClientLoadBalanceStrategy) {
         ((ClientLoadBalanceStrategy) strategy).initialize(connector);

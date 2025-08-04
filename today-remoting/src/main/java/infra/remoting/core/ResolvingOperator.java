@@ -92,10 +92,7 @@ class ResolvingOperator<T> implements Disposable {
   @Nullable
   public final T valueIfResolved() {
     if (this.subscribers == READY) {
-      T value = this.value;
-      if (value != null) {
-        return value;
-      }
+      return this.value;
     }
 
     return null;
@@ -647,6 +644,7 @@ class ResolvingOperator<T> implements Disposable {
       }
     }
 
+    @Nullable
     @Override
     public Object scanUnsafe(Attr key) {
       if (key == Attr.PARENT)

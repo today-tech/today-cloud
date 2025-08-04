@@ -24,7 +24,6 @@ import java.util.List;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.core.RemotingClient;
 import infra.remoting.core.RemotingServer;
-import infra.remoting.lb.LoadBalanceRemotingClient;
 import infra.remoting.lb.LoadBalanceTarget;
 import infra.remoting.transport.netty.client.TcpClientTransport;
 import infra.remoting.transport.netty.server.CloseableChannel;
@@ -71,35 +70,21 @@ public class RoundRobinLoadbalancerExample {
     LoadBalanceTarget target8082 = LoadBalanceTarget.of("8082", TcpClientTransport.create(8082));
 
     Flux<List<LoadBalanceTarget>> producer =
-            Flux.interval(Duration.ofSeconds(5))
-                    .log()
-                    .map(
-                            i -> {
-                              int val = i.intValue();
-                              switch (val) {
-                                case 0:
-                                  return Collections.emptyList();
-                                case 1:
-                                  return Collections.singletonList(target8080);
-                                case 2:
-                                  return Arrays.asList(target8080, target8081);
-                                case 3:
-                                  return Arrays.asList(target8080, target8082);
-                                case 4:
-                                  return Arrays.asList(target8081, target8082);
-                                case 5:
-                                  return Arrays.asList(target8080, target8081, target8082);
-                                case 6:
-                                  return Collections.emptyList();
-                                case 7:
-                                  return Collections.emptyList();
-                                default:
-                                  return Arrays.asList(target8080, target8081, target8082);
-                              }
-                            });
+            Flux.interval(Duration.ofSeconds(5)).log().map(i -> {
+              int val = i.intValue();
+              return switch (val) {
+                case 0, 6, 7 -> Collections.emptyList();
+                case 1 -> Collections.singletonList(target8080);
+                case 2 -> Arrays.asList(target8080, target8081);
+                case 3 -> Arrays.asList(target8080, target8082);
+                case 4 -> Arrays.asList(target8081, target8082);
+                default -> Arrays.asList(target8080, target8081, target8082);
+              };
+            });
 
-    RemotingClient client =
-            LoadBalanceRemotingClient.builder(producer).roundRobinLoadBalanceStrategy().build();
+    RemotingClient client = RemotingClient.forLoadBalance(producer)
+            .roundRobinLoadBalanceStrategy()
+            .build();
 
     for (int i = 0; i < 10000; i++) {
       try {

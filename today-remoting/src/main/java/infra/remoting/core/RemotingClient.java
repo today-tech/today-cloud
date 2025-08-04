@@ -14,14 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
+
 package infra.remoting.core;
 
 import org.reactivestreams.Publisher;
+
+import java.util.List;
 
 import infra.remoting.Channel;
 import infra.remoting.Closeable;
 import infra.remoting.Payload;
 import infra.remoting.lb.LoadBalanceRemotingClient;
+import infra.remoting.lb.LoadBalanceTarget;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -68,6 +72,7 @@ import reactor.core.publisher.Mono;
  * RemotingClient client = RemotingClient.from(source);
  * }</pre>
  *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @see LoadBalanceRemotingClient
  */
 public interface RemotingClient extends Closeable {
@@ -147,4 +152,33 @@ public interface RemotingClient extends Closeable {
   static RemotingClient from(Channel channel) {
     return new RemotingClientAdapter(channel);
   }
+
+  /**
+   * Shortcut to create an {@link LoadBalanceRemotingClient} with round-robin load balancing.
+   * Effectively a shortcut for:
+   *
+   * <pre>{@code
+   * LoadBalanceRemotingClient.builder(targetPublisher)
+   *    .connector(ChannelConnector.create())
+   *    .build();
+   * }</pre>
+   *
+   * @param connector a "template" for connecting to load balance targets
+   * @param targetPublisher refreshes the list of load balance targets periodically
+   * @return the created client instance
+   */
+  static LoadBalanceRemotingClient forLoadBalance(ChannelConnector connector, Publisher<List<LoadBalanceTarget>> targetPublisher) {
+    return forLoadBalance(targetPublisher).connector(connector).build();
+  }
+
+  /**
+   * Return a builder for a {@link LoadBalanceRemotingClient}.
+   *
+   * @param targetPublisher refreshes the list of load balance targets periodically
+   * @return the created builder
+   */
+  static LoadBalanceRemotingClient.Builder forLoadBalance(Publisher<List<LoadBalanceTarget>> targetPublisher) {
+    return LoadBalanceRemotingClient.builder(targetPublisher);
+  }
+
 }

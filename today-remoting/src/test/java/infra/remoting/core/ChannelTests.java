@@ -38,7 +38,7 @@ import infra.remoting.error.ApplicationErrorException;
 import infra.remoting.error.CustomProtocolException;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.LocalDuplexConnection;
+import infra.remoting.test.util.LocalConnection;
 import infra.remoting.util.DefaultPayload;
 import infra.remoting.util.EmptyPayload;
 import reactor.core.Disposable;
@@ -533,10 +533,10 @@ public class ChannelTests {
       this.thisClosedSink = Sinks.empty();
       this.otherClosedSink = Sinks.empty();
 
-      LocalDuplexConnection serverConnection =
-              new LocalDuplexConnection("server", allocator, clientProcessor, serverProcessor);
-      LocalDuplexConnection clientConnection =
-              new LocalDuplexConnection("client", allocator, serverProcessor, clientProcessor);
+      LocalConnection serverConnection =
+              new LocalConnection("server", allocator, clientProcessor, serverProcessor);
+      LocalConnection clientConnection =
+              new LocalConnection("client", allocator, serverProcessor, clientProcessor);
 
       clientConnection.onClose().doFinally(__ -> serverConnection.dispose()).subscribe();
       serverConnection.onClose().doFinally(__ -> clientConnection.dispose()).subscribe();

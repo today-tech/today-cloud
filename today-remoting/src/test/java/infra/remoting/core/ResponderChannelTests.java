@@ -64,7 +64,7 @@ import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.plugins.RequestInterceptor;
 import infra.remoting.plugins.TestRequestInterceptor;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.test.util.TestSubscriber;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.DefaultPayload;
@@ -1203,7 +1203,7 @@ public class ResponderChannelTests {
 
     public void setAcceptingSocket(Channel acceptingSocket) {
       this.acceptingSocket = acceptingSocket;
-      connection = new TestDuplexConnection(alloc());
+      connection = new TestConnection(alloc());
       connectSub = TestSubscriber.create();
       this.prefetch = Integer.MAX_VALUE;
       super.doInit();
@@ -1216,7 +1216,7 @@ public class ResponderChannelTests {
 
     public void setAcceptingSocket(Channel acceptingSocket, int prefetch) {
       this.acceptingSocket = acceptingSocket;
-      connection = new TestDuplexConnection(alloc());
+      connection = new TestConnection(alloc());
       connectSub = TestSubscriber.create();
       this.prefetch = prefetch;
       super.doInit();

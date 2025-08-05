@@ -30,7 +30,7 @@ import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.error.ConnectionErrorException;
 import infra.remoting.error.Exceptions;
@@ -70,7 +70,7 @@ class ResponderChannel extends ChannelSupport implements Channel {
           AtomicReferenceFieldUpdater.newUpdater(
                   ResponderChannel.class, Throwable.class, "terminationError");
 
-  ResponderChannel(DuplexConnection connection, Channel requestHandler, PayloadDecoder payloadDecoder, @Nullable ResponderLeaseTracker leaseHandler,
+  ResponderChannel(Connection connection, Channel requestHandler, PayloadDecoder payloadDecoder, @Nullable ResponderLeaseTracker leaseHandler,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, Function<Channel, ? extends RequestInterceptor> requestInterceptorFunction,
           Sinks.Empty<Void> onThisSideClosedSink) {
     super(mtu, maxFrameLength, maxInboundPayloadSize, payloadDecoder, connection, null, requestInterceptorFunction);

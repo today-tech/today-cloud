@@ -44,7 +44,7 @@ import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.error.ApplicationErrorException;
 import infra.remoting.frame.FrameType;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.DefaultPayload;
 import reactor.core.Exceptions;
@@ -81,7 +81,7 @@ public class RequestResponderChannelSubscriberTests {
   public void requestNFrameShouldBeSentOnSubscriptionAndThenSeparately(String completionCase) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final Payload firstPayload = TestChannelSupport.genericPayload(allocator);
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
@@ -276,7 +276,7 @@ public class RequestResponderChannelSubscriberTests {
   public void failOnOverflow() {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final Payload firstPayload = TestChannelSupport.genericPayload(allocator);
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
@@ -356,7 +356,7 @@ public class RequestResponderChannelSubscriberTests {
   public void failOnOverflowBeforeFirstPayloadIsSent() {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final Payload firstPayload = TestChannelSupport.genericPayload(allocator);
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
@@ -420,7 +420,7 @@ public class RequestResponderChannelSubscriberTests {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestChannelSupport activeStreams = TestChannelSupport.client();
       final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-      final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+      final TestConnection sender = activeStreams.getConnection();
       ;
       final Payload firstPayload = TestChannelSupport.randomPayload(allocator);
       final TestPublisher<Payload> publisher = TestPublisher.create();
@@ -550,7 +550,7 @@ public class RequestResponderChannelSubscriberTests {
 
       stateAssert.isTerminated();
 
-      FrameAssert.assertThat(activeStreams.getDuplexConnection().awaitFrame())
+      FrameAssert.assertThat(activeStreams.getConnection().awaitFrame())
               .typeOf(ERROR)
               .hasData("test")
               .hasStreamId(1)
@@ -643,7 +643,7 @@ public class RequestResponderChannelSubscriberTests {
       for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
         final TestChannelSupport activeStreams = TestChannelSupport.client();
         final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-        final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+        final TestConnection sender = activeStreams.getConnection();
         final TestPublisher<Payload> publisher =
                 TestPublisher.createNoncompliant(DEFER_CANCELLATION, CLEANUP_ON_TERMINATE);
 
@@ -819,7 +819,7 @@ public class RequestResponderChannelSubscriberTests {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestChannelSupport activeStreams = TestChannelSupport.client();
       final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-      final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+      final TestConnection sender = activeStreams.getConnection();
       ;
       final TestPublisher<Payload> publisher =
               TestPublisher.createNoncompliant(DEFER_CANCELLATION, CLEANUP_ON_TERMINATE);

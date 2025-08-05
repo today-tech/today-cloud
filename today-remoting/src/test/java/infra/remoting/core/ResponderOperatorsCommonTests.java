@@ -35,7 +35,7 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.plugins.RequestInterceptor;
 import infra.remoting.plugins.TestRequestInterceptor;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
@@ -288,7 +288,7 @@ public class ResponderOperatorsCommonTests {
     TestChannelSupport testRequesterResponderSupport =
             TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = testRequesterResponderSupport.getAllocator();
-    final TestDuplexConnection sender = testRequesterResponderSupport.getDuplexConnection();
+    final TestConnection sender = testRequesterResponderSupport.getConnection();
     TestPublisher<Payload> testPublisher = TestPublisher.create();
     TestHandler testHandler = new TestHandler(testPublisher, new AssertSubscriber<>(0));
 
@@ -356,7 +356,7 @@ public class ResponderOperatorsCommonTests {
     TestChannelSupport testRequesterResponderSupport =
             TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = testRequesterResponderSupport.getAllocator();
-    final TestDuplexConnection sender = testRequesterResponderSupport.getDuplexConnection();
+    final TestConnection sender = testRequesterResponderSupport.getConnection();
     TestPublisher<Payload> testPublisher = TestPublisher.create();
     TestHandler testHandler = new TestHandler(testPublisher, new AssertSubscriber<>(0));
 

@@ -43,7 +43,7 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.frame.PayloadFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.DefaultPayload;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -65,7 +65,7 @@ class RequesterChannelSubscribersTests {
 
   private LeaksTrackingByteBufAllocator allocator;
   private Channel channelRequester;
-  private TestDuplexConnection connection;
+  private TestConnection connection;
   protected Sinks.Empty<Void> thisClosedSink;
   protected Sinks.Empty<Void> otherClosedSink;
 
@@ -77,7 +77,7 @@ class RequesterChannelSubscribersTests {
   @BeforeEach
   void setUp() {
     allocator = LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
-    connection = new TestDuplexConnection(allocator);
+    connection = new TestConnection(allocator);
     this.thisClosedSink = Sinks.empty();
     this.otherClosedSink = Sinks.empty();
     channelRequester =

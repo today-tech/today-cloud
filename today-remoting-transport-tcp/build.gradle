@@ -15,7 +15,6 @@ dependencies {
   api(project(":today-remoting"))
 
   api "io.projectreactor.netty:reactor-netty-core"
-  api "io.projectreactor.netty:reactor-netty-http"
 
   optional 'io.netty:netty-transport'
   optional 'io.netty:netty-codec'
@@ -32,10 +31,4 @@ dependencies {
 
   testImplementation testFixtures(project(":today-remoting"))
 
-}
-
-jar {
-  manifest {
-    attributes("Automatic-Module-Name": "infra.remoting.transport.tcp")
-  }
 }

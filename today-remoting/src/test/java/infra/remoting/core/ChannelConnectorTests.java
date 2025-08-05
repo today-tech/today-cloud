@@ -38,7 +38,7 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.RequestResponseFrameCodec;
 import infra.remoting.test.util.TestClientTransport;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -58,7 +58,7 @@ public class ChannelConnectorTests {
             .connect(transport)
             .block();
 
-    final TestDuplexConnection duplexConnection = transport.testConnection();
+    final TestConnection duplexConnection = transport.testConnection();
 
     duplexConnection.addToReceivedBuffer(
             KeepAliveFrameCodec.encode(duplexConnection.alloc(), false, 1, Unpooled.EMPTY_BUFFER));
@@ -71,7 +71,7 @@ public class ChannelConnectorTests {
 
     duplexConnection.dispose();
 
-    final TestDuplexConnection duplexConnection2 = transport.testConnection();
+    final TestConnection duplexConnection2 = transport.testConnection();
 
     final ByteBuf frame;
     switch (frameType) {

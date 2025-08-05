@@ -39,7 +39,7 @@
   <logger name="infra.remoting.test.TransportTest" level="DEBUG" />
   <logger name="infra.remoting.resume.ClientChannelSession" level="DEBUG" />
   <logger name="infra.remoting.resume.ServerChannelSession" level="DEBUG" />
-  <logger name="infra.remoting.resume.ResumableDuplexConnection" level="DEBUG" />
+  <logger name="infra.remoting.resume.ResumableConnection" level="DEBUG" />
   <logger name="infra.remoting.resume.InMemoryResumableFramesStore" level="DEBUG" />
 
   <root level="INFO">

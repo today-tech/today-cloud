@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.error.ConnectionErrorException;
 import infra.remoting.error.Exceptions;
 import infra.remoting.error.RejectedResumeException;
@@ -45,12 +45,12 @@ import reactor.util.function.Tuple2;
 import reactor.util.retry.Retry;
 
 public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
-        CoreSubscriber<Tuple2<ByteBuf, DuplexConnection>> {
+        CoreSubscriber<Tuple2<ByteBuf, Connection>> {
 
   private static final Logger logger = LoggerFactory.getLogger(ClientChannelSession.class);
 
-  final ResumableDuplexConnection resumableConnection;
-  final Mono<Tuple2<ByteBuf, DuplexConnection>> connectionFactory;
+  final ResumableConnection resumableConnection;
+  final Mono<Tuple2<ByteBuf, Connection>> connectionFactory;
   final ResumableFramesStore resumableFramesStore;
 
   final ByteBufAllocator allocator;
@@ -69,9 +69,9 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
 
   public ClientChannelSession(
           ByteBuf resumeToken,
-          ResumableDuplexConnection resumableDuplexConnection,
-          Mono<DuplexConnection> connectionFactory,
-          Function<DuplexConnection, Mono<Tuple2<ByteBuf, DuplexConnection>>> connectionTransformer,
+          ResumableConnection resumableConnection,
+          Mono<Connection> connectionFactory,
+          Function<Connection, Mono<Tuple2<ByteBuf, Connection>>> connectionTransformer,
           ResumableFramesStore resumableFramesStore,
           Duration resumeSessionDuration,
           Retry retry,
@@ -81,7 +81,7 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
     this.connectionFactory =
             connectionFactory
                     .doOnDiscard(
-                            DuplexConnection.class,
+                            Connection.class,
                             c -> {
                               final ConnectionErrorException connectionErrorException =
                                       new ConnectionErrorException("resumption_server=[Session Expired]");
@@ -115,16 +115,16 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
                             })
                     .doOnDiscard(Tuple2.class, this::tryReestablishSession);
     this.resumableFramesStore = resumableFramesStore;
-    this.allocator = resumableDuplexConnection.alloc();
+    this.allocator = resumableConnection.alloc();
     this.resumeSessionDuration = resumeSessionDuration;
     this.retry = retry;
     this.cleanupStoreOnKeepAlive = cleanupStoreOnKeepAlive;
-    this.resumableConnection = resumableDuplexConnection;
+    this.resumableConnection = resumableConnection;
 
-    resumableDuplexConnection.onClose().doFinally(__ -> dispose()).subscribe();
+    resumableConnection.onClose().doFinally(__ -> dispose()).subscribe();
 
     this.reconnectDisposable =
-            resumableDuplexConnection.onActiveConnectionClosed().subscribe(this::reconnect);
+            resumableConnection.onActiveConnectionClosed().subscribe(this::reconnect);
   }
 
   void reconnect(int index) {
@@ -196,12 +196,12 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
     return resumableConnection.isDisposed();
   }
 
-  void tryReestablishSession(Tuple2<ByteBuf, DuplexConnection> tuple2) {
+  void tryReestablishSession(Tuple2<ByteBuf, Connection> tuple2) {
     if (logger.isDebugEnabled()) {
       logger.debug("Active subscription is canceled {}", s == Operators.cancelledSubscription());
     }
     ByteBuf shouldBeResumeOKFrame = tuple2.getT1();
-    DuplexConnection nextDuplexConnection = tuple2.getT2();
+    Connection nextConnection = tuple2.getT2();
 
     final int streamId = FrameHeaderCodec.streamId(shouldBeResumeOKFrame);
     if (streamId != 0) {
@@ -212,9 +212,9 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
       }
       final ConnectionErrorException connectionErrorException =
               new ConnectionErrorException("RESUME_OK frame must be received before any others");
-      resumableConnection.dispose(nextDuplexConnection, connectionErrorException);
-      nextDuplexConnection.sendErrorAndClose(connectionErrorException);
-      nextDuplexConnection.receive().subscribe();
+      resumableConnection.dispose(nextConnection, connectionErrorException);
+      nextConnection.sendErrorAndClose(connectionErrorException);
+      nextConnection.receive().subscribe();
 
       throw connectionErrorException; // throw to retry connection again
     }
@@ -251,10 +251,10 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
           }
           final ConnectionErrorException t = new ConnectionErrorException(e.getMessage(), e);
 
-          resumableConnection.dispose(nextDuplexConnection, t);
+          resumableConnection.dispose(nextConnection, t);
 
-          nextDuplexConnection.sendErrorAndClose(t);
-          nextDuplexConnection.receive().subscribe();
+          nextConnection.sendErrorAndClose(t);
+          nextConnection.receive().subscribe();
 
           return;
         }
@@ -267,8 +267,8 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
           }
           final ConnectionErrorException connectionErrorException =
                   new ConnectionErrorException("resumption_server=[Session Expired]");
-          nextDuplexConnection.sendErrorAndClose(connectionErrorException);
-          nextDuplexConnection.receive().subscribe();
+          nextConnection.sendErrorAndClose(connectionErrorException);
+          nextConnection.receive().subscribe();
           return;
         }
 
@@ -278,7 +278,7 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
           logger.debug("Side[client]|Session[{}]. Session has been resumed successfully", session);
         }
 
-        if (!resumableConnection.connect(nextDuplexConnection)) {
+        if (!resumableConnection.connect(nextConnection)) {
           if (logger.isDebugEnabled()) {
             logger.debug(
                     "Side[client]|Session[{}]. Session has already been expired. Terminating received connection",
@@ -286,8 +286,8 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
           }
           final ConnectionErrorException connectionErrorException =
                   new ConnectionErrorException("resumption_server_pos=[Session Expired]");
-          nextDuplexConnection.sendErrorAndClose(connectionErrorException);
-          nextDuplexConnection.receive().subscribe();
+          nextConnection.sendErrorAndClose(connectionErrorException);
+          nextConnection.receive().subscribe();
           // no need to do anything since connection resumable connection is liklly to
           // be disposed
         }
@@ -303,10 +303,10 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
         final ConnectionErrorException connectionErrorException =
                 new ConnectionErrorException("resumption_server_pos=[" + remoteImpliedPos + "]");
 
-        resumableConnection.dispose(nextDuplexConnection, connectionErrorException);
+        resumableConnection.dispose(nextConnection, connectionErrorException);
 
-        nextDuplexConnection.sendErrorAndClose(connectionErrorException);
-        nextDuplexConnection.receive().subscribe();
+        nextConnection.sendErrorAndClose(connectionErrorException);
+        nextConnection.receive().subscribe();
       }
     }
     else if (frameType == FrameType.ERROR) {
@@ -318,14 +318,14 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
                 exception);
       }
       if (exception instanceof RejectedResumeException) {
-        resumableConnection.dispose(nextDuplexConnection, exception);
-        nextDuplexConnection.dispose();
-        nextDuplexConnection.receive().subscribe();
+        resumableConnection.dispose(nextConnection, exception);
+        nextConnection.dispose();
+        nextConnection.receive().subscribe();
         return;
       }
 
-      nextDuplexConnection.dispose();
-      nextDuplexConnection.receive().subscribe();
+      nextConnection.dispose();
+      nextConnection.receive().subscribe();
       throw exception; // assume retryable exception
     }
     else {
@@ -337,10 +337,10 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
       final ConnectionErrorException connectionErrorException =
               new ConnectionErrorException("RESUME_OK frame must be received before any others");
 
-      resumableConnection.dispose(nextDuplexConnection, connectionErrorException);
+      resumableConnection.dispose(nextConnection, connectionErrorException);
 
-      nextDuplexConnection.sendErrorAndClose(connectionErrorException);
-      nextDuplexConnection.receive().subscribe();
+      nextConnection.sendErrorAndClose(connectionErrorException);
+      nextConnection.receive().subscribe();
 
       // no need to do anything since remote server rejected our connection completely
     }
@@ -369,7 +369,7 @@ public class ClientChannelSession implements ChannelSession, ResumeStateHolder,
   }
 
   @Override
-  public void onNext(Tuple2<ByteBuf, DuplexConnection> objects) { }
+  public void onNext(Tuple2<ByteBuf, Connection> objects) { }
 
   @Override
   public void onError(Throwable t) {

@@ -60,7 +60,7 @@ import infra.remoting.lease.Lease;
 import infra.remoting.lease.MissingLeaseException;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.test.util.TestClientTransport;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.test.util.TestServerTransport;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.DefaultPayload;
@@ -89,7 +89,7 @@ class ChannelLeaseTests {
   private Channel channelRequester;
   private ResponderLeaseTracker responderLeaseTracker;
   private LeaksTrackingByteBufAllocator byteBufAllocator;
-  private TestDuplexConnection connection;
+  private TestConnection connection;
   private ResponderChannel responderChannel;
   private Channel mockChannelHandler;
 
@@ -103,7 +103,7 @@ class ChannelLeaseTests {
     PayloadDecoder payloadDecoder = PayloadDecoder.DEFAULT;
     byteBufAllocator = LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
 
-    connection = new TestDuplexConnection(byteBufAllocator);
+    connection = new TestConnection(byteBufAllocator);
     requesterLeaseTracker = new RequesterLeaseTracker(TAG, 0);
     responderLeaseTracker = new ResponderLeaseTracker(TAG, connection, () -> leaseSender.asFlux());
     this.thisClosedSink = Sinks.empty();
@@ -217,7 +217,7 @@ class ChannelLeaseTests {
     TestServerTransport transport = new TestServerTransport();
     RemotingServer.create().bind(transport).block();
 
-    TestDuplexConnection connection = transport.connect();
+    TestConnection connection = transport.connect();
     connection.addToReceivedBuffer(setupFrame);
 
     Collection<ByteBuf> sent = connection.getSent();

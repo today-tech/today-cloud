@@ -24,7 +24,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import infra.remoting.Closeable;
 import infra.remoting.ConnectionSetupPayload;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
@@ -35,7 +35,7 @@ import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.SetupFrameCodec;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.transport.ConnectionAcceptor;
 import infra.remoting.transport.ServerTransport;
 import infra.remoting.util.DefaultPayload;
@@ -73,7 +73,7 @@ public class SetupRejectionTests {
   void requesterStreamsTerminatedOnZeroErrorFrame() {
     LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
-    TestDuplexConnection conn = new TestDuplexConnection(allocator);
+    TestConnection conn = new TestConnection(allocator);
     Sinks.Empty<Void> onThisSideClosedSink = Sinks.empty();
 
     RequesterChannel channel =
@@ -116,7 +116,7 @@ public class SetupRejectionTests {
   void requesterNewStreamsTerminatedAfterZeroErrorFrame() {
     LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
-    TestDuplexConnection conn = new TestDuplexConnection(allocator);
+    TestConnection conn = new TestConnection(allocator);
     Sinks.Empty<Void> onThisSideClosedSink = Sinks.empty();
     RequesterChannel channel =
             new RequesterChannel(
@@ -171,7 +171,7 @@ public class SetupRejectionTests {
 
     private final LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
-    private final TestDuplexConnection conn = new TestDuplexConnection(allocator);
+    private final TestConnection conn = new TestConnection(allocator);
 
     @Override
     public Mono<TestCloseable> start(ConnectionAcceptor acceptor) {
@@ -192,9 +192,9 @@ public class SetupRejectionTests {
 
   private static class TestCloseable implements Closeable {
 
-    private final DuplexConnection conn;
+    private final Connection conn;
 
-    TestCloseable(ConnectionAcceptor acceptor, DuplexConnection conn) {
+    TestCloseable(ConnectionAcceptor acceptor, Connection conn) {
       this.conn = conn;
       Mono.from(acceptor.accept(conn)).subscribe(notUsed -> { }, err -> conn.dispose());
     }

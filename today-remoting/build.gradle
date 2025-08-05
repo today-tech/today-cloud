@@ -11,6 +11,7 @@ dependencies {
 
   testImplementation(project(":today-remoting-transport-local"))
   testImplementation(project(":today-remoting-transport-tcp"))
+  testImplementation(project(":today-remoting-transport-websocket"))
 
   testImplementation 'io.projectreactor:reactor-test'
   testImplementation 'org.awaitility:awaitility'

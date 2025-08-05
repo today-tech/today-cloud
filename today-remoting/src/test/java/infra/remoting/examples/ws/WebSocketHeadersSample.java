@@ -27,8 +27,8 @@ import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.transport.ConnectionAcceptor;
-import infra.remoting.transport.netty.WebsocketDuplexConnection;
-import infra.remoting.transport.netty.client.WebsocketClientTransport;
+import infra.remoting.transport.websocket.WebsocketClientTransport;
+import infra.remoting.transport.websocket.WebsocketConnection;
 import infra.remoting.util.ByteBufPayload;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import reactor.core.publisher.Flux;
@@ -58,7 +58,7 @@ public class WebSocketHeadersSample {
                               if (req.requestHeaders().containsValue("Authorization", "test", true)) {
                                 return res.sendWebsocket((in, out) ->
                                         connectionAcceptor
-                                                .accept(new WebsocketDuplexConnection((Connection) in))
+                                                .accept(new WebsocketConnection((Connection) in))
                                                 .then(out.neverComplete()));
                               }
                               res.status(HttpResponseStatus.UNAUTHORIZED);

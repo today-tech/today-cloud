@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 import infra.lang.Nullable;
 import infra.remoting.Channel;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.RequestInterceptor;
 import io.netty.buffer.ByteBufAllocator;
@@ -41,7 +41,7 @@ class ChannelSupport {
 
   public final ByteBufAllocator allocator;
 
-  public final DuplexConnection connection;
+  public final Connection connection;
 
   @Nullable
   public final RequestInterceptor requestInterceptor;
@@ -52,7 +52,7 @@ class ChannelSupport {
   protected final IntObjectMap<FrameHandler> activeStreams;
 
   public ChannelSupport(int mtu, int maxFrameLength, int maxInboundPayloadSize,
-          PayloadDecoder payloadDecoder, DuplexConnection connection, @Nullable StreamIdProvider streamIdProvider,
+          PayloadDecoder payloadDecoder, Connection connection, @Nullable StreamIdProvider streamIdProvider,
           Function<Channel, ? extends RequestInterceptor> requestInterceptorFunction) {
 
     this.activeStreams = new IntObjectHashMap<>();
@@ -86,7 +86,7 @@ class ChannelSupport {
     return allocator;
   }
 
-  public DuplexConnection getDuplexConnection() {
+  public Connection getConnection() {
     return connection;
   }
 

@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 import infra.lang.Nullable;
 import infra.remoting.Closeable;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ConnectionAcceptor;
 import infra.remoting.transport.ServerTransport;
@@ -131,7 +131,7 @@ public final class LocalServerTransport implements ServerTransport<Closeable> {
 
     private final ConnectionAcceptor acceptor;
 
-    private final Set<DuplexConnection> activeConnections = ConcurrentHashMap.newKeySet();
+    private final Set<Connection> activeConnections = ConcurrentHashMap.newKeySet();
 
     private final Sinks.Empty<Void> onClose = Sinks.unsafe().empty();
 
@@ -142,13 +142,13 @@ public final class LocalServerTransport implements ServerTransport<Closeable> {
     }
 
     @Override
-    public Mono<Void> accept(DuplexConnection duplexConnection) {
-      activeConnections.add(duplexConnection);
-      duplexConnection
+    public Mono<Void> accept(Connection connection) {
+      activeConnections.add(connection);
+      connection
               .onClose()
-              .doFinally(__ -> activeConnections.remove(duplexConnection))
+              .doFinally(__ -> activeConnections.remove(connection))
               .subscribe();
-      return acceptor.accept(duplexConnection);
+      return acceptor.accept(connection);
     }
 
     @Override
@@ -158,8 +158,8 @@ public final class LocalServerTransport implements ServerTransport<Closeable> {
         return;
       }
 
-      Mono.whenDelayError(activeConnections.stream().peek(DuplexConnection::dispose)
-                      .map(DuplexConnection::onClose).collect(Collectors.toList()))
+      Mono.whenDelayError(activeConnections.stream().peek(Connection::dispose)
+                      .map(Connection::onClose).collect(Collectors.toList()))
               .subscribe(null, onClose::tryEmitError, onClose::tryEmitEmpty);
     }
 

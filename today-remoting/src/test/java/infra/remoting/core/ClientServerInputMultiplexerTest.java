@@ -31,12 +31,12 @@ import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.LeaseFrameCodec;
 import infra.remoting.frame.MetadataPushFrameCodec;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClientServerInputMultiplexerTest {
-  private TestDuplexConnection source;
+  private TestConnection source;
   private ClientServerInputMultiplexer clientMultiplexer;
   private LeaksTrackingByteBufAllocator allocator =
           LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
@@ -44,7 +44,7 @@ public class ClientServerInputMultiplexerTest {
 
   @BeforeEach
   public void setup() {
-    source = new TestDuplexConnection(allocator);
+    source = new TestConnection(allocator);
     clientMultiplexer =
             new ClientServerInputMultiplexer(source, new InitializingInterceptorRegistry(), true);
     serverMultiplexer =

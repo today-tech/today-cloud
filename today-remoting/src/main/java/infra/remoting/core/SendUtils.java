@@ -18,7 +18,7 @@ package infra.remoting.core;
 
 import java.util.function.Consumer;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.error.CanceledException;
 import infra.remoting.frame.CancelFrameCodec;
@@ -55,7 +55,7 @@ final class SendUtils {
   static final Context DISCARD_CONTEXT = Operators.enableOnDiscard(null, DROPPED_ELEMENTS_CONSUMER);
 
   static void sendReleasingPayload(int streamId, FrameType frameType, int mtu, Payload payload,
-          DuplexConnection connection, ByteBufAllocator allocator, boolean requester) {
+          Connection connection, ByteBufAllocator allocator, boolean requester) {
 
     final boolean hasMetadata = payload.hasMetadata();
     final ByteBuf metadata = hasMetadata ? payload.metadata() : null;
@@ -148,7 +148,7 @@ final class SendUtils {
   }
 
   static void sendReleasingPayload(int streamId, FrameType frameType, long initialRequestN, int mtu,
-          Payload payload, DuplexConnection connection, ByteBufAllocator allocator, boolean complete) {
+          Payload payload, Connection connection, ByteBufAllocator allocator, boolean complete) {
 
     final boolean hasMetadata = payload.hasMetadata();
     final ByteBuf metadata = hasMetadata ? payload.metadata() : null;
@@ -239,7 +239,7 @@ final class SendUtils {
     }
   }
 
-  static void sendTerminalFrame(int streamId, FrameType frameType, DuplexConnection connection,
+  static void sendTerminalFrame(int streamId, FrameType frameType, Connection connection,
           ByteBufAllocator allocator, boolean requester, boolean onFollowingFrame, Throwable t) {
 
     if (onFollowingFrame) {

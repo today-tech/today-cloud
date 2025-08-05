@@ -34,7 +34,7 @@ import infra.remoting.Payload;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.frame.FrameType;
 import infra.remoting.plugins.TestRequestInterceptor;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -85,7 +85,7 @@ class FireAndForgetRequesterMonoTests {
     // should not add anything to map
     stateAssert.isTerminated();
     activeStreams.assertNoActiveStreams();
-    final ByteBuf frame = activeStreams.getDuplexConnection().awaitFrame();
+    final ByteBuf frame = activeStreams.getConnection().awaitFrame();
     FrameAssert.assertThat(frame)
             .isNotNull()
             .hasPayloadSize(
@@ -99,7 +99,7 @@ class FireAndForgetRequesterMonoTests {
             .hasStreamId(1)
             .hasNoLeaks();
 
-    assertThat(activeStreams.getDuplexConnection().isEmpty()).isTrue();
+    assertThat(activeStreams.getConnection().isEmpty()).isTrue();
     activeStreams.getAllocator().assertHasNoLeaks();
     testRequestInterceptor
             .expectOnStart(1, FrameType.REQUEST_FNF)
@@ -119,7 +119,7 @@ class FireAndForgetRequesterMonoTests {
     final int mtu = 64;
     final TestChannelSupport streamManager = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
-    final TestDuplexConnection sender = streamManager.getDuplexConnection();
+    final TestConnection sender = streamManager.getConnection();
 
     final byte[] metadata = new byte[65];
     final byte[] data = new byte[129];
@@ -219,7 +219,7 @@ class FireAndForgetRequesterMonoTests {
     final TestChannelSupport streamManager =
             TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
-    final TestDuplexConnection sender = streamManager.getDuplexConnection();
+    final TestConnection sender = streamManager.getConnection();
     final Payload payload = ByteBufPayload.create("");
     payload.release();
 
@@ -268,7 +268,7 @@ class FireAndForgetRequesterMonoTests {
     final TestChannelSupport streamManager =
             TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
-    final TestDuplexConnection sender = streamManager.getDuplexConnection();
+    final TestConnection sender = streamManager.getConnection();
 
     final byte[] metadata = new byte[FRAME_LENGTH_MASK];
     final byte[] data = new byte[FRAME_LENGTH_MASK];
@@ -329,7 +329,7 @@ class FireAndForgetRequesterMonoTests {
     final TestChannelSupport streamManager =
             TestChannelSupport.client(exception, testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
-    final TestDuplexConnection sender = streamManager.getDuplexConnection();
+    final TestConnection sender = streamManager.getConnection();
     final Payload payload = genericPayload(allocator);
 
     final FireAndForgetRequesterMono fireAndForgetRequesterMono =
@@ -371,7 +371,7 @@ class FireAndForgetRequesterMonoTests {
     final TestRequestInterceptor testRequestInterceptor = new TestRequestInterceptor();
     final TestChannelSupport streamManager = TestChannelSupport.client(testRequestInterceptor);
     final LeaksTrackingByteBufAllocator allocator = streamManager.getAllocator();
-    final TestDuplexConnection sender = streamManager.getDuplexConnection();
+    final TestConnection sender = streamManager.getConnection();
 
     for (int i = 1; i < 50000; i += 2) {
       final Payload payload = ByteBufPayload.create("testData", "testMetadata");

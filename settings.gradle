@@ -39,6 +39,7 @@ include 'today-remoting'
 include 'today-remoting-micrometer'
 include 'today-remoting-transport-tcp'
 include 'today-remoting-transport-local'
+include 'today-remoting-transport-websocket'
 
 // Samples
 

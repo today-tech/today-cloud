@@ -35,7 +35,7 @@ import infra.remoting.PayloadAssert;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.error.ApplicationErrorException;
 import infra.remoting.frame.FrameType;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.EmptyPayload;
 import io.netty.buffer.ByteBuf;
@@ -78,7 +78,7 @@ public class RequestResponseRequesterMonoTests {
                   transformer) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final Payload payload = genericPayload(allocator);
 
     final RequestResponseRequesterMono requestResponseRequesterMono =
@@ -323,7 +323,7 @@ public class RequestResponseRequesterMonoTests {
     final int mtu = 64;
     final TestChannelSupport activeStreams = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
 
     final byte[] metadata = new byte[65];
     final byte[] data = new byte[129];
@@ -433,7 +433,7 @@ public class RequestResponseRequesterMonoTests {
   public void shouldBeNoOpsOnCancel() {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final Payload payload = ByteBufPayload.create("testData", "testMetadata");
 
     final RequestResponseRequesterMono requestResponseRequesterMono =
@@ -469,7 +469,7 @@ public class RequestResponseRequesterMonoTests {
           Consumer<RequestResponseRequesterMono> monoConsumer) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     ;
     final Payload payload = ByteBufPayload.create("");
     payload.release();
@@ -513,7 +513,7 @@ public class RequestResponseRequesterMonoTests {
   public void shouldErrorOnIncorrectRefCntInGivenPayloadLatePhase() {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     ;
     final Payload payload = ByteBufPayload.create("");
 
@@ -548,7 +548,7 @@ public class RequestResponseRequesterMonoTests {
     final int mtu = 64;
     final TestChannelSupport activeStreams = TestChannelSupport.client(mtu);
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     ;
     final byte[] metadata = new byte[65];
     final byte[] data = new byte[129];
@@ -588,7 +588,7 @@ public class RequestResponseRequesterMonoTests {
           Consumer<RequestResponseRequesterMono> monoConsumer) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     ;
 
     final byte[] metadata = new byte[FRAME_LENGTH_MASK];

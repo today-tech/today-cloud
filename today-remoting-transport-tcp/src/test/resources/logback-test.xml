@@ -26,14 +26,14 @@
 
   <logger name="infra.remoting.transport.netty" level="INFO" />
   <logger name="infra.remoting.FrameLogger" level="INFO" />
-  <logger name="infra.remoting.fragmentation.FragmentationDuplexConnection" level="INFO" />
+  <logger name="infra.remoting.fragmentation.FragmentationConnection" level="INFO" />
   <logger name="infra.remoting.transport.netty" level="INFO" />
   <logger name="infra.remoting.core.RequesterChannel" level="DEBUG" />
   <logger name="infra.remoting.core.ResponderChannel" level="DEBUG" />
   <logger name="infra.remoting.test.TransportTest" level="DEBUG" />
   <logger name="infra.remoting.resume.ClientChannelSession" level="DEBUG" />
   <logger name="infra.remoting.resume.ServerChannelSession" level="DEBUG" />
-  <logger name="infra.remoting.resume.ResumableDuplexConnection" level="DEBUG" />
+  <logger name="infra.remoting.resume.ResumableConnection" level="DEBUG" />
   <logger name="infra.remoting.resume.InMemoryResumableFramesStore" level="DEBUG" />
 
   <root level="INFO">

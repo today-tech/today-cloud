@@ -53,7 +53,7 @@ import io.netty.util.NetUtil;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import reactor.core.publisher.Mono;
 
-import static infra.remoting.transport.tcp.PromiseAdapter.adapt;
+import static infra.remoting.util.PromiseAdapter.adapt;
 
 /**
  * Netty TCP server transport
@@ -359,7 +359,7 @@ public class TCPServerTransport extends ChannelInboundHandlerAdapter implements 
                       0, FRAME_LENGTH_SIZE, 0, FRAME_LENGTH_SIZE))
               .addLast("channel-transport", transport);
 
-//      acceptor.accept(new TcpDuplexConnection(ch));
+//      acceptor.accept(new TcpConnection(ch));
     }
   }
 

@@ -26,7 +26,7 @@ import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;
 import infra.remoting.ConnectionSetupPayload;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.error.InvalidSetupException;
@@ -325,29 +325,29 @@ public final class RemotingServer {
       private final ServerSetup serverSetup = serverSetup(timeout);
 
       @Override
-      public Mono<Void> accept(DuplexConnection connection) {
+      public Mono<Void> accept(Connection connection) {
         return acceptor(serverSetup, connection, maxFrameLength);
       }
     };
   }
 
-  private Mono<Void> acceptor(ServerSetup serverSetup, DuplexConnection sourceConnection, int maxFrameLength) {
-    final DuplexConnection interceptedConnection = interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection);
+  private Mono<Void> acceptor(ServerSetup serverSetup, Connection sourceConnection, int maxFrameLength) {
+    final Connection interceptedConnection = interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection);
     return serverSetup
-            .init(LoggingDuplexConnection.wrapIfEnabled(interceptedConnection))
+            .init(LoggingConnection.wrapIfEnabled(interceptedConnection))
             .flatMap(tuple2 -> {
               final ByteBuf startFrame = tuple2.getT1();
-              final DuplexConnection clientServerConnection = tuple2.getT2();
+              final Connection clientServerConnection = tuple2.getT2();
 
               return accept(serverSetup, startFrame, clientServerConnection, maxFrameLength);
             });
   }
 
-  private Mono<Void> acceptResume(ServerSetup serverSetup, ByteBuf resumeFrame, DuplexConnection clientServerConnection) {
+  private Mono<Void> acceptResume(ServerSetup serverSetup, ByteBuf resumeFrame, Connection clientServerConnection) {
     return serverSetup.acceptChannelResume(resumeFrame, clientServerConnection);
   }
 
-  private Mono<Void> accept(ServerSetup serverSetup, ByteBuf startFrame, DuplexConnection clientServerConnection, int maxFrameLength) {
+  private Mono<Void> accept(ServerSetup serverSetup, ByteBuf startFrame, Connection clientServerConnection, int maxFrameLength) {
     return switch (FrameHeaderCodec.frameType(startFrame)) {
       case SETUP -> acceptSetup(serverSetup, startFrame, clientServerConnection, maxFrameLength);
       case RESUME -> acceptResume(serverSetup, startFrame, clientServerConnection);
@@ -358,7 +358,7 @@ public final class RemotingServer {
     };
   }
 
-  private Mono<Void> acceptSetup(ServerSetup serverSetup, ByteBuf setupFrame, DuplexConnection clientServerConnection, int maxFrameLength) {
+  private Mono<Void> acceptSetup(ServerSetup serverSetup, ByteBuf setupFrame, Connection clientServerConnection, int maxFrameLength) {
     if (!SetupFrameCodec.isSupportedVersion(setupFrame)) {
       serverSetup.sendError(clientServerConnection, new InvalidSetupException(
               "Unsupported version: " + SetupFrameCodec.humanReadableVersion(setupFrame)));
@@ -371,10 +371,10 @@ public final class RemotingServer {
       return clientServerConnection.onClose();
     }
 
-    return serverSetup.acceptChannelSetup(setupFrame, clientServerConnection, (keepAliveHandler, wrappedDuplexConnection) -> {
+    return serverSetup.acceptChannelSetup(setupFrame, clientServerConnection, (keepAliveHandler, wrappedConnection) -> {
       final InitializingInterceptorRegistry interceptors = this.interceptors;
       final ConnectionSetupPayload setupPayload = new DefaultConnectionSetupPayload(setupFrame.retain());
-      final ClientServerInputMultiplexer multiplexer = new ClientServerInputMultiplexer(wrappedDuplexConnection, interceptors, false);
+      final ClientServerInputMultiplexer multiplexer = new ClientServerInputMultiplexer(wrappedConnection, interceptors, false);
       final LeaseSpec leases;
       final RequesterLeaseTracker requesterLeaseTracker;
       if (leaseEnabled) {
@@ -401,12 +401,12 @@ public final class RemotingServer {
               .decorateAcceptor(acceptor)
               .accept(setupPayload, wrappedChannelRequester)
               .onErrorResume(err -> Mono.fromRunnable(() -> serverSetup.sendError(
-                              wrappedDuplexConnection, rejectedSetupError(err)))
-                      .then(wrappedDuplexConnection.onClose())
+                              wrappedConnection, rejectedSetupError(err)))
+                      .then(wrappedConnection.onClose())
                       .then(Mono.error(err)))
               .doOnNext(channelHandler -> {
                 Channel wrappedChannelHandler = interceptors.decorateResponder(channelHandler);
-                DuplexConnection clientConnection = multiplexer.asClientConnection();
+                Connection clientConnection = multiplexer.asClientConnection();
 
                 ResponderLeaseTracker responderLeaseTracker = leaseEnabled
                         ? new ResponderLeaseTracker(SERVER_TAG, clientConnection, leases.sender)

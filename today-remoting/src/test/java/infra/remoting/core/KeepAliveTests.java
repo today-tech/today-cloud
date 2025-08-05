@@ -35,9 +35,9 @@ import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.resume.ChannelSession;
 import infra.remoting.resume.InMemoryResumableFramesStore;
-import infra.remoting.resume.ResumableDuplexConnection;
+import infra.remoting.resume.ResumableConnection;
 import infra.remoting.resume.ResumeStateHolder;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -72,7 +72,7 @@ public class KeepAliveTests {
   static ChannelState requester(int tickPeriod, int timeout) {
     LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
-    TestDuplexConnection connection = new TestDuplexConnection(allocator);
+    TestConnection connection = new TestConnection(allocator);
     Sinks.Empty<Void> empty = Sinks.empty();
     RequesterChannel channel =
             new RequesterChannel(
@@ -95,9 +95,9 @@ public class KeepAliveTests {
   static ResumableChannelState resumableRequester(int tickPeriod, int timeout) {
     LeaksTrackingByteBufAllocator allocator =
             LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
-    TestDuplexConnection connection = new TestDuplexConnection(allocator);
-    ResumableDuplexConnection resumableConnection =
-            new ResumableDuplexConnection(
+    TestConnection connection = new TestConnection(allocator);
+    ResumableConnection resumableConnection =
+            new ResumableConnection(
                     "test",
                     Unpooled.EMPTY_BUFFER,
                     connection,
@@ -129,7 +129,7 @@ public class KeepAliveTests {
   void channelNotDisposedOnPresentKeepAlives() {
     ChannelState requesterState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
 
-    TestDuplexConnection connection = requesterState.connection();
+    TestConnection connection = requesterState.connection();
 
     Disposable disposable =
             Flux.interval(Duration.ofMillis(KEEP_ALIVE_INTERVAL))
@@ -196,7 +196,7 @@ public class KeepAliveTests {
   @Test
   void clientRequesterSendsKeepAlives() {
     ChannelState channelState = requester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    TestDuplexConnection connection = channelState.connection();
+    TestConnection connection = channelState.connection();
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(KEEP_ALIVE_INTERVAL));
     this.keepAliveFrameWithRespondFlag(connection.pollFrame());
@@ -218,7 +218,7 @@ public class KeepAliveTests {
   @Test
   void requesterRespondsToKeepAlives() {
     ChannelState channelState = requester(100_000, 100_000);
-    TestDuplexConnection connection = channelState.connection();
+    TestConnection connection = channelState.connection();
     Duration duration = Duration.ofMillis(100);
     Mono.delay(duration)
             .subscribe(
@@ -247,10 +247,10 @@ public class KeepAliveTests {
   void resumableRequesterNoKeepAlivesAfterDisconnect() {
     ResumableChannelState channelState =
             resumableRequester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    TestDuplexConnection testConnection = channelState.connection();
-    ResumableDuplexConnection resumableDuplexConnection = channelState.resumableDuplexConnection();
+    TestConnection testConnection = channelState.connection();
+    ResumableConnection resumableConnection = channelState.resumableConnection();
 
-    resumableDuplexConnection.disconnect();
+    resumableConnection.disconnect();
 
     Duration duration = Duration.ofMillis(KEEP_ALIVE_INTERVAL * 5);
     virtualTimeScheduler.advanceTimeBy(duration);
@@ -266,11 +266,11 @@ public class KeepAliveTests {
   void resumableRequesterKeepAlivesAfterReconnect() {
     ResumableChannelState channelState =
             resumableRequester(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_TIMEOUT);
-    ResumableDuplexConnection resumableDuplexConnection = channelState.resumableDuplexConnection();
-    resumableDuplexConnection.disconnect();
-    TestDuplexConnection newTestConnection = new TestDuplexConnection(channelState.alloc());
-    resumableDuplexConnection.connect(newTestConnection);
-    //    resumableDuplexConnection.(0, 0, ignored -> Mono.empty());
+    ResumableConnection resumableConnection = channelState.resumableConnection();
+    resumableConnection.disconnect();
+    TestConnection newTestConnection = new TestConnection(channelState.alloc());
+    resumableConnection.connect(newTestConnection);
+    //    resumableConnection.(0, 0, ignored -> Mono.empty());
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(KEEP_ALIVE_INTERVAL));
 
@@ -327,7 +327,7 @@ public class KeepAliveTests {
     ResumableChannelState resumableRequesterState =
             resumableRequester(KEEP_ALIVE_INTERVAL, RESUMABLE_KEEP_ALIVE_TIMEOUT);
     Channel channel = resumableRequesterState.channel();
-    TestDuplexConnection connection = resumableRequesterState.connection();
+    TestConnection connection = resumableRequesterState.connection();
 
     virtualTimeScheduler.advanceTimeBy(Duration.ofMillis(500));
 
@@ -356,13 +356,13 @@ public class KeepAliveTests {
 
   static class ChannelState {
     private final Channel channel;
-    private final TestDuplexConnection connection;
+    private final TestConnection connection;
     private final LeaksTrackingByteBufAllocator allocator;
     private final Sinks.Empty<Void> onClose;
 
     public ChannelState(Channel channel,
             LeaksTrackingByteBufAllocator allocator,
-            TestDuplexConnection connection,
+            TestConnection connection,
             Sinks.Empty<Void> onClose) {
       this.channel = channel;
       this.connection = connection;
@@ -370,7 +370,7 @@ public class KeepAliveTests {
       this.onClose = onClose;
     }
 
-    public TestDuplexConnection connection() {
+    public TestConnection connection() {
       return connection;
     }
 
@@ -385,30 +385,30 @@ public class KeepAliveTests {
 
   static class ResumableChannelState {
     private final Channel channel;
-    private final TestDuplexConnection connection;
-    private final ResumableDuplexConnection resumableDuplexConnection;
+    private final TestConnection connection;
+    private final ResumableConnection resumableConnection;
     private final LeaksTrackingByteBufAllocator allocator;
     private final Sinks.Empty<Void> onClose;
 
     public ResumableChannelState(
             Channel channel,
-            TestDuplexConnection connection,
-            ResumableDuplexConnection resumableDuplexConnection,
+            TestConnection connection,
+            ResumableConnection resumableConnection,
             Sinks.Empty<Void> onClose,
             LeaksTrackingByteBufAllocator allocator) {
       this.channel = channel;
       this.connection = connection;
-      this.resumableDuplexConnection = resumableDuplexConnection;
+      this.resumableConnection = resumableConnection;
       this.onClose = onClose;
       this.allocator = allocator;
     }
 
-    public TestDuplexConnection connection() {
+    public TestConnection connection() {
       return connection;
     }
 
-    public ResumableDuplexConnection resumableDuplexConnection() {
-      return resumableDuplexConnection;
+    public ResumableConnection resumableConnection() {
+      return resumableConnection;
     }
 
     public Channel channel() {

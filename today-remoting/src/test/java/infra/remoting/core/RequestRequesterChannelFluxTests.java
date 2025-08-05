@@ -43,7 +43,7 @@ import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.error.ApplicationErrorException;
 import infra.remoting.frame.FrameType;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.DefaultPayload;
 import reactor.core.publisher.Hooks;
@@ -72,7 +72,7 @@ public class RequestRequesterChannelFluxTests {
   public void requestNFrameShouldBeSentOnSubscriptionAndThenSeparately(String completionCase) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final Payload payload = TestChannelSupport.genericPayload(allocator);
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
@@ -254,7 +254,7 @@ public class RequestRequesterChannelFluxTests {
   public void streamShouldErrorWithoutInitializingRemoteStreamIfSourceIsEmpty(boolean doRequest) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
     final RequestChannelRequesterFlux requestChannelRequesterFlux =
@@ -299,7 +299,7 @@ public class RequestRequesterChannelFluxTests {
           boolean doRequest) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
     final RequestChannelRequesterFlux requestChannelRequesterFlux =
@@ -343,7 +343,7 @@ public class RequestRequesterChannelFluxTests {
   public void streamShouldBeInHalfClosedStateOnTheInboundCancellation(String terminationMode) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
     final RequestChannelRequesterFlux requestChannelRequesterFlux =
@@ -442,7 +442,7 @@ public class RequestRequesterChannelFluxTests {
   public void errorShouldTerminateExecution(String terminationMode) {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
     final RequestChannelRequesterFlux requestChannelRequesterFlux =
@@ -525,7 +525,7 @@ public class RequestRequesterChannelFluxTests {
   public void failOnOverflow() {
     final TestChannelSupport activeStreams = TestChannelSupport.client();
     final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-    final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+    final TestConnection sender = activeStreams.getConnection();
     final TestPublisher<Payload> publisher = TestPublisher.create();
 
     final RequestChannelRequesterFlux requestChannelRequesterFlux =
@@ -628,7 +628,7 @@ public class RequestRequesterChannelFluxTests {
       for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
         final TestChannelSupport activeStreams = TestChannelSupport.client();
         final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-        final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+        final TestConnection sender = activeStreams.getConnection();
         final TestPublisher<Payload> publisher =
                 TestPublisher.createNoncompliant(TestPublisher.Violation.DEFER_CANCELLATION);
 
@@ -800,7 +800,7 @@ public class RequestRequesterChannelFluxTests {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       final TestChannelSupport activeStreams = TestChannelSupport.client();
       final LeaksTrackingByteBufAllocator allocator = activeStreams.getAllocator();
-      final TestDuplexConnection sender = activeStreams.getDuplexConnection();
+      final TestConnection sender = activeStreams.getConnection();
       final TestPublisher<Payload> publisher =
               TestPublisher.createNoncompliant(TestPublisher.Violation.DEFER_CANCELLATION);
 

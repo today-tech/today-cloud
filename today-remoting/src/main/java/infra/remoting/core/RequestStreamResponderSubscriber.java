@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.error.CanceledException;
 import infra.remoting.frame.ErrorFrameCodec;
@@ -99,7 +99,7 @@ final class RequestStreamResponderSubscriber implements ResponderFrameHandler, C
     }
 
     final int streamId = this.streamId;
-    final DuplexConnection sender = channel.connection;
+    final Connection sender = channel.connection;
     final ByteBufAllocator allocator = channel.allocator;
 
     final int mtu = channel.mtu;

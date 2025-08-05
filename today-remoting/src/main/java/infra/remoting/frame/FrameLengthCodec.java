@@ -21,7 +21,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
 /**
- * Some transports like TCP aren't framed, and require a length. This is used by DuplexConnections
+ * Some transports like TCP aren't framed, and require a length. This is used by Connections
  * for transports that need to send length
  */
 public class FrameLengthCodec {

@@ -22,14 +22,14 @@ import java.time.Duration;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.error.RejectedResumeException;
 import infra.remoting.error.UnsupportedSetupException;
 import infra.remoting.frame.ResumeFrameCodec;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.keepalive.KeepAliveHandler;
-import infra.remoting.resume.ResumableDuplexConnection;
+import infra.remoting.resume.ResumableConnection;
 import infra.remoting.resume.ResumableFramesStore;
 import infra.remoting.resume.ServerChannelSession;
 import infra.remoting.resume.SessionManager;
@@ -48,23 +48,23 @@ abstract class ServerSetup {
     this.timeout = timeout;
   }
 
-  Mono<Tuple2<ByteBuf, DuplexConnection>> init(DuplexConnection connection) {
-    return Mono.<Tuple2<ByteBuf, DuplexConnection>>create(sink -> sink.onRequest(__ -> new SetupHandlingDuplexConnection(connection, sink)))
+  Mono<Tuple2<ByteBuf, Connection>> init(Connection connection) {
+    return Mono.<Tuple2<ByteBuf, Connection>>create(sink -> sink.onRequest(__ -> new SetupHandlingConnection(connection, sink)))
             .timeout(this.timeout)
             .or(connection.onClose().then(Mono.error(ClosedChannelException::new)));
   }
 
   abstract Mono<Void> acceptChannelSetup(ByteBuf frame,
-          DuplexConnection clientServerConnection,
-          BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then);
+          Connection clientServerConnection,
+          BiFunction<KeepAliveHandler, Connection, Mono<Void>> then);
 
-  abstract Mono<Void> acceptChannelResume(ByteBuf frame, DuplexConnection connection);
+  abstract Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection);
 
   void dispose() { }
 
-  void sendError(DuplexConnection duplexConnection, ProtocolErrorException exception) {
-    duplexConnection.sendErrorAndClose(exception);
-    duplexConnection.receive().subscribe();
+  void sendError(Connection connection, ProtocolErrorException exception) {
+    connection.sendErrorAndClose(exception);
+    connection.receive().subscribe();
   }
 
   static class DefaultServerSetup extends ServerSetup {
@@ -74,22 +74,22 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptChannelSetup(ByteBuf frame, DuplexConnection duplexConnection,
-            BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then) {
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, Connection connection,
+            BiFunction<KeepAliveHandler, Connection, Mono<Void>> then) {
 
       if (SetupFrameCodec.resumeEnabled(frame)) {
-        sendError(duplexConnection, new UnsupportedSetupException("resume not supported"));
-        return duplexConnection.onClose();
+        sendError(connection, new UnsupportedSetupException("resume not supported"));
+        return connection.onClose();
       }
       else {
-        return then.apply(new DefaultKeepAliveHandler(), duplexConnection);
+        return then.apply(new DefaultKeepAliveHandler(), connection);
       }
     }
 
     @Override
-    public Mono<Void> acceptChannelResume(ByteBuf frame, DuplexConnection duplexConnection) {
-      sendError(duplexConnection, new RejectedResumeException("resume not supported"));
-      return duplexConnection.onClose();
+    public Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection) {
+      sendError(connection, new RejectedResumeException("resume not supported"));
+      return connection.onClose();
     }
   }
 
@@ -112,21 +112,21 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptChannelSetup(ByteBuf frame, DuplexConnection duplexConnection,
-            BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then) {
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, Connection connection,
+            BiFunction<KeepAliveHandler, Connection, Mono<Void>> then) {
 
       if (SetupFrameCodec.resumeEnabled(frame)) {
         ByteBuf resumeToken = SetupFrameCodec.resumeToken(frame);
 
         final ResumableFramesStore resumableFramesStore = resumeStoreFactory.apply(resumeToken);
-        final ResumableDuplexConnection resumableDuplexConnection =
-                new ResumableDuplexConnection(
-                        "server", resumeToken, duplexConnection, resumableFramesStore);
+        final ResumableConnection resumableConnection =
+                new ResumableConnection(
+                        "server", resumeToken, connection, resumableFramesStore);
         final ServerChannelSession serverChannelSession =
                 new ServerChannelSession(
                         resumeToken,
-                        resumableDuplexConnection,
-                        duplexConnection,
+                        resumableConnection,
+                        connection,
                         resumableFramesStore,
                         resumeSessionDuration,
                         cleanupStoreOnKeepAlive);
@@ -134,24 +134,24 @@ abstract class ServerSetup {
         sessionManager.save(serverChannelSession, resumeToken);
 
         return then.apply(new ResumableKeepAliveHandler(
-                        resumableDuplexConnection, serverChannelSession, serverChannelSession),
-                resumableDuplexConnection);
+                        resumableConnection, serverChannelSession, serverChannelSession),
+                resumableConnection);
       }
       else {
-        return then.apply(new DefaultKeepAliveHandler(), duplexConnection);
+        return then.apply(new DefaultKeepAliveHandler(), connection);
       }
     }
 
     @Override
-    public Mono<Void> acceptChannelResume(ByteBuf frame, DuplexConnection duplexConnection) {
+    public Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection) {
       ServerChannelSession session = sessionManager.get(ResumeFrameCodec.token(frame));
       if (session != null) {
-        session.resumeWith(frame, duplexConnection);
-        return duplexConnection.onClose();
+        session.resumeWith(frame, connection);
+        return connection.onClose();
       }
       else {
-        sendError(duplexConnection, new RejectedResumeException("unknown resume token"));
-        return duplexConnection.onClose();
+        sendError(connection, new RejectedResumeException("unknown resume token"));
+        return connection.onClose();
       }
     }
 

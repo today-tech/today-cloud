@@ -17,10 +17,10 @@
 
 package infra.remoting.plugins;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 
 /**
- * Contract to decorate a {@link DuplexConnection} and intercept the sending and receiving of
+ * Contract to decorate a {@link Connection} and intercept the sending and receiving of
  * protocol frames at the transport level.
  */
 @FunctionalInterface
@@ -32,6 +32,6 @@ public interface ConnectionDecorator {
     SOURCE
   }
 
-  DuplexConnection decorate(Type type, DuplexConnection connection);
+  Connection decorate(Type type, Connection connection);
 
 }

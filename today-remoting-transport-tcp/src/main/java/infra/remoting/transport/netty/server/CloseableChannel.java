@@ -26,7 +26,7 @@ import io.netty.channel.Channel;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableChannel;
 
-import static infra.remoting.transport.tcp.PromiseAdapter.adapt;
+import static infra.remoting.util.PromiseAdapter.adapt;
 
 /**
  * An implementation of {@link Closeable} that wraps a {@link DisposableChannel}, enabling

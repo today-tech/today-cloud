@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 
 /**
  * Extends {@link InterceptorRegistry} with methods for building a chain of registered interceptors.
@@ -47,7 +47,7 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
                     .collect(Collectors.toList()));
   }
 
-  public DuplexConnection initConnection(ConnectionDecorator.Type type, DuplexConnection connection) {
+  public Connection initConnection(ConnectionDecorator.Type type, Connection connection) {
     for (ConnectionDecorator interceptor : connectionDecorators) {
       connection = interceptor.decorate(type, connection);
     }

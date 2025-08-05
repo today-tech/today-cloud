@@ -27,7 +27,7 @@ import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.ConnectionSetupPayload;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
@@ -38,7 +38,7 @@ import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.plugins.InterceptorRegistry;
 import infra.remoting.plugins.RateLimitDecorator;
 import infra.remoting.resume.ClientChannelSession;
-import infra.remoting.resume.ResumableDuplexConnection;
+import infra.remoting.resume.ResumableConnection;
 import infra.remoting.resume.ResumableFramesStore;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.Transport;
@@ -510,13 +510,13 @@ public class ChannelConnector {
   public Mono<Channel> connect(Supplier<ClientTransport> transportSupplier) {
     return Mono.fromSupplier(transportSupplier).flatMap(ct -> {
       int maxFrameLength = ct.getMaxFrameLength();
-      Mono<DuplexConnection> connectionMono = Mono.fromCallable(() -> {
+      Mono<Connection> connectionMono = Mono.fromCallable(() -> {
                 assertValidateSetup(maxFrameLength, maxInboundPayloadSize, mtu);
                 return ct;
               })
               .flatMap(transport -> transport.connect())
               .map(sourceConnection -> interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection))
-              .map(con -> LoggingDuplexConnection.wrapIfEnabled(con));
+              .map(con -> LoggingConnection.wrapIfEnabled(con));
 
       return connectionMono
               .flatMap(connection -> setupPayloadMono
@@ -525,7 +525,7 @@ public class ChannelConnector {
                       .doOnError(ex -> connection.dispose())
                       .doOnCancel(connection::dispose))
               .flatMap(tuple2 -> {
-                DuplexConnection sourceConnection = tuple2.getT1();
+                Connection sourceConnection = tuple2.getT1();
                 Payload setupPayload = tuple2.getT2();
                 boolean leaseEnabled = leaseConfigurer != null;
                 boolean resumeEnabled = resume != null;
@@ -552,20 +552,20 @@ public class ChannelConnector {
                 sourceConnection.sendFrame(0, setupFrame.retainedSlice());
 
                 return clientSetup.init(sourceConnection).flatMap(tuple -> {
-                  final DuplexConnection clientServerConnection = tuple.getT2();
+                  final Connection clientServerConnection = tuple.getT2();
                   final KeepAliveHandler keepAliveHandler;
-                  final DuplexConnection wrappedConnection;
+                  final Connection wrappedConnection;
                   final InitializingInterceptorRegistry interceptors = this.interceptors;
 
                   if (resumeEnabled) {
                     final ResumableClientSetup resumableClientSetup = new ResumableClientSetup();
                     final ResumableFramesStore resumableFramesStore = resume.getStoreFactory(CLIENT_TAG).apply(resumeToken);
-                    final ResumableDuplexConnection resumableDuplexConnection = new ResumableDuplexConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
-                    final ClientChannelSession session = new ClientChannelSession(resumeToken, resumableDuplexConnection, connectionMono, resumableClientSetup::init,
+                    final ResumableConnection resumableConnection = new ResumableConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
+                    final ClientChannelSession session = new ClientChannelSession(resumeToken, resumableConnection, connectionMono, resumableClientSetup::init,
                             resumableFramesStore, resume.getSessionDuration(), resume.getRetry(), resume.isCleanupStoreOnKeepAlive());
 
-                    keepAliveHandler = new KeepAliveHandler.ResumableKeepAliveHandler(resumableDuplexConnection, session, session);
-                    wrappedConnection = resumableDuplexConnection;
+                    keepAliveHandler = new KeepAliveHandler.ResumableKeepAliveHandler(resumableConnection, session, session);
+                    wrappedConnection = resumableConnection;
                   }
                   else {
                     keepAliveHandler = new KeepAliveHandler.DefaultKeepAliveHandler();

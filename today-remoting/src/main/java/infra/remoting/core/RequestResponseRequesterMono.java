@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import infra.lang.NonNull;
 import infra.lang.Nullable;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.frame.CancelFrameCodec;
 import infra.remoting.frame.FrameType;
@@ -164,7 +164,7 @@ final class RequestResponseRequesterMono extends Mono<Payload>
   void sendFirstPayload(Payload payload) {
 
     final ChannelSupport sm = this.channel;
-    final DuplexConnection connection = sm.connection;
+    final Connection connection = sm.connection;
     final ByteBufAllocator allocator = sm.allocator;
 
     final int streamId;

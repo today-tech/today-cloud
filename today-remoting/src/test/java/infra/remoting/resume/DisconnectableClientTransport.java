@@ -21,7 +21,7 @@ import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.transport.ClientTransport;
 import reactor.core.publisher.Mono;
 
@@ -29,7 +29,7 @@ class DisconnectableClientTransport implements ClientTransport {
 
   private final ClientTransport clientTransport;
 
-  private final AtomicReference<DuplexConnection> curConnection = new AtomicReference<>();
+  private final AtomicReference<Connection> curConnection = new AtomicReference<>();
 
   private long nextConnectPermitMillis;
 
@@ -38,7 +38,7 @@ class DisconnectableClientTransport implements ClientTransport {
   }
 
   @Override
-  public Mono<DuplexConnection> connect() {
+  public Mono<Connection> connect() {
     return Mono.defer(() ->
             now() < nextConnectPermitMillis
                     ? Mono.error(new ClosedChannelException())
@@ -62,7 +62,7 @@ class DisconnectableClientTransport implements ClientTransport {
   }
 
   public void disconnectFor(Duration cooldown) {
-    DuplexConnection cur = curConnection.getAndSet(null);
+    Connection cur = curConnection.getAndSet(null);
     if (cur != null) {
       nextConnectPermitMillis = now() + cooldown.toMillis();
       cur.dispose();

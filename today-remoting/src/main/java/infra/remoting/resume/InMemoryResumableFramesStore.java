@@ -37,7 +37,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 import reactor.core.publisher.Sinks;
 
-import static infra.remoting.resume.ResumableDuplexConnection.isResumableFrame;
+import static infra.remoting.resume.ResumableConnection.isResumableFrame;
 
 /**
  * writes - n (where n is frequent, primary operation) reads - m (where m == KeepAliveFrequency)

@@ -29,7 +29,7 @@ import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.error.ConnectionErrorException;
 import infra.remoting.error.Exceptions;
@@ -76,7 +76,7 @@ class RequesterChannel extends ChannelSupport implements Channel {
 
   private final Mono<Void> onAllClosed;
 
-  RequesterChannel(DuplexConnection connection, PayloadDecoder payloadDecoder, StreamIdProvider streamIdProvider,
+  RequesterChannel(Connection connection, PayloadDecoder payloadDecoder, StreamIdProvider streamIdProvider,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, int keepAliveTickPeriod, int keepAliveAckTimeout,
           @Nullable KeepAliveHandler keepAliveHandler, Function<Channel, RequestInterceptor> requestInterceptorFunction,
           @Nullable RequesterLeaseTracker requesterLeaseTracker, Sinks.Empty<Void> onThisSideClosedSink, Mono<Void> onAllClosed) {

@@ -17,14 +17,14 @@
 
 package infra.remoting.transport;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public interface Transport {
 
   /**
-   * Configurations that exposes the maximum frame size that a {@link DuplexConnection} can bring up.
+   * Configurations that exposes the maximum frame size that a {@link Connection} can bring up.
    *
    * <p>This number should not exist the 16,777,215 (maximum frame size specified by protocol spec)
    *

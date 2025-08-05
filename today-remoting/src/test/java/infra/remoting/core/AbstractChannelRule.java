@@ -24,14 +24,14 @@ import java.time.Duration;
 import io.netty.buffer.ByteBufAllocator;
 import infra.remoting.Channel;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.test.util.TestSubscriber;
 
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public abstract class AbstractChannelRule<T extends Channel> {
 
-  protected TestDuplexConnection connection;
+  protected TestConnection connection;
   protected Subscriber<Void> connectSub;
   protected T channel;
   protected LeaksTrackingByteBufAllocator allocator;
@@ -53,7 +53,7 @@ public abstract class AbstractChannelRule<T extends Channel> {
     if (channel != null) {
       channel.dispose();
     }
-    connection = new TestDuplexConnection(allocator);
+    connection = new TestConnection(allocator);
     channel = newChannel();
   }
 

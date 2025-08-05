@@ -25,7 +25,7 @@ import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.error.CanceledException;
 import infra.remoting.frame.ErrorFrameCodec;
@@ -111,7 +111,7 @@ final class RequestResponseResponderSubscriber
 
     final int streamId = this.streamId;
     final ChannelSupport channel = this.channel;
-    final DuplexConnection connection = channel.connection;
+    final Connection connection = channel.connection;
     final ByteBufAllocator allocator = channel.allocator;
 
     channel.remove(streamId, this);

@@ -26,14 +26,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.Channel;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.RequestInterceptor;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import reactor.core.Exceptions;
 
@@ -46,15 +46,15 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
 
   final Throwable error;
 
-  TestChannelSupport(@Nullable Throwable error, StreamIdProvider streamIdProvider, DuplexConnection connection,
+  TestChannelSupport(@Nullable Throwable error, StreamIdProvider streamIdProvider, Connection connection,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, @Nullable RequestInterceptor requestInterceptor) {
     super(mtu, maxFrameLength, maxInboundPayloadSize, PayloadDecoder.ZERO_COPY, connection, streamIdProvider, (__) -> requestInterceptor);
     this.error = error;
   }
 
   @Override
-  public TestDuplexConnection getDuplexConnection() {
-    return (TestDuplexConnection) super.getDuplexConnection();
+  public TestConnection getConnection() {
+    return (TestConnection) super.getConnection();
   }
 
   static Payload genericPayload(LeaksTrackingByteBufAllocator allocator) {
@@ -169,7 +169,7 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
   public static TestChannelSupport client(
           @Nullable Throwable e, @Nullable RequestInterceptor requestInterceptor) {
     return client(
-            new TestDuplexConnection(
+            new TestConnection(
                     LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT)),
             0,
             FRAME_LENGTH_MASK,
@@ -185,7 +185,7 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
   public static TestChannelSupport client(
           int mtu, int maxFrameLength, int maxInboundPayloadSize, @Nullable Throwable e) {
     return client(
-            new TestDuplexConnection(
+            new TestConnection(
                     LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT)),
             mtu,
             maxFrameLength,
@@ -195,7 +195,7 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
   }
 
   public static TestChannelSupport client(
-          TestDuplexConnection duplexConnection,
+          TestConnection duplexConnection,
           int mtu,
           int maxFrameLength,
           int maxInboundPayloadSize) {
@@ -203,7 +203,7 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
   }
 
   public static TestChannelSupport client(
-          TestDuplexConnection duplexConnection,
+          TestConnection duplexConnection,
           int mtu,
           int maxFrameLength,
           int maxInboundPayloadSize,
@@ -213,7 +213,7 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
   }
 
   public static TestChannelSupport client(
-          TestDuplexConnection duplexConnection,
+          TestConnection duplexConnection,
           int mtu,
           int maxFrameLength,
           int maxInboundPayloadSize,
@@ -248,7 +248,7 @@ final class TestChannelSupport extends ChannelSupport implements Channel {
 
   public static TestChannelSupport client(RequestInterceptor requestInterceptor) {
     return client(
-            new TestDuplexConnection(
+            new TestConnection(
                     LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT)),
             0,
             FRAME_LENGTH_MASK,

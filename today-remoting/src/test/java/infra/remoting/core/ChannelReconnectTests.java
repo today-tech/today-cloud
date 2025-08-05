@@ -31,7 +31,7 @@ import infra.remoting.FrameAssert;
 import infra.remoting.Channel;
 import infra.remoting.frame.FrameType;
 import infra.remoting.test.util.TestClientTransport;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.transport.ClientTransport;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
@@ -164,7 +164,7 @@ public class ChannelReconnectTests {
     Mono<Channel> channelMono = ChannelConnector.connectWith(transport);
 
     Channel channel1 = channelMono.block();
-    TestDuplexConnection connection1 = transport.testConnection();
+    TestConnection connection1 = transport.testConnection();
 
     FrameAssert.assertThat(connection1.awaitFrame())
             .typeOf(FrameType.SETUP)
@@ -172,7 +172,7 @@ public class ChannelReconnectTests {
             .hasNoLeaks();
 
     Channel channel2 = channelMono.block();
-    TestDuplexConnection connection2 = transport.testConnection();
+    TestConnection connection2 = transport.testConnection();
 
     assertThat(channel1).isNotEqualTo(channel2);
 

@@ -53,7 +53,7 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.frame.PayloadFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.ChannelWrapper;
 import reactor.core.Disposable;
@@ -629,7 +629,7 @@ public class DefaultChannelClientTests {
     terminateSubscriber.assertNotTerminated();
     Assertions.assertThat(rule.client.isDisposed()).isFalse();
 
-    rule.connection = new TestDuplexConnection(rule.allocator);
+    rule.connection = new TestConnection(rule.allocator);
     rule.channel = rule.newChannel();
     rule.producer = Sinks.one();
 

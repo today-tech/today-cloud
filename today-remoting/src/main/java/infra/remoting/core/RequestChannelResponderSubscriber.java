@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import infra.remoting.Channel;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.error.CanceledException;
 import infra.remoting.frame.CancelFrameCodec;
@@ -71,7 +71,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload> implements R
 
   final ChannelSupport channel;
 
-  final DuplexConnection connection;
+  final Connection connection;
 
   final long firstRequest;
 
@@ -103,7 +103,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload> implements R
           ByteBuf firstFrame, ChannelSupport channel, Channel handler) {
     this.streamId = streamId;
     this.channel = channel;
-    this.connection = channel.getDuplexConnection();
+    this.connection = channel.getConnection();
     this.handler = handler;
     this.firstRequest = firstRequestN;
 
@@ -116,7 +116,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload> implements R
           Payload firstPayload, ChannelSupport channel) {
     this.streamId = streamId;
     this.channel = channel;
-    this.connection = channel.getDuplexConnection();
+    this.connection = channel.getConnection();
     this.firstRequest = firstRequestN;
     this.firstPayload = firstPayload;
 
@@ -725,7 +725,7 @@ final class RequestChannelResponderSubscriber extends Flux<Payload> implements R
     }
 
     final int streamId = this.streamId;
-    final DuplexConnection connection = channel.connection;
+    final Connection connection = channel.connection;
     final ByteBufAllocator allocator = channel.allocator;
 
     final int mtu = channel.mtu;

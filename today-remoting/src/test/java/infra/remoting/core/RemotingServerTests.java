@@ -32,7 +32,7 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.RequestResponseFrameCodec;
 import infra.remoting.frame.SetupFrameCodec;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.test.util.TestServerTransport;
 import infra.remoting.util.EmptyPayload;
 import reactor.core.Scannable;
@@ -51,7 +51,7 @@ public class RemotingServerTests {
     TestServerTransport transport = new TestServerTransport();
     RemotingServer.create().bind(transport).block();
 
-    final TestDuplexConnection duplexConnection = transport.connect();
+    final TestConnection duplexConnection = transport.connect();
 
     duplexConnection.addToReceivedBuffer(
             KeepAliveFrameCodec.encode(duplexConnection.alloc(), false, 1, Unpooled.EMPTY_BUFFER));
@@ -77,7 +77,7 @@ public class RemotingServerTests {
     try {
       RemotingServer.create().maxTimeToFirstFrame(Duration.ofMinutes(2)).bind(transport).block();
 
-      final TestDuplexConnection duplexConnection = transport.connect();
+      final TestConnection duplexConnection = transport.connect();
 
       scheduler.advanceTimeBy(Duration.ofMinutes(1));
 
@@ -151,7 +151,7 @@ public class RemotingServerTests {
     byte[] bytes = new byte[16_000_000];
     new Random().nextBytes(bytes);
 
-    TestDuplexConnection connection = transport.connect();
+    TestConnection connection = transport.connect();
     connection.addToReceivedBuffer(
             RequestResponseFrameCodec.encode(
                     ByteBufAllocator.DEFAULT,
@@ -180,7 +180,7 @@ public class RemotingServerTests {
             .bind(transport)
             .block();
 
-    TestDuplexConnection connection = transport.connect();
+    TestConnection connection = transport.connect();
     connection.addToReceivedBuffer(
             SetupFrameCodec.encode(
                     ByteBufAllocator.DEFAULT,

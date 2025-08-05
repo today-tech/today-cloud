@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import infra.lang.NonNull;
 import infra.lang.Nullable;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.frame.CancelFrameCodec;
 import infra.remoting.frame.FrameType;
@@ -180,7 +180,7 @@ final class RequestStreamRequesterFlux extends Flux<Payload>
 
   void sendFirstPayload(Payload payload, long initialRequestN) {
     final ChannelSupport channel = this.channel;
-    final DuplexConnection connection = channel.connection;
+    final Connection connection = channel.connection;
     final ByteBufAllocator allocator = channel.allocator;
 
     final int streamId;

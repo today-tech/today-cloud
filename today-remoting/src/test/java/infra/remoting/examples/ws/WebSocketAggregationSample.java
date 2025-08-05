@@ -27,8 +27,8 @@ import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.transport.ConnectionAcceptor;
-import infra.remoting.transport.netty.WebsocketDuplexConnection;
-import infra.remoting.transport.netty.client.WebsocketClientTransport;
+import infra.remoting.transport.websocket.WebsocketClientTransport;
+import infra.remoting.transport.websocket.WebsocketConnection;
 import infra.remoting.util.ByteBufPayload;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -52,7 +52,7 @@ public class WebSocketAggregationSample {
                     .host("localhost")
                     .port(0)
                     .handle((req, res) -> res.sendWebsocket((in, out) -> connectionAcceptor
-                            .accept(new WebsocketDuplexConnection(
+                            .accept(new WebsocketConnection(
                                     (Connection) in.aggregateFrames()))
                             .then(out.neverComplete())))
                     .bindNow();

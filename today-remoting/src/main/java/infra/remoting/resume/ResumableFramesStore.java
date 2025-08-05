@@ -22,7 +22,9 @@ import io.netty.buffer.ByteBuf;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Store for resumable frames */
+/**
+ * Store for resumable frames
+ */
 public interface ResumableFramesStore extends Closeable {
 
   /**
@@ -33,7 +35,9 @@ public interface ResumableFramesStore extends Closeable {
    */
   Mono<Void> saveFrames(Flux<ByteBuf> frames);
 
-  /** Release frames from tail of the store up to remote implied position */
+  /**
+   * Release frames from tail of the store up to remote implied position
+   */
   void releaseFrames(long remoteImpliedPos);
 
   /**
@@ -42,10 +46,14 @@ public interface ResumableFramesStore extends Closeable {
    */
   Flux<ByteBuf> resumeStream();
 
-  /** @return Local frame position as defined by protocol */
+  /**
+   * @return Local frame position as defined by protocol
+   */
   long framePosition();
 
-  /** @return Implied frame position as defined by protocol */
+  /**
+   * @return Implied frame position as defined by protocol
+   */
   long frameImpliedPosition();
 
   /**
@@ -55,4 +63,5 @@ public interface ResumableFramesStore extends Closeable {
    * @return {@code true} if information about the frame has been stored
    */
   boolean resumableFrameReceived(ByteBuf frame);
+
 }

@@ -147,12 +147,11 @@ abstract class ServerSetup {
       ServerChannelSession session = sessionManager.get(ResumeFrameCodec.token(frame));
       if (session != null) {
         session.resumeWith(frame, connection);
-        return connection.onClose();
       }
       else {
         sendError(connection, new RejectedResumeException("unknown resume token"));
-        return connection.onClose();
       }
+      return connection.onClose();
     }
 
     @Override

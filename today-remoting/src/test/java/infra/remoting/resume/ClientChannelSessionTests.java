@@ -22,9 +22,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCounted;
 import infra.remoting.FrameAssert;
 import infra.remoting.error.ConnectionCloseException;
 import infra.remoting.error.RejectedResumeException;
@@ -35,6 +32,9 @@ import infra.remoting.frame.ResumeOkFrameCodec;
 import infra.remoting.keepalive.KeepAliveSupport;
 import infra.remoting.test.util.TestClientTransport;
 import infra.remoting.test.util.TestConnection;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import reactor.core.publisher.Operators;
 import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
@@ -43,7 +43,7 @@ import reactor.util.retry.Retry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ClientChannelSessionTests {
+class ClientChannelSessionTests {
 
   @Test
   void sessionTimeoutSmokeTest() {

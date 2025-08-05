@@ -43,19 +43,19 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 import reactor.core.publisher.Sinks;
 
-public class ResumableConnection extends Flux<ByteBuf>
-        implements Connection, Subscription {
+public class ResumableConnection extends Flux<ByteBuf> implements Connection, Subscription {
 
   static final Logger logger = LoggerFactory.getLogger(ResumableConnection.class);
 
   final String side;
   final String session;
+  final SocketAddress remoteAddress;
+
   final ResumableFramesStore resumableFramesStore;
 
   final UnboundedProcessor savableFramesSender;
   final Sinks.Empty<Void> onQueueClose;
   final Sinks.Empty<Void> onLastConnectionClose;
-  final SocketAddress remoteAddress;
   final Sinks.Many<Integer> onConnectionClosedSink;
 
   CoreSubscriber<? super ByteBuf> receiveSubscriber;
@@ -73,21 +73,17 @@ public class ResumableConnection extends Flux<ByteBuf>
 
   int connectionIndex = 0;
 
-  public ResumableConnection(
-          String side,
-          ByteBuf session,
-          Connection initialConnection,
-          ResumableFramesStore resumableFramesStore) {
+  public ResumableConnection(String side, ByteBuf session, Connection initialConnection, ResumableFramesStore store) {
     this.side = side;
     this.session = session.toString(CharsetUtil.UTF_8);
     this.onConnectionClosedSink = Sinks.unsafe().many().unicast().onBackpressureBuffer();
-    this.resumableFramesStore = resumableFramesStore;
+    this.resumableFramesStore = store;
     this.onQueueClose = Sinks.unsafe().empty();
     this.onLastConnectionClose = Sinks.unsafe().empty();
     this.savableFramesSender = new UnboundedProcessor(onQueueClose::tryEmitEmpty);
     this.remoteAddress = initialConnection.remoteAddress();
 
-    resumableFramesStore.saveFrames(savableFramesSender).subscribe();
+    store.saveFrames(savableFramesSender).subscribe();
 
     ACTIVE_CONNECTION.lazySet(this, initialConnection);
   }
@@ -111,58 +107,43 @@ public class ResumableConnection extends Flux<ByteBuf>
     }
   }
 
-  void initConnection(Connection nextConnection) {
+  private void initConnection(Connection nextConnection) {
     final int nextConnectionIndex = this.connectionIndex + 1;
-    final FrameReceivingSubscriber frameReceivingSubscriber =
-            new FrameReceivingSubscriber(side, resumableFramesStore, receiveSubscriber);
+    final var frameReceivingSubscriber = new FrameReceivingSubscriber(side, resumableFramesStore, receiveSubscriber);
 
     this.connectionIndex = nextConnectionIndex;
     this.activeReceivingSubscriber = frameReceivingSubscriber;
 
     if (logger.isDebugEnabled()) {
-      logger.debug(
-              "Side[{}]|Session[{}]|Connection[{}]. Connecting", side, session, connectionIndex);
+      logger.debug("Side[{}]|Session[{}]|Connection[{}]. Connecting", side, session, connectionIndex);
     }
 
-    final Disposable resumeStreamSubscription =
-            resumableFramesStore
-                    .resumeStream()
-                    .subscribe(
-                            f -> nextConnection.sendFrame(FrameHeaderCodec.streamId(f), f),
-                            t -> {
-                              dispose(nextConnection, t);
-                              nextConnection.sendErrorAndClose(new ConnectionErrorException(t.getMessage(), t));
-                            },
-                            () -> {
-                              final ConnectionErrorException e =
-                                      new ConnectionErrorException("Connection Closed Unexpectedly");
-                              dispose(nextConnection, e);
-                              nextConnection.sendErrorAndClose(e);
-                            });
+    final Disposable resumeStreamSubscription = resumableFramesStore
+            .resumeStream()
+            .subscribe(f -> nextConnection.sendFrame(FrameHeaderCodec.streamId(f), f),
+                    t -> {
+                      dispose(nextConnection, t);
+                      nextConnection.sendErrorAndClose(new ConnectionErrorException(t.getMessage(), t));
+                    },
+                    () -> {
+                      final ConnectionErrorException e =
+                              new ConnectionErrorException("Connection Closed Unexpectedly");
+                      dispose(nextConnection, e);
+                      nextConnection.sendErrorAndClose(e);
+                    });
     nextConnection.receive().subscribe(frameReceivingSubscriber);
-    nextConnection
-            .onClose()
-            .doFinally(
-                    __ -> {
-                      frameReceivingSubscriber.dispose();
-                      resumeStreamSubscription.dispose();
-                      if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Side[{}]|Session[{}]|Connection[{}]. Disconnected",
-                                side,
-                                session,
-                                connectionIndex);
-                      }
-                      Sinks.EmitResult result = onConnectionClosedSink.tryEmitNext(nextConnectionIndex);
-                      if (!result.equals(Sinks.EmitResult.OK)) {
-                        logger.error(
-                                "Side[{}]|Session[{}]|Connection[{}]. Failed to notify session of closed connection: {}",
-                                side,
-                                session,
-                                connectionIndex,
-                                result);
-                      }
-                    })
+    nextConnection.onClose().doFinally(__ -> {
+              frameReceivingSubscriber.dispose();
+              resumeStreamSubscription.dispose();
+              if (logger.isDebugEnabled()) {
+                logger.debug("Side[{}]|Session[{}]|Connection[{}]. Disconnected", side, session, connectionIndex);
+              }
+              Sinks.EmitResult result = onConnectionClosedSink.tryEmitNext(nextConnectionIndex);
+              if (!result.equals(Sinks.EmitResult.OK)) {
+                logger.error("Side[{}]|Session[{}]|Connection[{}]. Failed to notify session of closed connection: {}",
+                        side, session, connectionIndex, result);
+              }
+            })
             .subscribe();
   }
 
@@ -203,25 +184,22 @@ public class ResumableConnection extends Flux<ByteBuf>
     savableFramesSender.tryEmitFinal(
             ErrorFrameCodec.encode(activeConnection.alloc(), 0, exception));
 
-    activeConnection
-            .onClose()
-            .subscribe(
-                    null,
-                    t -> {
-                      onConnectionClosedSink.tryEmitComplete();
-                      onLastConnectionClose.tryEmitEmpty();
-                    },
-                    () -> {
-                      onConnectionClosedSink.tryEmitComplete();
+    activeConnection.onClose().subscribe(null,
+            t -> {
+              onConnectionClosedSink.tryEmitComplete();
+              onLastConnectionClose.tryEmitEmpty();
+            },
+            () -> {
+              onConnectionClosedSink.tryEmitComplete();
 
-                      final Throwable cause = exception.getCause();
-                      if (cause == null) {
-                        onLastConnectionClose.tryEmitEmpty();
-                      }
-                      else {
-                        onLastConnectionClose.tryEmitError(cause);
-                      }
-                    });
+              final Throwable cause = exception.getCause();
+              if (cause == null) {
+                onLastConnectionClose.tryEmitEmpty();
+              }
+              else {
+                onLastConnectionClose.tryEmitError(cause);
+              }
+            });
   }
 
   @Override
@@ -242,55 +220,47 @@ public class ResumableConnection extends Flux<ByteBuf>
 
   @Override
   public void dispose() {
-    final Connection activeConnection =
-            ACTIVE_CONNECTION.getAndSet(this, DisposedConnection.INSTANCE);
+    final Connection activeConnection = ACTIVE_CONNECTION.getAndSet(this, DisposedConnection.INSTANCE);
     if (activeConnection == DisposedConnection.INSTANCE) {
       return;
     }
     savableFramesSender.onComplete();
-    activeConnection
-            .onClose()
-            .subscribe(
-                    null,
-                    t -> {
-                      onConnectionClosedSink.tryEmitComplete();
-                      onLastConnectionClose.tryEmitEmpty();
-                    },
-                    () -> {
-                      onConnectionClosedSink.tryEmitComplete();
-                      onLastConnectionClose.tryEmitEmpty();
-                    });
+    activeConnection.onClose().subscribe(null,
+            t -> {
+              onConnectionClosedSink.tryEmitComplete();
+              onLastConnectionClose.tryEmitEmpty();
+            },
+            () -> {
+              onConnectionClosedSink.tryEmitComplete();
+              onLastConnectionClose.tryEmitEmpty();
+            });
   }
 
   void dispose(Connection nextConnection, @Nullable Throwable e) {
-    final Connection activeConnection =
-            ACTIVE_CONNECTION.getAndSet(this, DisposedConnection.INSTANCE);
+    final Connection activeConnection = ACTIVE_CONNECTION.getAndSet(this, DisposedConnection.INSTANCE);
     if (activeConnection == DisposedConnection.INSTANCE) {
       return;
     }
     savableFramesSender.onComplete();
-    nextConnection
-            .onClose()
-            .subscribe(
-                    null,
-                    t -> {
-                      if (e != null) {
-                        onLastConnectionClose.tryEmitError(e);
-                      }
-                      else {
-                        onLastConnectionClose.tryEmitEmpty();
-                      }
-                      onConnectionClosedSink.tryEmitComplete();
-                    },
-                    () -> {
-                      if (e != null) {
-                        onLastConnectionClose.tryEmitError(e);
-                      }
-                      else {
-                        onLastConnectionClose.tryEmitEmpty();
-                      }
-                      onConnectionClosedSink.tryEmitComplete();
-                    });
+    nextConnection.onClose().subscribe(null,
+            t -> {
+              if (e != null) {
+                onLastConnectionClose.tryEmitError(e);
+              }
+              else {
+                onLastConnectionClose.tryEmitEmpty();
+              }
+              onConnectionClosedSink.tryEmitComplete();
+            },
+            () -> {
+              if (e != null) {
+                onLastConnectionClose.tryEmitError(e);
+              }
+              else {
+                onLastConnectionClose.tryEmitEmpty();
+              }
+              onConnectionClosedSink.tryEmitComplete();
+            });
   }
 
   @Override
@@ -332,29 +302,16 @@ public class ResumableConnection extends Flux<ByteBuf>
 
   @Override
   public String toString() {
-    return "ResumableConnection{"
-            + "side='"
-            + side
-            + '\''
-            + ", session='"
-            + session
-            + '\''
-            + ", remoteAddress="
-            + remoteAddress
-            + ", state="
-            + state
-            + ", activeConnection="
-            + activeConnection
-            + ", connectionIndex="
-            + connectionIndex
-            + '}';
+    return "ResumableConnection{side='%s', session='%s', remoteAddress=%s, state=%d, activeConnection=%s, connectionIndex=%d}"
+            .formatted(side, session, remoteAddress, state, activeConnection, connectionIndex);
   }
 
   private static final class DisposedConnection implements Connection {
 
     static final DisposedConnection INSTANCE = new DisposedConnection();
 
-    private DisposedConnection() { }
+    private DisposedConnection() {
+    }
 
     @Override
     public void dispose() { }
@@ -365,7 +322,8 @@ public class ResumableConnection extends Flux<ByteBuf>
     }
 
     @Override
-    public void sendFrame(int streamId, ByteBuf frame) { }
+    public void sendFrame(int streamId, ByteBuf frame) {
+    }
 
     @Override
     public Flux<ByteBuf> receive() {
@@ -373,7 +331,8 @@ public class ResumableConnection extends Flux<ByteBuf>
     }
 
     @Override
-    public void sendErrorAndClose(ProtocolErrorException e) { }
+    public void sendErrorAndClose(ProtocolErrorException e) {
+    }
 
     @Override
     public ByteBufAllocator alloc() {
@@ -387,12 +346,11 @@ public class ResumableConnection extends Flux<ByteBuf>
     }
   }
 
-  private static final class FrameReceivingSubscriber
-          implements CoreSubscriber<ByteBuf>, Disposable {
+  private static final class FrameReceivingSubscriber implements CoreSubscriber<ByteBuf>, Disposable {
 
-    final ResumableFramesStore resumableFramesStore;
-    final CoreSubscriber<? super ByteBuf> actual;
-    final String tag;
+    private final ResumableFramesStore resumableFramesStore;
+    private final CoreSubscriber<? super ByteBuf> actual;
+    private final String tag;
 
     volatile Subscription s;
     static final AtomicReferenceFieldUpdater<FrameReceivingSubscriber, Subscription> S =
@@ -401,8 +359,7 @@ public class ResumableConnection extends Flux<ByteBuf>
 
     boolean cancelled;
 
-    private FrameReceivingSubscriber(
-            String tag, ResumableFramesStore store, CoreSubscriber<? super ByteBuf> actual) {
+    private FrameReceivingSubscriber(String tag, ResumableFramesStore store, CoreSubscriber<? super ByteBuf> actual) {
       this.tag = tag;
       this.resumableFramesStore = store;
       this.actual = actual;

@@ -55,7 +55,7 @@ import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.TestDuplexConnection;
 import infra.remoting.util.ByteBufPayload;
-import infra.remoting.util.ChannelWrapper;
+import infra.remoting.ChannelWrapper;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;

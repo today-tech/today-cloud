@@ -28,7 +28,7 @@ import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.DuplexConnection;
 import infra.remoting.ProtocolErrorException;
-import infra.remoting.exceptions.ConnectionErrorException;
+import infra.remoting.error.ConnectionErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.internal.UnboundedProcessor;

@@ -25,7 +25,7 @@ import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
-import infra.remoting.util.ChannelWrapper;
+import infra.remoting.ChannelWrapper;
 import io.micrometer.common.util.StringUtils;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;

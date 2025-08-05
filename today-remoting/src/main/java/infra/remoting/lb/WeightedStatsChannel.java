@@ -18,7 +18,7 @@
 package infra.remoting.lb;
 
 import infra.remoting.Channel;
-import infra.remoting.util.ChannelWrapper;
+import infra.remoting.ChannelWrapper;
 
 /**
  * Package private {@code ChannelWrapper} used from {@link WeightedStats#wrap(Channel)} to attach a

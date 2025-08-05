@@ -21,7 +21,7 @@ import org.reactivestreams.Publisher;
 
 import infra.remoting.Channel;
 import infra.remoting.Payload;
-import infra.remoting.util.ChannelWrapper;
+import infra.remoting.ChannelWrapper;
 import reactor.core.publisher.Flux;
 
 /**

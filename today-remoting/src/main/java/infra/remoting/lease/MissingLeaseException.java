@@ -16,7 +16,7 @@
  */
 package infra.remoting.lease;
 
-import infra.remoting.exceptions.RejectedException;
+import infra.remoting.error.RejectedException;
 
 public class MissingLeaseException extends RejectedException {
   private static final long serialVersionUID = -6169748673403858959L;

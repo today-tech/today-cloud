@@ -29,7 +29,7 @@ import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
-import infra.remoting.exceptions.RejectedSetupException;
+import infra.remoting.error.RejectedSetupException;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
 import infra.remoting.transport.netty.client.TcpClientTransport;

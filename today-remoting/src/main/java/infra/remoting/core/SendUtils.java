@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
-import infra.remoting.exceptions.CanceledException;
+import infra.remoting.error.CanceledException;
 import infra.remoting.frame.CancelFrameCodec;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameType;

@@ -33,15 +33,17 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 
 public final class ByteBufPayload extends AbstractReferenceCounted implements Payload {
-  private static final Recycler<ByteBufPayload> RECYCLER =
-          new Recycler<ByteBufPayload>() {
-            protected ByteBufPayload newObject(Handle<ByteBufPayload> handle) {
-              return new ByteBufPayload(handle);
-            }
-          };
+
+  private static final Recycler<ByteBufPayload> RECYCLER = new Recycler<>() {
+    protected ByteBufPayload newObject(Handle<ByteBufPayload> handle) {
+      return new ByteBufPayload(handle);
+    }
+  };
 
   private final Handle<ByteBufPayload> handle;
+
   private ByteBuf data;
+
   private ByteBuf metadata;
 
   private ByteBufPayload(final Handle<ByteBufPayload> handle) {
@@ -78,13 +80,9 @@ public final class ByteBufPayload extends AbstractReferenceCounted implements Pa
             null);
   }
 
-  public static Payload create(
-          CharSequence data,
-          Charset dataCharset,
-          @Nullable CharSequence metadata,
-          Charset metadataCharset) {
-    return create(
-            ByteBufUtil.encodeString(ByteBufAllocator.DEFAULT, CharBuffer.wrap(data), dataCharset),
+  public static Payload create(CharSequence data, Charset dataCharset,
+          @Nullable CharSequence metadata, Charset metadataCharset) {
+    return create(ByteBufUtil.encodeString(ByteBufAllocator.DEFAULT, CharBuffer.wrap(data), dataCharset),
             metadata == null
                     ? null
                     : ByteBufUtil.encodeString(
@@ -123,8 +121,7 @@ public final class ByteBufPayload extends AbstractReferenceCounted implements Pa
   }
 
   public static Payload create(Payload payload) {
-    return create(
-            payload.sliceData().retain(),
+    return create(payload.sliceData().retain(),
             payload.hasMetadata() ? payload.sliceMetadata().retain() : null);
   }
 

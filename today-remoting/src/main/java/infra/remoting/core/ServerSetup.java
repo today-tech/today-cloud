@@ -24,8 +24,8 @@ import java.util.function.Function;
 
 import infra.remoting.DuplexConnection;
 import infra.remoting.ProtocolErrorException;
-import infra.remoting.exceptions.RejectedResumeException;
-import infra.remoting.exceptions.UnsupportedSetupException;
+import infra.remoting.error.RejectedResumeException;
+import infra.remoting.error.UnsupportedSetupException;
 import infra.remoting.frame.ResumeFrameCodec;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.keepalive.KeepAliveHandler;

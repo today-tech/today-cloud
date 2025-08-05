@@ -27,7 +27,7 @@ import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
 import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
-import infra.remoting.exceptions.CanceledException;
+import infra.remoting.error.CanceledException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.PayloadFrameCodec;

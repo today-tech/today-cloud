@@ -29,7 +29,7 @@ import infra.remoting.Closeable;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
-import infra.remoting.exceptions.ApplicationErrorException;
+import infra.remoting.error.ApplicationErrorException;
 import infra.remoting.transport.local.LocalClientTransport;
 import infra.remoting.transport.local.LocalServerTransport;
 import infra.remoting.util.DefaultPayload;

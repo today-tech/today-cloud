@@ -29,19 +29,18 @@ import static infra.remoting.core.StateUtils.extractRequestN;
 
 class ShouldNotHaveFlag extends BasicErrorMessageFactory {
 
-  static final Map<Long, String> FLAGS_NAMES =
-          new HashMap<Long, String>() {
-            {
-              put(StateUtils.UNSUBSCRIBED_STATE, "UNSUBSCRIBED");
-              put(StateUtils.TERMINATED_STATE, "TERMINATED");
-              put(SUBSCRIBED_FLAG, "SUBSCRIBED");
-              put(StateUtils.REQUEST_MASK, "REQUESTED(%n)");
-              put(StateUtils.FIRST_FRAME_SENT_FLAG, "FIRST_FRAME_SENT");
-              put(StateUtils.REASSEMBLING_FLAG, "REASSEMBLING");
-              put(StateUtils.INBOUND_TERMINATED_FLAG, "INBOUND_TERMINATED");
-              put(StateUtils.OUTBOUND_TERMINATED_FLAG, "OUTBOUND_TERMINATED");
-            }
-          };
+  static final Map<Long, String> FLAGS_NAMES = new HashMap<>() {
+    {
+      put(StateUtils.UNSUBSCRIBED_STATE, "UNSUBSCRIBED");
+      put(StateUtils.TERMINATED_STATE, "TERMINATED");
+      put(SUBSCRIBED_FLAG, "SUBSCRIBED");
+      put(StateUtils.REQUEST_MASK, "REQUESTED(%n)");
+      put(StateUtils.FIRST_FRAME_SENT_FLAG, "FIRST_FRAME_SENT");
+      put(StateUtils.REASSEMBLING_FLAG, "REASSEMBLING");
+      put(StateUtils.INBOUND_TERMINATED_FLAG, "INBOUND_TERMINATED");
+      put(StateUtils.OUTBOUND_TERMINATED_FLAG, "OUTBOUND_TERMINATED");
+    }
+  };
 
   static final String SHOULD_NOT_HAVE_FLAG =
           "Expected state\n\t%s\nto not have\n\t%s\nbut had\n\t[%s]";
@@ -59,7 +58,7 @@ class ShouldNotHaveFlag extends BasicErrorMessageFactory {
     long flag = 1L << 31;
     for (int i = 0; i < 33; i++, flag <<= 1) {
       if ((currentState & flag) == flag) {
-        if (stringBuilder.length() > 0) {
+        if (!stringBuilder.isEmpty()) {
           stringBuilder.append(", ");
         }
         stringBuilder.append(FLAGS_NAMES.get(flag));
@@ -67,7 +66,7 @@ class ShouldNotHaveFlag extends BasicErrorMessageFactory {
     }
     long requestN = extractRequestN(currentState);
     if (requestN > 0) {
-      if (stringBuilder.length() > 0) {
+      if (!stringBuilder.isEmpty()) {
         stringBuilder.append(", ");
       }
       stringBuilder.append(String.format(FLAGS_NAMES.get(REQUEST_MASK), requestN));

@@ -38,7 +38,7 @@ import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.TestClientTransport;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.util.EmptyPayload;
-import infra.remoting.util.ChannelWrapper;
+import infra.remoting.ChannelWrapper;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;

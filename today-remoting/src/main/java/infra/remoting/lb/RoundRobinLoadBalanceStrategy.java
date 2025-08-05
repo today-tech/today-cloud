@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import infra.remoting.Channel;
 
 /**
- * Simple {@link LoadBalanceStrategy} that selects the {@code RSocket} to use in round-robin order.
+ * Simple {@link LoadBalanceStrategy} that selects the {@code Channel} to use in round-robin order.
  */
 public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
 

@@ -18,9 +18,9 @@ package infra.remoting.core;
 
 import java.util.function.Consumer;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
-import infra.remoting.exceptions.CanceledException;
+import infra.remoting.error.CanceledException;
 import infra.remoting.frame.CancelFrameCodec;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameType;
@@ -40,29 +40,22 @@ import reactor.util.context.Context;
 import static infra.remoting.core.FragmentationUtils.isFragmentable;
 
 final class SendUtils {
-  private static final Consumer<?> DROPPED_ELEMENTS_CONSUMER =
-          data -> {
-            if (data instanceof ReferenceCounted) {
-              try {
-                ReferenceCounted referenceCounted = (ReferenceCounted) data;
-                referenceCounted.release();
-              }
-              catch (Throwable e) {
-                // ignored
-              }
-            }
-          };
+
+  private static final Consumer<?> DROPPED_ELEMENTS_CONSUMER = data -> {
+    if (data instanceof ReferenceCounted rc) {
+      try {
+        rc.release();
+      }
+      catch (Throwable e) {
+        // ignored
+      }
+    }
+  };
 
   static final Context DISCARD_CONTEXT = Operators.enableOnDiscard(null, DROPPED_ELEMENTS_CONSUMER);
 
-  static void sendReleasingPayload(
-          int streamId,
-          FrameType frameType,
-          int mtu,
-          Payload payload,
-          DuplexConnection connection,
-          ByteBufAllocator allocator,
-          boolean requester) {
+  static void sendReleasingPayload(int streamId, FrameType frameType, int mtu, Payload payload,
+          Connection connection, ByteBufAllocator allocator, boolean requester) {
 
     final boolean hasMetadata = payload.hasMetadata();
     final ByteBuf metadata = hasMetadata ? payload.metadata() : null;
@@ -83,9 +76,8 @@ final class SendUtils {
 
       final ByteBuf first;
       try {
-        first =
-                FragmentationUtils.encodeFirstFragment(
-                        allocator, mtu, frameType, streamId, hasMetadata, slicedMetadata, slicedData);
+        first = FragmentationUtils.encodeFirstFragment(
+                allocator, mtu, frameType, streamId, hasMetadata, slicedMetadata, slicedData);
       }
       catch (IllegalReferenceCountException e) {
         sendTerminalFrame(streamId, frameType, connection, allocator, requester, false, e);
@@ -98,9 +90,8 @@ final class SendUtils {
       while (slicedData.isReadable() || slicedMetadata.isReadable()) {
         final ByteBuf following;
         try {
-          following =
-                  FragmentationUtils.encodeFollowsFragment(
-                          allocator, mtu, streamId, complete, slicedMetadata, slicedData);
+          following = FragmentationUtils.encodeFollowsFragment(
+                  allocator, mtu, streamId, complete, slicedMetadata, slicedData);
         }
         catch (IllegalReferenceCountException e) {
           sendTerminalFrame(streamId, frameType, connection, allocator, requester, true, e);
@@ -144,48 +135,20 @@ final class SendUtils {
         throw e;
       }
 
-      final ByteBuf requestFrame;
-      switch (frameType) {
-        case REQUEST_FNF:
-          requestFrame =
-                  RequestFireAndForgetFrameCodec.encode(
-                          allocator, streamId, false, metadataRetainedSlice, dataRetainedSlice);
-          break;
-        case REQUEST_RESPONSE:
-          requestFrame =
-                  RequestResponseFrameCodec.encode(
-                          allocator, streamId, false, metadataRetainedSlice, dataRetainedSlice);
-          break;
-        case PAYLOAD:
-        case NEXT:
-        case NEXT_COMPLETE:
-          requestFrame =
-                  PayloadFrameCodec.encode(
-                          allocator,
-                          streamId,
-                          false,
-                          frameType == FrameType.NEXT_COMPLETE,
-                          frameType != FrameType.PAYLOAD,
-                          metadataRetainedSlice,
-                          dataRetainedSlice);
-          break;
-        default:
-          throw new IllegalArgumentException("Unsupported frame type " + frameType);
-      }
+      final ByteBuf requestFrame = switch (frameType) {
+        case REQUEST_FNF -> RequestFireAndForgetFrameCodec.encode(allocator, streamId, false, metadataRetainedSlice, dataRetainedSlice);
+        case REQUEST_RESPONSE -> RequestResponseFrameCodec.encode(allocator, streamId, false, metadataRetainedSlice, dataRetainedSlice);
+        case PAYLOAD, NEXT, NEXT_COMPLETE -> PayloadFrameCodec.encode(allocator, streamId, false,
+                frameType == FrameType.NEXT_COMPLETE, frameType != FrameType.PAYLOAD, metadataRetainedSlice, dataRetainedSlice);
+        default -> throw new IllegalArgumentException("Unsupported frame type " + frameType);
+      };
 
       connection.sendFrame(streamId, requestFrame);
     }
   }
 
-  static void sendReleasingPayload(
-          int streamId,
-          FrameType frameType,
-          long initialRequestN,
-          int mtu,
-          Payload payload,
-          DuplexConnection connection,
-          ByteBufAllocator allocator,
-          boolean complete) {
+  static void sendReleasingPayload(int streamId, FrameType frameType, long initialRequestN, int mtu,
+          Payload payload, Connection connection, ByteBufAllocator allocator, boolean complete) {
 
     final boolean hasMetadata = payload.hasMetadata();
     final ByteBuf metadata = hasMetadata ? payload.metadata() : null;
@@ -206,16 +169,8 @@ final class SendUtils {
 
       final ByteBuf first;
       try {
-        first =
-                FragmentationUtils.encodeFirstFragment(
-                        allocator,
-                        mtu,
-                        initialRequestN,
-                        frameType,
-                        streamId,
-                        hasMetadata,
-                        slicedMetadata,
-                        slicedData);
+        first = FragmentationUtils.encodeFirstFragment(allocator, mtu, initialRequestN,
+                frameType, streamId, hasMetadata, slicedMetadata, slicedData);
       }
       catch (IllegalReferenceCountException e) {
         sendTerminalFrame(streamId, frameType, connection, allocator, true, false, e);
@@ -227,9 +182,8 @@ final class SendUtils {
       while (slicedData.isReadable() || slicedMetadata.isReadable()) {
         final ByteBuf following;
         try {
-          following =
-                  FragmentationUtils.encodeFollowsFragment(
-                          allocator, mtu, streamId, complete, slicedMetadata, slicedData);
+          following = FragmentationUtils.encodeFollowsFragment(
+                  allocator, mtu, streamId, complete, slicedMetadata, slicedData);
         }
         catch (IllegalReferenceCountException e) {
           sendTerminalFrame(streamId, frameType, connection, allocator, true, true, e);
@@ -273,45 +227,20 @@ final class SendUtils {
         throw e;
       }
 
-      final ByteBuf requestFrame;
-      switch (frameType) {
-        case REQUEST_STREAM:
-          requestFrame =
-                  RequestStreamFrameCodec.encode(
-                          allocator,
-                          streamId,
-                          false,
-                          initialRequestN,
-                          metadataRetainedSlice,
-                          dataRetainedSlice);
-          break;
-        case REQUEST_CHANNEL:
-          requestFrame =
-                  RequestChannelFrameCodec.encode(
-                          allocator,
-                          streamId,
-                          false,
-                          complete,
-                          initialRequestN,
-                          metadataRetainedSlice,
-                          dataRetainedSlice);
-          break;
-        default:
-          throw new IllegalArgumentException("Unsupported frame type " + frameType);
-      }
+      final ByteBuf requestFrame = switch (frameType) {
+        case REQUEST_STREAM -> RequestStreamFrameCodec.encode(allocator, streamId, false, initialRequestN,
+                metadataRetainedSlice, dataRetainedSlice);
+        case REQUEST_CHANNEL -> RequestChannelFrameCodec.encode(allocator, streamId, false, complete,
+                initialRequestN, metadataRetainedSlice, dataRetainedSlice);
+        default -> throw new IllegalArgumentException("Unsupported frame type " + frameType);
+      };
 
       connection.sendFrame(streamId, requestFrame);
     }
   }
 
-  static void sendTerminalFrame(
-          int streamId,
-          FrameType frameType,
-          DuplexConnection connection,
-          ByteBufAllocator allocator,
-          boolean requester,
-          boolean onFollowingFrame,
-          Throwable t) {
+  static void sendTerminalFrame(int streamId, FrameType frameType, Connection connection,
+          ByteBufAllocator allocator, boolean requester, boolean onFollowingFrame, Throwable t) {
 
     if (onFollowingFrame) {
       if (requester) {
@@ -319,15 +248,8 @@ final class SendUtils {
         connection.sendFrame(streamId, cancelFrame);
       }
       else {
-        final ByteBuf errorFrame =
-                ErrorFrameCodec.encode(
-                        allocator,
-                        streamId,
-                        new CanceledException(
-                                "Failed to encode fragmented "
-                                        + frameType
-                                        + " frame. Cause: "
-                                        + t.getMessage()));
+        final ByteBuf errorFrame = ErrorFrameCodec.encode(allocator, streamId,
+                new CanceledException("Failed to encode fragmented %s frame. Cause: %s".formatted(frameType, t.getMessage())));
         connection.sendFrame(streamId, errorFrame);
       }
     }
@@ -341,12 +263,8 @@ final class SendUtils {
             connection.sendFrame(streamId, cancelFrame);
           }
           else {
-            final ByteBuf errorFrame =
-                    ErrorFrameCodec.encode(
-                            allocator,
-                            streamId,
-                            new CanceledException(
-                                    "Failed to encode " + frameType + " frame. Cause: " + t.getMessage()));
+            final ByteBuf errorFrame = ErrorFrameCodec.encode(allocator, streamId, new CanceledException(
+                    "Failed to encode %s frame. Cause: %s".formatted(frameType, t.getMessage())));
             connection.sendFrame(streamId, errorFrame);
           }
       }

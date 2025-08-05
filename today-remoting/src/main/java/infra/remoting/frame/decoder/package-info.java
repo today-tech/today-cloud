@@ -16,7 +16,7 @@
  */
 
 /**
- * Support for encoding and decoding of RSocket frames to and from {@link infra.remoting.Payload
+ * Support for encoding and decoding of protocol frames to and from {@link infra.remoting.Payload
  * Payload}.
  */
 @NonNullApi

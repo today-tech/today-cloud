@@ -84,7 +84,7 @@ class ReassemblyUtils {
     if (!hasFollows && !isReassembling(state)) {
       Payload payload;
       try {
-        payload = payloadDecoder.apply(frame);
+        payload = payloadDecoder.decode(frame);
       }
       catch (Throwable t) {
         // sends cancel frame to prevent any further frames
@@ -145,7 +145,7 @@ class ReassemblyUtils {
 
       Payload payload;
       try {
-        payload = payloadDecoder.apply(frames);
+        payload = payloadDecoder.decode(frames);
         frames.release();
       }
       catch (Throwable t) {

@@ -17,11 +17,11 @@
 
 package infra.remoting.transport;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import reactor.core.publisher.Mono;
 
 /**
- * A contract to accept a new {@code DuplexConnection}.
+ * A contract to accept a new {@code Connection}.
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/2 22:06
@@ -29,12 +29,12 @@ import reactor.core.publisher.Mono;
 public interface ConnectionAcceptor {
 
   /**
-   * Accept a new {@code DuplexConnection} and returns {@code Publisher} signifying the end of
+   * Accept a new {@code Connection} and returns {@code Publisher} signifying the end of
    * processing of the connection.
    *
-   * @param connection New {@code DuplexConnection} to be processed.
+   * @param connection New {@code Connection} to be processed.
    * @return A {@code Publisher} which terminates when the processing of the connection finishes.
    */
-  Mono<Void> accept(DuplexConnection connection);
+  Mono<Void> accept(Connection connection);
 
 }

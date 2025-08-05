@@ -29,7 +29,7 @@ import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
-import infra.remoting.exceptions.RejectedSetupException;
+import infra.remoting.error.RejectedSetupException;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
 import infra.remoting.transport.netty.client.TcpClientTransport;
@@ -48,7 +48,7 @@ public class SetupRejectionTests {
   /*
   TODO Fix this test
   @DisplayName(
-      "Rejecting setup by server causes requester RSocket disposal and RejectedSetupException")
+      "Rejecting setup by server causes requester Channel disposal and RejectedSetupException")
   @ParameterizedTest
   @MethodSource(value = "transports")*/
   void rejectSetupTcp(
@@ -57,7 +57,7 @@ public class SetupRejectionTests {
 
     String errorMessage = "error";
     RejectingAcceptor acceptor = new RejectingAcceptor(errorMessage);
-    Mono<Channel> serverRequester = acceptor.requesterRSocket();
+    Mono<Channel> serverRequester = acceptor.requesterChannel();
 
     CloseableChannel channel =
             RemotingServer.create(acceptor)
@@ -124,12 +124,12 @@ public class SetupRejectionTests {
     }
 
     @Override
-    public Mono<Channel> accept(ConnectionSetupPayload setup, Channel sendingSocket) {
-      requesters.tryEmitNext(sendingSocket);
+    public Mono<Channel> accept(ConnectionSetupPayload setup, Channel channel) {
+      requesters.tryEmitNext(channel);
       return Mono.error(new RuntimeException(msg));
     }
 
-    public Mono<Channel> requesterRSocket() {
+    public Mono<Channel> requesterChannel() {
       return requesters.asFlux().next();
     }
   }

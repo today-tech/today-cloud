@@ -294,7 +294,7 @@ public class InMemoryResumeStoreTests {
 
       final Consumer<ByteBuf> consumer =
               f -> {
-                if (ResumableDuplexConnection.isResumableFrame(f)) {
+                if (ResumableConnection.isResumableFrame(f)) {
                   receivedPosition.addAndGet(f.readableBytes());
                   receivedFrames.offer(f);
                   return;

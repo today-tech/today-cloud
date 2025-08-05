@@ -24,8 +24,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.ResourceLeakDetector;
 
-/** Payload of a Frame . */
+/**
+ * Payload of a Frame.
+ */
 public interface Payload extends ReferenceCounted {
+
   /**
    * Returns whether the payload has metadata, useful for tell if metadata is empty or not present.
    *
@@ -87,6 +90,13 @@ public interface Payload extends ReferenceCounted {
    */
   @Override
   Payload touch(Object hint);
+
+  /**
+   * Readable bytes
+   */
+  default int length() {
+    return metadata().readableBytes() + data().readableBytes();
+  }
 
   default ByteBuffer getMetadata() {
     return sliceMetadata().nioBuffer();

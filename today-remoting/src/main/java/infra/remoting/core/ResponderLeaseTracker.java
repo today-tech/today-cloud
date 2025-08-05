@@ -19,7 +19,7 @@ package infra.remoting.core;
 
 import infra.lang.Nullable;
 import infra.remoting.Availability;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.frame.LeaseFrameCodec;
 import infra.remoting.lease.Lease;
 import infra.remoting.lease.LeaseSender;
@@ -32,12 +32,12 @@ final class ResponderLeaseTracker extends BaseSubscriber<Lease> implements Dispo
 
   final String tag;
   final ByteBufAllocator allocator;
-  final DuplexConnection connection;
+  final Connection connection;
 
   @Nullable
   volatile MutableLease currentLease;
 
-  ResponderLeaseTracker(String tag, DuplexConnection connection, LeaseSender leaseSender) {
+  ResponderLeaseTracker(String tag, Connection connection, LeaseSender leaseSender) {
     this.tag = tag;
     this.connection = connection;
     this.allocator = connection.alloc();

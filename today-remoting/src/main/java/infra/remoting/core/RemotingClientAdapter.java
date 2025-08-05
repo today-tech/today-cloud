@@ -31,58 +31,58 @@ import reactor.core.publisher.Mono;
  */
 class RemotingClientAdapter implements RemotingClient {
 
-  private final Channel rsocket;
+  private final Channel channel;
 
-  public RemotingClientAdapter(Channel rsocket) {
-    this.rsocket = rsocket;
+  public RemotingClientAdapter(Channel channel) {
+    this.channel = channel;
   }
 
-  public Channel rsocket() {
-    return rsocket;
+  public Channel channel() {
+    return channel;
   }
 
   @Override
   public boolean connect() {
-    throw new UnsupportedOperationException("Connect does not apply to a server side RSocket");
+    throw new UnsupportedOperationException("Connect does not apply to a server side Channel");
   }
 
   @Override
   public Mono<Channel> source() {
-    return Mono.just(rsocket);
+    return Mono.just(channel);
   }
 
   @Override
   public Mono<Void> onClose() {
-    return rsocket.onClose();
+    return channel.onClose();
   }
 
   @Override
   public Mono<Void> fireAndForget(Mono<Payload> payloadMono) {
-    return payloadMono.flatMap(rsocket::fireAndForget);
+    return payloadMono.flatMap(channel::fireAndForget);
   }
 
   @Override
   public Mono<Payload> requestResponse(Mono<Payload> payloadMono) {
-    return payloadMono.flatMap(rsocket::requestResponse);
+    return payloadMono.flatMap(channel::requestResponse);
   }
 
   @Override
   public Flux<Payload> requestStream(Mono<Payload> payloadMono) {
-    return payloadMono.flatMapMany(rsocket::requestStream);
+    return payloadMono.flatMapMany(channel::requestStream);
   }
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return rsocket.requestChannel(payloads);
+    return channel.requestChannel(payloads);
   }
 
   @Override
   public Mono<Void> metadataPush(Mono<Payload> payloadMono) {
-    return payloadMono.flatMap(rsocket::metadataPush);
+    return payloadMono.flatMap(channel::metadataPush);
   }
 
   @Override
   public void dispose() {
-    rsocket.dispose();
+    channel.dispose();
   }
 }

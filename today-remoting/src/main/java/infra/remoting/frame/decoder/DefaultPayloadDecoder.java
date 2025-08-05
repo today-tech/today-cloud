@@ -32,11 +32,13 @@ import infra.remoting.util.DefaultPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-/** Default Frame decoder that copies the frames contents for easy of use. */
+/**
+ * Default Frame decoder that copies the frames contents for easy of use.
+ */
 class DefaultPayloadDecoder implements PayloadDecoder {
 
   @Override
-  public Payload apply(ByteBuf byteBuf) {
+  public Payload decode(ByteBuf byteBuf) {
     ByteBuf d;
     FrameType type = FrameHeaderCodec.frameType(byteBuf);
     ByteBuf m = switch (type) {

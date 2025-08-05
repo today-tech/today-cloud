@@ -19,7 +19,7 @@ package infra.remoting.transport.local;
 
 import java.util.Objects;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.internal.UnboundedProcessor;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ConnectionAcceptor;
@@ -72,7 +72,7 @@ public final class LocalClientTransport implements ClientTransport {
   }
 
   @Override
-  public Mono<DuplexConnection> connect() {
+  public Mono<Connection> connect() {
     return Mono.defer(() -> {
       ConnectionAcceptor server = LocalServerTransport.findServer(name);
       if (server == null) {
@@ -86,10 +86,10 @@ public final class LocalClientTransport implements ClientTransport {
 
       Mono<Void> onClose = inSink.asMono().and(outSink.asMono());
 
-      server.accept(new LocalDuplexConnection(name, allocator, out, in, onClose)).subscribe();
+      server.accept(new LocalConnection(name, allocator, out, in, onClose)).subscribe();
 
-      return Mono.<DuplexConnection>just(
-              new LocalDuplexConnection(name, allocator, in, out, onClose));
+      return Mono.<Connection>just(
+              new LocalConnection(name, allocator, in, out, onClose));
     });
   }
 }

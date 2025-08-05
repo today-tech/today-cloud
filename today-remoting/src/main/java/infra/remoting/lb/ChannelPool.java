@@ -44,8 +44,8 @@ import reactor.core.publisher.Sinks;
 
 class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<List<LoadBalanceTarget>>, Closeable {
 
-  static final AtomicReferenceFieldUpdater<ChannelPool, PooledChannel[]> ACTIVE_SOCKETS =
-          AtomicReferenceFieldUpdater.newUpdater(ChannelPool.class, PooledChannel[].class, "activeSockets");
+  static final AtomicReferenceFieldUpdater<ChannelPool, PooledChannel[]> ACTIVE_CHANNELS =
+          AtomicReferenceFieldUpdater.newUpdater(ChannelPool.class, PooledChannel[].class, "activeChannels");
 
   static final PooledChannel[] EMPTY = new PooledChannel[0];
   static final PooledChannel[] TERMINATED = new PooledChannel[0];
@@ -53,7 +53,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
   static final AtomicReferenceFieldUpdater<ChannelPool, Subscription> S =
           AtomicReferenceFieldUpdater.newUpdater(ChannelPool.class, Subscription.class, "s");
 
-  final DeferredResolutionChannel deferredResolutionRSocket = new DeferredResolutionChannel(this);
+  final DeferredResolutionChannel deferredResolutionChannel = new DeferredResolutionChannel(this);
 
   final ChannelConnector connector;
 
@@ -61,14 +61,14 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
 
   final Sinks.Empty<Void> onAllClosedSink = Sinks.unsafe().empty();
 
-  volatile PooledChannel[] activeSockets;
+  volatile PooledChannel[] activeChannels;
 
   volatile Subscription s;
 
   public ChannelPool(ChannelConnector connector, Publisher<List<LoadBalanceTarget>> targetPublisher, LoadBalanceStrategy loadbalanceStrategy) {
     this.connector = connector;
     this.loadbalanceStrategy = loadbalanceStrategy;
-    ACTIVE_SOCKETS.lazySet(this, EMPTY);
+    ACTIVE_CHANNELS.lazySet(this, EMPTY);
     targetPublisher.subscribe(this);
   }
 
@@ -81,7 +81,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
   protected void doOnDispose() {
     Operators.terminate(S, this);
 
-    Channel[] activeSockets = ACTIVE_SOCKETS.getAndSet(this, TERMINATED);
+    Channel[] activeSockets = ACTIVE_CHANNELS.getAndSet(this, TERMINATED);
     for (Channel channel : activeSockets) {
       channel.dispose();
     }
@@ -115,38 +115,38 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
     PooledChannel[] inactiveSockets;
     PooledChannel[] socketsToUse;
     for (; ; ) {
-      HashMap<LoadBalanceTarget, Integer> rSocketSuppliersCopy = new HashMap<>(targets.size());
+      HashMap<LoadBalanceTarget, Integer> channelSuppliersCopy = new HashMap<>(targets.size());
 
       int j = 0;
       for (LoadBalanceTarget target : targets) {
-        rSocketSuppliersCopy.put(target, j++);
+        channelSuppliersCopy.put(target, j++);
       }
 
       // Intersect current and new list of targets and find the ones to keep vs dispose
-      previouslyActiveSockets = this.activeSockets;
+      previouslyActiveSockets = this.activeChannels;
       inactiveSockets = new PooledChannel[previouslyActiveSockets.length];
       PooledChannel[] nextActiveSockets =
-              new PooledChannel[previouslyActiveSockets.length + rSocketSuppliersCopy.size()];
+              new PooledChannel[previouslyActiveSockets.length + channelSuppliersCopy.size()];
       int activeSocketsPosition = 0;
       int inactiveSocketsPosition = 0;
-      for (PooledChannel rSocket : previouslyActiveSockets) {
-        Integer index = rSocketSuppliersCopy.remove(rSocket.target());
+      for (PooledChannel channel : previouslyActiveSockets) {
+        Integer index = channelSuppliersCopy.remove(channel.target());
         if (index == null) {
-          // if one of the active rSockets is not included, we remove it and put in the
+          // if one of the active channels is not included, we remove it and put in the
           // pending removal
-          if (!rSocket.isDisposed()) {
-            inactiveSockets[inactiveSocketsPosition++] = rSocket;
-            // TODO: provide a meaningful algo for keeping removed rsocket in the list
-            //  nextActiveSockets[position++] = rSocket;
+          if (!channel.isDisposed()) {
+            inactiveSockets[inactiveSocketsPosition++] = channel;
+            // TODO: provide a meaningful algo for keeping removed channel in the list
+            //  nextActiveSockets[position++] = channel;
           }
         }
         else {
-          if (!rSocket.isDisposed()) {
-            // keep old RSocket instance
-            nextActiveSockets[activeSocketsPosition++] = rSocket;
+          if (!channel.isDisposed()) {
+            // keep old Channel instance
+            nextActiveSockets[activeSocketsPosition++] = channel;
           }
           else {
-            // put newly create RSocket instance
+            // put newly create Channel instance
             LoadBalanceTarget target = targets.get(index);
             nextActiveSockets[activeSocketsPosition++] =
                     new PooledChannel(this, this.connector.connect(target.getTransport()), target);
@@ -155,7 +155,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
       }
 
       // The remainder are the brand new targets
-      for (LoadBalanceTarget target : rSocketSuppliersCopy.keySet()) {
+      for (LoadBalanceTarget target : channelSuppliersCopy.keySet()) {
         nextActiveSockets[activeSocketsPosition++] =
                 new PooledChannel(this, this.connector.connect(target.getTransport()), target);
       }
@@ -166,7 +166,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
       else {
         socketsToUse = Arrays.copyOf(nextActiveSockets, activeSocketsPosition);
       }
-      if (ACTIVE_SOCKETS.compareAndSet(this, previouslyActiveSockets, socketsToUse)) {
+      if (ACTIVE_CHANNELS.compareAndSet(this, previouslyActiveSockets, socketsToUse)) {
         break;
       }
     }
@@ -204,7 +204,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
 
   public Channel select() {
     if (isDisposed()) {
-      return this.deferredResolutionRSocket;
+      return this.deferredResolutionChannel;
     }
 
     Channel selected = doSelect();
@@ -223,7 +223,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
           return selected;
         }
       }
-      return this.deferredResolutionRSocket;
+      return this.deferredResolutionChannel;
     }
 
     return selected;
@@ -231,7 +231,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
 
   @Nullable
   public Channel doSelect() {
-    PooledChannel[] sockets = this.activeSockets;
+    PooledChannel[] sockets = this.activeChannels;
 
     if (sockets == EMPTY || sockets == TERMINATED) {
       return null;

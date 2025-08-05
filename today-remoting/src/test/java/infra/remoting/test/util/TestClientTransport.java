@@ -19,30 +19,31 @@ package infra.remoting.test.util;
 
 import java.time.Duration;
 
-import io.netty.buffer.ByteBufAllocator;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
 import infra.remoting.transport.ClientTransport;
+import io.netty.buffer.ByteBufAllocator;
 import reactor.core.publisher.Mono;
 
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public class TestClientTransport implements ClientTransport {
+
   private final LeaksTrackingByteBufAllocator allocator =
           LeaksTrackingByteBufAllocator.instrument(
                   ByteBufAllocator.DEFAULT, Duration.ofSeconds(1), "client");
 
-  private volatile TestDuplexConnection testDuplexConnection;
+  private volatile TestConnection testConnection;
 
   int maxFrameLength = FRAME_LENGTH_MASK;
 
   @Override
-  public Mono<DuplexConnection> connect() {
-    return Mono.fromSupplier(() -> testDuplexConnection = new TestDuplexConnection(allocator));
+  public Mono<Connection> connect() {
+    return Mono.fromSupplier(() -> testConnection = new TestConnection(allocator));
   }
 
-  public TestDuplexConnection testConnection() {
-    return testDuplexConnection;
+  public TestConnection testConnection() {
+    return testConnection;
   }
 
   public LeaksTrackingByteBufAllocator alloc() {

@@ -24,7 +24,6 @@ infraJar {
 
 dependencies {
   implementation project(":today-service-registry")
-  implementation project(":today-cloud-config-server-etcd")
   implementation 'cn.taketoday:today-starter-web'
   implementation 'cn.taketoday:today-starter-netty'
   implementation 'ch.qos.logback:logback-classic'

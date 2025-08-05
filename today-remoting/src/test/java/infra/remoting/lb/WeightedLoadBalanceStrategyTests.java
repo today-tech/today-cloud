@@ -59,7 +59,7 @@ public class WeightedLoadBalanceStrategyTests {
     final AtomicInteger counter2 = new AtomicInteger();
     final ClientTransport mockTransport = Mockito.mock(ClientTransport.class);
     final ChannelConnector channelConnectorMock = Mockito.mock(ChannelConnector.class);
-    final WeightedTestChannel rSocket1 =
+    final WeightedTestChannel channel =
             new WeightedTestChannel(
                     new Channel() {
                       @Override
@@ -68,7 +68,7 @@ public class WeightedLoadBalanceStrategyTests {
                         return Mono.empty();
                       }
                     });
-    final WeightedTestChannel rSocket2 =
+    final WeightedTestChannel channel1 =
             new WeightedTestChannel(
                     new Channel() {
                       @Override
@@ -78,8 +78,8 @@ public class WeightedLoadBalanceStrategyTests {
                       }
                     });
     Mockito.when(channelConnectorMock.connect(Mockito.any(ClientTransport.class)))
-            .then(im -> Mono.just(rSocket1))
-            .then(im -> Mono.just(rSocket2));
+            .then(im -> Mono.just(channel))
+            .then(im -> Mono.just(channel1));
 
     final TestPublisher<List<LoadBalanceTarget>> source = TestPublisher.create();
     final ChannelPool channelPool =
@@ -115,7 +115,7 @@ public class WeightedLoadBalanceStrategyTests {
     final ClientTransport mockTransport1 = Mockito.mock(ClientTransport.class);
     final ClientTransport mockTransport2 = Mockito.mock(ClientTransport.class);
     final ChannelConnector channelConnectorMock = Mockito.mock(ChannelConnector.class);
-    final WeightedTestChannel rSocket1 =
+    final WeightedTestChannel channel1 =
             new WeightedTestChannel(
                     new Channel() {
                       @Override
@@ -124,7 +124,7 @@ public class WeightedLoadBalanceStrategyTests {
                         return Mono.empty();
                       }
                     });
-    final WeightedTestChannel rSocket2 =
+    final WeightedTestChannel channel2 =
             new WeightedTestChannel(
                     new Channel() {
                       @Override
@@ -133,7 +133,7 @@ public class WeightedLoadBalanceStrategyTests {
                         return Mono.empty();
                       }
                     });
-    final WeightedTestChannel rSocket3 =
+    final WeightedTestChannel channel3 =
             new WeightedTestChannel(
                     new Channel() {
                       @Override
@@ -144,9 +144,9 @@ public class WeightedLoadBalanceStrategyTests {
                     });
 
     Mockito.when(channelConnectorMock.connect(Mockito.any(ClientTransport.class)))
-            .then(im -> Mono.just(rSocket1))
-            .then(im -> Mono.just(rSocket2))
-            .then(im -> Mono.just(rSocket3));
+            .then(im -> Mono.just(channel1))
+            .then(im -> Mono.just(channel2))
+            .then(im -> Mono.just(channel3));
 
     final TestPublisher<List<LoadBalanceTarget>> source = TestPublisher.create();
     final ChannelPool channelPool =
@@ -171,7 +171,7 @@ public class WeightedLoadBalanceStrategyTests {
       channelPool.select().fireAndForget(EmptyPayload.INSTANCE).subscribe();
     }
 
-    rSocket1.updateAvailability(0.0);
+    channel1.updateAvailability(0.0);
 
     source.next(Collections.singletonList(LoadBalanceTarget.of("1", mockTransport1)));
 
@@ -195,7 +195,7 @@ public class WeightedLoadBalanceStrategyTests {
     Assertions.assertThat(counter2.get())
             .isCloseTo(0, Offset.offset(Math.round(RaceTestConstants.REPEATS * 3 * 0.1f)));
 
-    rSocket2.updateAvailability(0.0);
+    channel2.updateAvailability(0.0);
 
     source.next(Collections.singletonList(LoadBalanceTarget.of("2", mockTransport1)));
 

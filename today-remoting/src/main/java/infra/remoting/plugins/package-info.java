@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-/** Contracts for interception of transports, connections, and requests in in RSocket Java. */
+/** Contracts for interception of transports, connections, and requests. */
 @NonNullApi
 package infra.remoting.plugins;
 

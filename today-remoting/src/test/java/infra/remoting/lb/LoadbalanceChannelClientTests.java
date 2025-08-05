@@ -26,10 +26,10 @@ import org.reactivestreams.Publisher;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import infra.remoting.Payload;
 import infra.remoting.Channel;
-import infra.remoting.core.RemotingClient;
+import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
+import infra.remoting.core.RemotingClient;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.util.DefaultPayload;
 import reactor.core.publisher.Flux;
@@ -78,17 +78,14 @@ class LoadbalanceChannelClientTests {
   void testChannelReconnection() {
     when(channelConnector.connect(clientTransport)).thenReturn(PROGRESSING_HANDLER);
 
-    RemotingClient client =
-            LoadBalanceRemotingClient.create(
-                    channelConnector,
-                    Mono.just(singletonList(LoadBalanceTarget.of("key", clientTransport))));
+    RemotingClient client = RemotingClient.forLoadBalance(channelConnector,
+            Mono.just(singletonList(LoadBalanceTarget.of("key", clientTransport))));
 
-    Publisher<String> result =
-            client
-                    .requestChannel(SOURCE)
-                    .repeatWhen(longFlux -> longFlux.delayElements(LONG_DURATION).take(5))
-                    .map(Payload::getDataUtf8)
-                    .log();
+    Publisher<String> result = client
+            .requestChannel(SOURCE)
+            .repeatWhen(longFlux -> longFlux.delayElements(LONG_DURATION).take(5))
+            .map(Payload::getDataUtf8)
+            .log();
 
     StepVerifier.create(result)
             .expectSubscription()

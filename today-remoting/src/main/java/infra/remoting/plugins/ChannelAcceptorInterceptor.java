@@ -24,7 +24,7 @@ import infra.remoting.ChannelAcceptor;
  * information and the ability to also decorate the sockets for requesting and responding.
  *
  * <p>This could be used as an alternative to registering an individual "requester" {@code
- * RSocketInterceptor} and "responder" {@code RSocketInterceptor}.
+ * ChannelInterceptor} and "responder" {@code ChannelInterceptor}.
  */
 @FunctionalInterface
 public interface ChannelAcceptorInterceptor {

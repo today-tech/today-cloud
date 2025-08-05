@@ -28,8 +28,8 @@ import reactor.core.publisher.Sinks;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public class TestServerTransport implements ServerTransport<Closeable> {
-  private final Sinks.One<TestDuplexConnection> connSink = Sinks.one();
-  private TestDuplexConnection connection;
+  private final Sinks.One<TestConnection> connSink = Sinks.one();
+  private TestConnection connection;
   private final LeaksTrackingByteBufAllocator allocator =
           LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
 
@@ -63,14 +63,14 @@ public class TestServerTransport implements ServerTransport<Closeable> {
   }
 
   private void disposeConnection() {
-    TestDuplexConnection c = connection;
+    TestConnection c = connection;
     if (c != null) {
       c.dispose();
     }
   }
 
-  public TestDuplexConnection connect() {
-    TestDuplexConnection c = new TestDuplexConnection(allocator);
+  public TestConnection connect() {
+    TestConnection c = new TestConnection(allocator);
     connection = c;
     connSink.tryEmitValue(c);
     return c;

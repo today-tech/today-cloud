@@ -38,7 +38,7 @@ import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.TestClientTransport;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.util.EmptyPayload;
-import infra.remoting.util.ChannelDecorator;
+import infra.remoting.ChannelWrapper;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
@@ -130,14 +130,14 @@ public class LoadbalanceTests {
     final LoadBalanceTarget target1 = LoadBalanceTarget.of("1", mockTransport1);
     final LoadBalanceTarget target2 = LoadBalanceTarget.of("2", mockTransport2);
 
-    final WeightedChannel weightedRSocket1 = new WeightedChannel(counter);
-    final WeightedChannel weightedRSocket2 = new WeightedChannel(counter);
+    final WeightedChannel weightedChannel1 = new WeightedChannel(counter);
+    final WeightedChannel weightedChannel2 = new WeightedChannel(counter);
 
     final ChannelConnector channelConnectorMock = Mockito.mock(ChannelConnector.class);
     Mockito.when(channelConnectorMock.connect(mockTransport1))
-            .then(im -> Mono.just(new TestChannel(weightedRSocket1)));
+            .then(im -> Mono.just(new TestChannel(weightedChannel1)));
     Mockito.when(channelConnectorMock.connect(mockTransport2))
-            .then(im -> Mono.just(new TestChannel(weightedRSocket2)));
+            .then(im -> Mono.just(new TestChannel(weightedChannel2)));
     final List<LoadBalanceTarget> collectionOfDestination1 = Collections.singletonList(target1);
     final List<LoadBalanceTarget> collectionOfDestination2 = Collections.singletonList(target2);
     final List<LoadBalanceTarget> collectionOfDestinations1And2 = Arrays.asList(target1, target2);
@@ -151,13 +151,13 @@ public class LoadbalanceTests {
                       source.asFlux(),
                       WeightedLoadBalanceStrategy.builder()
                               .weightedStatsResolver(
-                                      rsocket -> {
-                                        if (rsocket instanceof TestChannel) {
-                                          return (WeightedChannel) ((TestChannel) rsocket).source();
+                                      channel -> {
+                                        if (channel instanceof TestChannel) {
+                                          return (WeightedChannel) ((TestChannel) channel).source();
                                         }
-                                        return ((PooledChannel) rsocket).target() == target1
-                                                ? weightedRSocket1
-                                                : weightedRSocket2;
+                                        return ((PooledChannel) channel).target() == target1
+                                                ? weightedChannel1
+                                                : weightedChannel2;
                                       })
                               .build());
       final Mono<Void> fnfSource =
@@ -188,12 +188,12 @@ public class LoadbalanceTests {
   }
 
   @Test
-  public void ensureRSocketIsCleanedFromThePoolIfSourceRSocketIsDisposed() {
+  public void ensureChannelIsCleanedFromThePoolIfSourceChannelIsDisposed() {
     final AtomicInteger counter = new AtomicInteger();
     final ClientTransport mockTransport = Mockito.mock(ClientTransport.class);
     final ChannelConnector channelConnectorMock = Mockito.mock(ChannelConnector.class);
 
-    final TestChannel testRSocket =
+    final TestChannel testChannel =
             new TestChannel(
                     new Channel() {
                       @Override
@@ -204,7 +204,7 @@ public class LoadbalanceTests {
                     });
 
     Mockito.when(channelConnectorMock.connect(Mockito.any(ClientTransport.class)))
-            .then(im -> Mono.delay(Duration.ofMillis(200)).map(__ -> testRSocket));
+            .then(im -> Mono.delay(Duration.ofMillis(200)).map(__ -> testChannel));
 
     final TestPublisher<List<LoadBalanceTarget>> source = TestPublisher.create();
     final ChannelPool channelPool =
@@ -217,7 +217,7 @@ public class LoadbalanceTests {
             .expectComplete()
             .verify(Duration.ofSeconds(2));
 
-    testRSocket.dispose();
+    testChannel.dispose();
 
     Assertions.assertThatThrownBy(
                     () ->
@@ -256,7 +256,7 @@ public class LoadbalanceTests {
     final ChannelPool channelPool =
             new ChannelPool(channelConnectorMock, source, new RoundRobinLoadBalanceStrategy());
 
-    // check that context is propagated when there is no rsocket
+    // check that context is propagated when there is no channel
     StepVerifier.create(
                     channelPool
                             .select()
@@ -281,7 +281,7 @@ public class LoadbalanceTests {
             .verify(Duration.ofSeconds(2));
 
     source.next(Collections.singletonList(LoadBalanceTarget.of("2", mockTransport)));
-    // check that context is propagated when there is an RSocket but it is unresolved
+    // check that context is propagated when there is a Channel but it is unresolved
     StepVerifier.create(
                     channelPool
                             .select()
@@ -302,7 +302,7 @@ public class LoadbalanceTests {
             .expectComplete()
             .verify(Duration.ofSeconds(2));
 
-    // check that context is propagated when there is an RSocket and it is resolved
+    // check that context is propagated when there is a Channel and it is resolved
     StepVerifier.create(
                     channelPool
                             .select()
@@ -405,7 +405,7 @@ public class LoadbalanceTests {
     Assertions.assertThat(counter.get()).isOne();
   }
 
-  static class TestChannel extends ChannelDecorator {
+  static class TestChannel extends ChannelWrapper {
 
     final Sinks.Empty<Void> sink = Sinks.empty();
 

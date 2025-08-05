@@ -22,5 +22,5 @@ package infra.remoting.error;
  * retrying and operation that causes a {@link Retryable} to be thrown is not specified.
  */
 public interface Retryable {
-  
+
 }

@@ -69,7 +69,7 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
   }
 
   public ChannelAcceptor decorateAcceptor(ChannelAcceptor acceptor) {
-    for (ChannelAcceptorInterceptor interceptor : channelAcceptorInterceptors) {
+    for (ChannelAcceptorDecorator interceptor : channelAcceptorDecorators) {
       acceptor = interceptor.decorate(acceptor);
     }
     return acceptor;

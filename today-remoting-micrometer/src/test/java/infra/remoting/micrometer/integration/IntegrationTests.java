@@ -31,7 +31,7 @@ import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
-import infra.remoting.plugins.ChannelAcceptorInterceptor;
+import infra.remoting.plugins.ChannelAcceptorDecorator;
 import infra.remoting.plugins.ChannelDecorator;
 import infra.remoting.plugins.ConnectionDecorator;
 import infra.remoting.test.TestSubscriber;
@@ -53,8 +53,8 @@ public class IntegrationTests {
 
   private static final ChannelDecorator requesterInterceptor;
   private static final ChannelDecorator responderInterceptor;
-  private static final ChannelAcceptorInterceptor clientAcceptorInterceptor;
-  private static final ChannelAcceptorInterceptor serverAcceptorInterceptor;
+  private static final ChannelAcceptorDecorator clientAcceptorInterceptor;
+  private static final ChannelAcceptorDecorator serverAcceptorInterceptor;
   private static final ConnectionDecorator CONNECTION_DECORATOR;
 
   private static volatile boolean calledRequester = false;

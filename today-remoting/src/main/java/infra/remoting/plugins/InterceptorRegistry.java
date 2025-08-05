@@ -29,7 +29,7 @@ import infra.remoting.Channel;
  *
  * <ul>
  *   <li>{@link #forConnection(ConnectionDecorator)} -- transport level
- *   <li>{@link #forChannelAcceptor(ChannelAcceptorInterceptor)} -- for accepting new connections
+ *   <li>{@link #forChannelAcceptor(ChannelAcceptorDecorator)} -- for accepting new connections
  *   <li>{@link #forRequester(ChannelDecorator)} -- for performing of requests
  *   <li>{@link #forResponder(ChannelDecorator)} -- for responding to requests
  * </ul>
@@ -44,7 +44,7 @@ public class InterceptorRegistry {
 
   protected final ArrayList<ChannelDecorator> responderChannelDecorators = new ArrayList<>();
 
-  protected final ArrayList<ChannelAcceptorInterceptor> channelAcceptorInterceptors = new ArrayList<>();
+  protected final ArrayList<ChannelAcceptorDecorator> channelAcceptorDecorators = new ArrayList<>();
 
   protected final ArrayList<ConnectionDecorator> connectionDecorators = new ArrayList<>();
 
@@ -106,19 +106,19 @@ public class InterceptorRegistry {
   }
 
   /**
-   * Add a {@link ChannelAcceptorInterceptor} that will intercept the accepting of new connections.
+   * Add a {@link ChannelAcceptorDecorator} that will intercept the accepting of new connections.
    */
-  public InterceptorRegistry forChannelAcceptor(ChannelAcceptorInterceptor interceptor) {
-    channelAcceptorInterceptors.add(interceptor);
+  public InterceptorRegistry forChannelAcceptor(ChannelAcceptorDecorator interceptor) {
+    channelAcceptorDecorators.add(interceptor);
     return this;
   }
 
   /**
-   * Variant of {@link #forChannelAcceptor(ChannelAcceptorInterceptor)} with access to the list of
+   * Variant of {@link #forChannelAcceptor(ChannelAcceptorDecorator)} with access to the list of
    * existing registrations.
    */
-  public InterceptorRegistry forChannelAcceptor(Consumer<List<ChannelAcceptorInterceptor>> consumer) {
-    consumer.accept(channelAcceptorInterceptors);
+  public InterceptorRegistry forChannelAcceptor(Consumer<List<ChannelAcceptorDecorator>> consumer) {
+    consumer.accept(channelAcceptorDecorators);
     return this;
   }
 

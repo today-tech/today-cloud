@@ -27,8 +27,8 @@ import infra.remoting.ChannelAcceptor;
  * ChannelInterceptor} and "responder" {@code ChannelInterceptor}.
  */
 @FunctionalInterface
-public interface ChannelAcceptorInterceptor {
+public interface ChannelAcceptorDecorator {
 
-  ChannelAcceptor decorate(ChannelAcceptor channelAcceptor);
+  ChannelAcceptor decorate(ChannelAcceptor delegate);
 
 }

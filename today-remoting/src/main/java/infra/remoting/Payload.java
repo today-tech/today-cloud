@@ -91,6 +91,13 @@ public interface Payload extends ReferenceCounted {
   @Override
   Payload touch(Object hint);
 
+  /**
+   * Readable bytes
+   */
+  default int length() {
+    return metadata().readableBytes() + data().readableBytes();
+  }
+
   default ByteBuffer getMetadata() {
     return sliceMetadata().nioBuffer();
   }

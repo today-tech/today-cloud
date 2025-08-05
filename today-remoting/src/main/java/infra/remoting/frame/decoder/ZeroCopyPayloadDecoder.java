@@ -38,10 +38,10 @@ public class ZeroCopyPayloadDecoder implements PayloadDecoder {
 
   @Override
   public Payload decode(ByteBuf byteBuf) {
-    ByteBuf m;
-    ByteBuf d;
     FrameType type = FrameHeaderCodec.frameType(byteBuf);
-    m = switch (type) {
+
+    ByteBuf d;
+    ByteBuf m = switch (type) {
       case REQUEST_FNF -> {
         d = RequestFireAndForgetFrameCodec.data(byteBuf);
         yield RequestFireAndForgetFrameCodec.metadata(byteBuf);

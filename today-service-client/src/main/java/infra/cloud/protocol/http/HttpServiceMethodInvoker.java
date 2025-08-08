@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 
 import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
-import infra.cloud.ServiceInstance;
+import infra.cloud.client.ServiceInstance;
 import infra.cloud.ServiceMethodInvoker;
 import infra.util.concurrent.Future;
 

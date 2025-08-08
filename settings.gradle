@@ -31,9 +31,13 @@ include 'today-cloud-core'
 include 'today-cloud-gateway'
 include 'today-cloud-config-server'
 
+include 'today-service-api'
 include 'today-service-client'
 include 'today-service-provider'
 include 'today-service-registry'
+include 'today-service-registry-simple-api'
+include 'today-service-registry-simple-client'
+include 'today-service-registry-simple-server'
 
 include 'today-remoting'
 include 'today-remoting-micrometer'

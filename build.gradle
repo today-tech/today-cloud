@@ -49,6 +49,8 @@ configure(javaProjects) {
     testImplementation("org.mockito:mockito-core")
     testImplementation("org.mockito:mockito-junit-jupiter")
     testImplementation("org.assertj:assertj-core")
+    testImplementation("cn.taketoday:today-test")
+    testImplementation("cn.taketoday:today-test-support")
     testImplementation 'org.projectlombok:lombok'
     testAnnotationProcessor("org.projectlombok:lombok")
 

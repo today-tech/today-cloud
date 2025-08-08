@@ -20,7 +20,7 @@ package infra.cloud.registry;
 import java.util.List;
 import java.util.Random;
 
-import infra.cloud.ServiceInstance;
+import infra.cloud.client.ServiceInstance;
 import infra.lang.Assert;
 
 /**

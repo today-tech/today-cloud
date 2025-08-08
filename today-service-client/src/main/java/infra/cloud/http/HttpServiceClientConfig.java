@@ -22,7 +22,6 @@ import java.util.List;
 import infra.beans.factory.ObjectProvider;
 import infra.cloud.core.serialize.JdkSerialization;
 import infra.cloud.core.serialize.Serialization;
-import infra.cloud.registry.RegistryProperties;
 import infra.cloud.serialize.ReturnValueSerialization;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.RpcRequestSerialization;
@@ -30,7 +29,6 @@ import infra.cloud.serialize.RpcResponseSerialization;
 import infra.cloud.serialize.ThrowableSerialization;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.MissingBean;
-import infra.context.properties.EnableConfigurationProperties;
 import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
 
@@ -39,7 +37,6 @@ import infra.stereotype.Component;
  * @since 1.0 2023/9/5 09:56
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(RegistryProperties.class)
 public class HttpServiceClientConfig {
 
   @Component

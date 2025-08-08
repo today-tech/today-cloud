@@ -19,7 +19,7 @@ package infra.cloud.registry;
 
 import java.util.List;
 
-import infra.cloud.ServiceInstance;
+import infra.cloud.client.ServiceInstance;
 
 /**
  * @author TODAY 2021/7/9 23:18

@@ -17,6 +17,8 @@
 
 package infra.cloud;
 
+import infra.cloud.client.DiscoveryClient;
+
 /**
  * @author TODAY 2021/7/4 22:58
  */

@@ -17,19 +17,15 @@
 
 package infra.cloud.provider;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import infra.beans.factory.SmartInitializingSingleton;
-import infra.cloud.registry.ServiceDefinition;
 import infra.context.ApplicationContext;
 import infra.context.support.ApplicationObjectSupport;
 import infra.lang.Nullable;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
-import infra.util.ExceptionUtils;
 import infra.util.ObjectUtils;
 
 /**
@@ -38,35 +34,12 @@ import infra.util.ObjectUtils;
  */
 public class LocalServiceHolder extends ApplicationObjectSupport implements SmartInitializingSingleton {
 
-  private final InetAddress localHost = ExceptionUtils.sneakyThrow(InetAddress::getLocalHost);
-
-  private String localHostName;
-
-  private final int port;
-
-  private final HashMap<String, Object> localServices = new HashMap<>();
-
-  private final ArrayList<ServiceDefinition> definitions = new ArrayList<>();
-
-  public LocalServiceHolder(int port) {
-    this.port = port;
-  }
-
-  public void setLocalHostName(String localHostName) {
-    this.localHostName = localHostName;
-  }
-
-  public ArrayList<ServiceDefinition> getServices() {
-    return definitions;
-  }
-
-  public int getPort() {
-    return port;
-  }
+  private final HashMap<Class<?>, Object> localServices = new HashMap<>();
 
   @Nullable
-  public Object getService(String serviceName) {
-    return localServices.get(serviceName);
+  @SuppressWarnings("unchecked")
+  public <T> T getService(Class<T> serviceName) {
+    return (T) localServices.get(serviceName);
   }
 
   @Override
@@ -90,16 +63,8 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
         }
       }
 
-      ServiceDefinition definition = new ServiceDefinition();
-
-      definition.setHost(localHostName == null ? localHost.getHostAddress() : localHostName);
-
-      definition.setPort(port);
-      definition.setName(interfaceToUse.getName());
-
-      logger.info("add service: [{}] to interface: [{}]", service, definition.getName());
-      definitions.add(definition);
-      localServices.put(interfaceToUse.getName(), service); // register object
+      logger.info("add service: [{}] to interface: [{}]", service, interfaceToUse.getName());
+      localServices.put(interfaceToUse, service); // register object
     }
 
   }

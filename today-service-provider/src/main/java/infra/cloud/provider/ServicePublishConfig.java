@@ -17,16 +17,10 @@
 
 package infra.cloud.provider;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import infra.cloud.registry.HttpRegistration;
-import infra.cloud.registry.ServiceRegistry;
-import infra.context.SmartLifecycle;
 import infra.context.annotation.Configuration;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.stereotype.Component;
-import infra.stereotype.Singleton;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -37,63 +31,9 @@ class ServicePublishConfig {
 
   private static final Logger log = LoggerFactory.getLogger(ServicePublishConfig.class);
 
-  @Singleton
-  static LocalServiceHolder localServiceHolder() {
-    return new LocalServiceHolder(9001);
-  }
-
   @Component
-  static ServiceProviderLifecycle serviceProviderLifecycle(ServiceRegistry<HttpRegistration> serviceRegistry, LocalServiceHolder serviceHolder) {
-    return new ServiceProviderLifecycle(serviceRegistry, serviceHolder);
-  }
-
-  static class ServiceProviderLifecycle implements SmartLifecycle {
-    final LocalServiceHolder serviceHolder;
-
-    final ServiceRegistry<HttpRegistration> serviceRegistry;
-
-    private final AtomicBoolean started = new AtomicBoolean();
-
-    ServiceProviderLifecycle(ServiceRegistry<HttpRegistration> serviceRegistry, LocalServiceHolder serviceHolder) {
-      this.serviceRegistry = serviceRegistry;
-      this.serviceHolder = serviceHolder;
-    }
-
-    @Override
-    public void start() {
-      if (started.compareAndSet(false, true)) {
-        log.info("Registering services to registry: [{}]", serviceRegistry);
-        serviceRegistry.register(new HttpRegistration(serviceHolder.getServices())); // register to registry
-      }
-    }
-
-    @Override
-    public void stop() {
-      throw new UnsupportedOperationException("Stop must not be invoked directly");
-    }
-
-    /**
-     * Go offline to delete the service registered on the machine
-     */
-    @Override
-    public void stop(Runnable callback) {
-      if (started.compareAndSet(true, false)) {
-        log.info("Un-Registering services: [{}]", serviceRegistry);
-        try {
-          HttpRegistration registration = new HttpRegistration(serviceHolder.getServices());
-          serviceRegistry.unregister(registration);
-        }
-        finally {
-          callback.run();
-        }
-      }
-    }
-
-    @Override
-    public boolean isRunning() {
-      return started.get();
-    }
-
+  static LocalServiceHolder localServiceHolder() {
+    return new LocalServiceHolder();
   }
 
 }

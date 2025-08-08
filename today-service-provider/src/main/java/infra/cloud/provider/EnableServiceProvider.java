@@ -23,13 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import infra.beans.factory.ObjectProvider;
-import infra.cloud.RpcResponse;
 import infra.cloud.core.serialize.JdkSerialization;
 import infra.cloud.core.serialize.Serialization;
-import infra.cloud.protocol.http.HttpServiceRegistry;
-import infra.cloud.registry.HttpRegistration;
-import infra.cloud.registry.RegistryProperties;
-import infra.cloud.registry.ServiceRegistry;
 import infra.cloud.serialize.ReturnValueSerialization;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.RpcResponseSerialization;
@@ -37,10 +32,8 @@ import infra.cloud.serialize.ThrowableSerialization;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.Import;
 import infra.context.annotation.MissingBean;
-import infra.context.properties.EnableConfigurationProperties;
 import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
-import infra.web.server.ServerProperties;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -55,13 +48,7 @@ public @interface EnableServiceProvider {
 
 @Import(ServicePublishConfig.class)
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({ ServerProperties.class, RegistryProperties.class })
 class TcpServiceProviderConfig {
-
-  @MissingBean
-  static ServiceRegistry<HttpRegistration> serviceRegistry(RegistryProperties properties, Serialization<RpcResponse> serialization) {
-    return HttpServiceRegistry.ofURL(properties.getHttpUrl(), serialization);
-  }
 
   @MissingBean
   static Serialization requestSerialization() {

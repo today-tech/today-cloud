@@ -20,25 +20,20 @@ package infra.cloud.protocol.http;
 import java.util.ArrayList;
 import java.util.List;
 
-import infra.cloud.DiscoveryClient;
 import infra.cloud.JdkServiceProxy;
 import infra.cloud.RpcResponse;
-import infra.cloud.ServiceInstance;
 import infra.cloud.ServiceMethodInvoker;
 import infra.cloud.ServiceProvider;
 import infra.cloud.ServiceProxy;
+import infra.cloud.client.ServiceInstance;
 import infra.cloud.core.serialize.JdkSerialization;
 import infra.cloud.core.serialize.Serialization;
-import infra.cloud.registry.HttpRegistration;
-import infra.cloud.registry.ServiceRegisterFailedException;
-import infra.cloud.registry.ServiceRegistry;
 import infra.core.style.ToStringBuilder;
-import infra.web.client.RestClientException;
 
 /**
  * @author TODAY 2021/7/3 23:48
  */
-public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, ServiceProvider, DiscoveryClient {
+public class HttpServiceRegistry implements ServiceProvider {
 
   private ServiceProxy serviceProxy;
 
@@ -76,27 +71,10 @@ public class HttpServiceRegistry implements ServiceRegistry<HttpRegistration>, S
     return new JdkServiceProxy();
   }
 
-  @Override
-  public void register(HttpRegistration registration) {
-    try {
-      httpOperations.register(registration);
-    }
-    catch (RestClientException e) {
-      throw new ServiceRegisterFailedException(registration, e);
-    }
-  }
-
-  @Override
-  public void unregister(HttpRegistration registration) {
-    httpOperations.delete(registration);
-  }
-
-  @Override
   public List<String> getServices() {
     return new ArrayList<>(httpOperations.getServices().keySet());
   }
 
-  @Override
   @SuppressWarnings("unchecked")
   public List<ServiceInstance> getInstances(String serviceId) {
     return httpOperations.getInstances(serviceId);

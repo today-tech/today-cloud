@@ -23,6 +23,8 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import infra.cloud.client.DiscoveryClient;
+import infra.cloud.client.ServiceInstance;
 import infra.cloud.registry.ServiceNotFoundException;
 
 /**

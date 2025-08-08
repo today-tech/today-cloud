@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import infra.cloud.client.ServiceInstance;
 import infra.cloud.registry.InstanceSelector;
 import infra.cloud.registry.RandomInstanceSelector;
 import infra.lang.Assert;

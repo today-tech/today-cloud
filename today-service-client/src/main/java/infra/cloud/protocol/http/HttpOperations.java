@@ -20,10 +20,10 @@ package infra.cloud.protocol.http;
 import java.util.List;
 import java.util.Map;
 
-import infra.cloud.DefaultServiceInstance;
+import infra.cloud.client.DefaultServiceInstance;
 import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
-import infra.cloud.ServiceInstance;
+import infra.cloud.client.ServiceInstance;
 import infra.cloud.core.serialize.Serialization;
 import infra.cloud.registry.ServiceNotFoundException;
 import infra.core.ParameterizedTypeReference;
@@ -39,6 +39,7 @@ import infra.web.client.RestTemplate;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/8/14 17:46
  */
+@Deprecated(forRemoval = true)
 final class HttpOperations {
   private static final ParameterizedTypeReference<List<DefaultServiceInstance>> reference = new ParameterizedTypeReference<>() { };
 

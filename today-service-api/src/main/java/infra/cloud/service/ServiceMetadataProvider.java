@@ -15,14 +15,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud;
-
-import infra.cloud.client.DiscoveryClient;
+package infra.cloud.service;
 
 /**
- * @author TODAY 2021/7/4 22:58
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 21:50
  */
-public interface ServiceProxy {
+public interface ServiceMetadataProvider {
 
-  <T> T getProxy(Class<T> serviceInterface, DiscoveryClient discoveryClient, ServiceMethodInvoker methodInvoker);
+  ServiceMetadata getMetadata(Class<?> serviceInterface);
+
 }

@@ -15,12 +15,11 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.protocol;
+package infra.cloud.client.annotation;
 
 import infra.beans.factory.config.DependencyDescriptor;
 import infra.beans.factory.support.DependencyResolvingStrategy;
-import infra.cloud.ServiceProvider;
-import infra.cloud.client.ServiceReference;
+import infra.cloud.service.ServiceProvider;
 import infra.context.ApplicationContext;
 import infra.lang.Nullable;
 import infra.stereotype.Service;

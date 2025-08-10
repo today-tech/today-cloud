@@ -15,23 +15,29 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo;
-
-import infra.app.ApplicationType;
-import infra.app.InfraApplication;
-import infra.app.builder.ApplicationBuilder;
+package infra.cloud.service;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2022/10/18 00:06
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 21:51
  */
-@InfraApplication
-public class ClientApplication {
+public class ServiceMetadata {
 
-  public static void main(String[] args) {
-    ApplicationBuilder.forSources(ClientApplication.class)
-            .type(ApplicationType.NETTY_WEB)
-            .run(args);
+  private final String name;
+
+  private final String version;
+
+  public ServiceMetadata(String name, String version) {
+    this.name = name;
+    this.version = version;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getVersion() {
+    return version;
   }
 
 }

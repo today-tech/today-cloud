@@ -15,14 +15,22 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud;
+package infra.cloud.service;
 
-import infra.util.concurrent.Future;
+import infra.lang.Nullable;
 
 /**
- * @author TODAY 2021/7/9 21:54
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 14:17
  */
-public interface RemoteExceptionHandler {
+public interface ReturnValueResolver {
 
-  Object handle(Future<Object> throwable) throws Throwable;
+  boolean supportsMethod(ServiceInterfaceMethod method);
+
+  InvocationType getInvocationType(ServiceInterfaceMethod method);
+
+  @Nullable
+  Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable;
+
+  boolean isBlocking();
 }

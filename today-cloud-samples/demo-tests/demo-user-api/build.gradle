@@ -7,3 +7,10 @@ dependencies {
   annotationProcessor("org.projectlombok:lombok")
 
 }
+
+jar {
+  manifest.attributes["Specification-Title"] = project.name
+  manifest.attributes["Specification-Version"] = project.version
+  manifest.attributes["Specification-Vendor"] = 'TODAY Tech'
+  manifest.attributes["Specification-Vendor-Id"] = 'cn.taketoday'
+}

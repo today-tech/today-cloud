@@ -15,24 +15,25 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud;
-
-import infra.cloud.registry.ServiceNotFoundException;
+package infra.cloud.service;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/8/14 21:53
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 12:01
  */
-public interface ServiceProvider {
+public interface ServiceInvoker {
 
   /**
-   * Lookup a service
+   * Implement this method to perform extra treatments before and after the
+   * invocation. Polite implementations would certainly like to invoke
+   * {@link ServiceInvocation#proceed()}.
    *
-   * @param serviceInterface service interface type
-   * @param <T> Service type
-   * @return service
-   * @throws ServiceNotFoundException service not found
+   * @param serviceMethod the service method
+   * @param args invocation args
+   * @return the result of the call to {@link ServiceInvocation#proceed()}, might be
+   * intercepted by the interceptor.
+   * @throws Throwable if the interceptors or the target-object throws an exception.
    */
-  <T> T getService(Class<T> serviceInterface);
+  InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Throwable;
 
 }

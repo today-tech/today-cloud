@@ -15,16 +15,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.registry;
+package infra.cloud.service;
 
-import java.util.List;
-
-import infra.cloud.client.ServiceInstance;
+import infra.core.AttributeAccessorSupport;
 
 /**
- * @author TODAY 2021/7/9 23:18
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 16:17
  */
-public interface InstanceSelector {
+public abstract class AbstractInvocationResult extends AttributeAccessorSupport implements InvocationResult {
 
-  ServiceInstance select(List<ServiceInstance> instances);
 }

@@ -15,23 +15,19 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo;
+package infra.cloud.client.annotation;
 
-import infra.app.ApplicationType;
-import infra.app.InfraApplication;
-import infra.app.builder.ApplicationBuilder;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2022/10/18 00:06
+ * @since 1.0 2023/11/20 23:07
  */
-@InfraApplication
-public class ClientApplication {
-
-  public static void main(String[] args) {
-    ApplicationBuilder.forSources(ClientApplication.class)
-            .type(ApplicationType.NETTY_WEB)
-            .run(args);
-  }
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD })
+public @interface ServiceReference {
 
 }

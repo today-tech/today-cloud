@@ -15,22 +15,9 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.http;
+@NonNullApi
+@NonNullFields
+package infra.cloud.service;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import infra.context.annotation.Import;
-
-/**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/9/5 10:03
- */
-@Import(HttpServiceClientConfig.class)
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface EnableHttpServiceClient {
-
-}
+import infra.lang.NonNullApi;
+import infra.lang.NonNullFields;

@@ -15,19 +15,22 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.client;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package infra.cloud.service;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/11/20 23:07
+ * Read ServiceMetadata from {@link Package} MANIFEST.MF file
+ *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 21:55
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD })
-public @interface ServiceReference {
+public class PackageInfoServiceMetadataProvider implements ServiceMetadataProvider {
+
+  @Override
+  public ServiceMetadata getMetadata(Class<?> serviceInterface) {
+    Package servicePackage = serviceInterface.getPackage();
+    String specificationVersion = servicePackage.getSpecificationVersion();
+    String specificationTitle = servicePackage.getSpecificationTitle();
+    return new ServiceMetadata(specificationTitle, specificationVersion);
+  }
 
 }

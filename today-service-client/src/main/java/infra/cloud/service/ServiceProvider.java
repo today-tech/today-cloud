@@ -15,20 +15,24 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud;
+package infra.cloud.service;
 
-import java.lang.reflect.Method;
+import infra.cloud.registry.ServiceNotFoundException;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2024/1/7 21:03
+ * @since 1.0 2023/8/14 21:53
  */
-public class ServiceMethod {
+public interface ServiceProvider {
 
-  public final Method method;
-
-  public ServiceMethod(Method method) {
-    this.method = method;
-  }
+  /**
+   * Lookup a service
+   *
+   * @param serviceInterface service interface type
+   * @param <T> Service type
+   * @return service
+   * @throws ServiceNotFoundException service not found
+   */
+  <T> T getService(Class<T> serviceInterface);
 
 }

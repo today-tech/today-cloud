@@ -12,6 +12,7 @@ infra:
     service-registry:
       auto-registration:
         port: 9000
+        fail-fast: true
 
 logging:
   level:

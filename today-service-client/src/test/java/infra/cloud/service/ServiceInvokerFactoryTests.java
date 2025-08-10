@@ -15,23 +15,28 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package cn.taketoday.demo;
+package infra.cloud.service;
 
-import infra.app.ApplicationType;
-import infra.app.InfraApplication;
-import infra.app.builder.ApplicationBuilder;
+import org.junit.jupiter.api.Test;
+
+import cn.taketoday.demo.service.UserService;
+import infra.cloud.client.simple.SimpleDiscoveryClient;
+import infra.cloud.client.simple.SimpleDiscoveryProperties;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2022/10/18 00:06
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/9 20:43
  */
-@InfraApplication
-public class ClientApplication {
+class ServiceInvokerFactoryTests {
 
-  public static void main(String[] args) {
-    ApplicationBuilder.forSources(ClientApplication.class)
-            .type(ApplicationType.NETTY_WEB)
-            .run(args);
+  @Test
+  void create() {
+
+//    ServiceInvokerFactory factory = new ServiceInvokerFactory(new SimpleDiscoveryClient(new SimpleDiscoveryProperties()));
+//    ServiceInvoker serviceInvoker = factory.create(UserService.class);
+//    assertThat(serviceInvoker).isNotNull();
   }
 
 }

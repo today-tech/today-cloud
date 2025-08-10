@@ -3,24 +3,13 @@ description = "TODAY Service Client"
 
 dependencies {
   api project(":today-remoting")
-
   api project(":today-cloud-core")
   api project(":today-service-api")
   api project(":today-service-registry")
 
-  optional 'io.netty:netty-transport'
-  optional 'io.netty:netty-codec'
-  optional 'io.netty:netty-handler'
+  api project(":today-remoting-transport-tcp")
 
-  implementation 'cn.taketoday:today-web'
-  implementation 'cn.taketoday:today-framework'
-  implementation 'io.projectreactor:reactor-core' // :3.6.1
 
-  implementation 'org.apache.commons:commons-pool2:2.12.0'
-
-  implementation 'io.protostuff:protostuff-core:1.7.4'
-  implementation 'io.protostuff:protostuff-runtime:1.7.4'
-
-  optional "com.google.protobuf:protobuf-java"
+  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
 }

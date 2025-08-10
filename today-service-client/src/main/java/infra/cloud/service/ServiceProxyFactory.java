@@ -15,34 +15,25 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.registry;
-
-import java.util.List;
-import java.util.Random;
-
-import infra.cloud.client.ServiceInstance;
-import infra.lang.Assert;
+package infra.cloud.service;
 
 /**
- * @author TODAY 2021/7/9 23:20
+ * Factory to create a client proxy from a REMOTE service interface
+ *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 2021/7/4 22:58
  */
-public class RandomInstanceSelector implements InstanceSelector {
-  private final Random random;
+public interface ServiceProxyFactory extends ServiceProvider {
 
-  public RandomInstanceSelector() {
-    this(new Random());
-  }
-
-  public RandomInstanceSelector(Random random) {
-    Assert.notNull(random, "Random is required");
-    this.random = random;
-  }
-
+  /**
+   * Return a proxy that implements the given service interface to perform
+   * requests and retrieve responses through a client.
+   *
+   * @param service the service to create a proxy for
+   * @param <S> the service type
+   * @return the created proxy
+   */
   @Override
-  public ServiceInstance select(List<ServiceInstance> instances) {
-    final int size = instances.size();
-    final int idx = random.nextInt(size);
-    return instances.get(idx);
-  }
+  <S> S getService(Class<S> service);
 
 }

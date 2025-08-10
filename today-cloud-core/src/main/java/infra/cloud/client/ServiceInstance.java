@@ -20,8 +20,6 @@ package infra.cloud.client;
 import java.net.URI;
 import java.util.Map;
 
-import infra.lang.Nullable;
-
 /**
  * Represents an instance of a service.
  *
@@ -33,9 +31,8 @@ public interface ServiceInstance {
   /**
    * @return The unique instance ID as registered.
    */
-  @Nullable
   default String getInstanceId() {
-    return null;
+    return getHost() + ":" + getPort();
   }
 
   /**

@@ -15,24 +15,24 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.provider;
+package infra.cloud.provider.annotation.config;
 
-import infra.context.annotation.Configuration;
-import infra.logging.Logger;
-import infra.logging.LoggerFactory;
+import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
+import infra.cloud.provider.LocalServiceHolder;
+import infra.cloud.registry.annotation.config.AutoServiceRegistrationAutoConfiguration;
+import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.stereotype.Component;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/11/28 20:51
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/10 22:31
  */
-@Configuration(proxyBeanMethods = false)
-class ServicePublishConfig {
-
-  private static final Logger log = LoggerFactory.getLogger(ServicePublishConfig.class);
+@ConditionalOnDiscoveryEnabled
+@DisableDIAutoConfiguration(before = AutoServiceRegistrationAutoConfiguration.class)
+public class ServiceProviderAutoConfiguration {
 
   @Component
-  static LocalServiceHolder localServiceHolder() {
+  public static LocalServiceHolder localServiceHolder() {
     return new LocalServiceHolder();
   }
 

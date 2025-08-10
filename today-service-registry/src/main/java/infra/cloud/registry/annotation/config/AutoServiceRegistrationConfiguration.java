@@ -15,29 +15,20 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.registry;
+package infra.cloud.registry.annotation.config;
 
-import infra.beans.factory.annotation.DisableDependencyInjection;
+import infra.cloud.registry.AutoServiceRegistrationProperties;
 import infra.context.annotation.Configuration;
-import infra.context.annotation.Import;
 import infra.context.condition.ConditionalOnProperty;
-import infra.lang.Nullable;
+import infra.context.properties.EnableConfigurationProperties;
 
 /**
  * @author Spencer Gibb
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */
-@DisableDependencyInjection
 @Configuration(proxyBeanMethods = false)
-@Import(AutoServiceRegistrationConfiguration.class)
+@EnableConfigurationProperties(AutoServiceRegistrationProperties.class)
 @ConditionalOnProperty(value = "infra.cloud.service-registry.auto-registration.enabled", matchIfMissing = true)
-public class AutoServiceRegistrationAutoConfiguration {
-
-  public AutoServiceRegistrationAutoConfiguration(@Nullable AutoServiceRegistration autoRegistration, AutoServiceRegistrationProperties properties) {
-    if (autoRegistration == null && properties.isFailFast()) {
-      throw new IllegalStateException(
-              "Auto Service Registration has been requested, but there is no AutoServiceRegistration bean");
-    }
-  }
+public class AutoServiceRegistrationConfiguration {
 
 }

@@ -32,7 +32,6 @@ dependencies {
   implementation "cn.taketoday:today-core"
   implementation "cn.taketoday:infra-gradle-plugin"
   implementation "org.gradle:test-retry-gradle-plugin:1.4.1"
-  implementation "org.apache.maven:maven-artifact:3.6.3"
 }
 
 gradlePlugin {

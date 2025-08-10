@@ -22,19 +22,19 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCounted;
 import infra.remoting.FrameAssert;
-import infra.remoting.exceptions.ConnectionCloseException;
-import infra.remoting.exceptions.RejectedResumeException;
+import infra.remoting.error.ConnectionCloseException;
+import infra.remoting.error.RejectedResumeException;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.KeepAliveFrameCodec;
 import infra.remoting.frame.ResumeOkFrameCodec;
 import infra.remoting.keepalive.KeepAliveSupport;
 import infra.remoting.test.util.TestClientTransport;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import reactor.core.publisher.Operators;
 import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
@@ -43,7 +43,7 @@ import reactor.util.retry.Retry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ClientChannelSessionTests {
+class ClientChannelSessionTests {
 
   @Test
   void sessionTimeoutSmokeTest() {
@@ -55,20 +55,20 @@ public class ClientChannelSessionTests {
 
       transport.connect().subscribe();
 
-      final ResumableDuplexConnection resumableDuplexConnection =
-              new ResumableDuplexConnection(
+      final ResumableConnection resumableConnection =
+              new ResumableConnection(
                       "test", Unpooled.EMPTY_BUFFER, transport.testConnection(), framesStore);
 
-      resumableDuplexConnection.receive().subscribe();
+      resumableConnection.receive().subscribe();
 
       final ClientChannelSession session =
               new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
-                      resumableDuplexConnection,
+                      resumableConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
                       c -> {
                         AtomicBoolean firstHandled = new AtomicBoolean();
-                        return ((TestDuplexConnection) c)
+                        return ((TestConnection) c)
                                 .receive()
                                 .next()
                                 .doOnNext(__ -> firstHandled.set(true))
@@ -177,7 +177,7 @@ public class ClientChannelSessionTests {
 
       assertThat(session.isDisposed()).isTrue();
 
-      resumableDuplexConnection.onClose().as(StepVerifier::create).expectComplete().verify();
+      resumableConnection.onClose().as(StepVerifier::create).expectComplete().verify();
       keepAliveSupport.dispose();
       transport.alloc().assertHasNoLeaks();
     }
@@ -197,20 +197,20 @@ public class ClientChannelSessionTests {
 
       transport.connect().subscribe();
 
-      final ResumableDuplexConnection resumableDuplexConnection =
-              new ResumableDuplexConnection(
+      final ResumableConnection resumableConnection =
+              new ResumableConnection(
                       "test", Unpooled.EMPTY_BUFFER, transport.testConnection(), framesStore);
 
-      resumableDuplexConnection.receive().subscribe();
+      resumableConnection.receive().subscribe();
 
       final ClientChannelSession session =
               new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
-                      resumableDuplexConnection,
+                      resumableConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
                       c -> {
                         AtomicBoolean firstHandled = new AtomicBoolean();
-                        return ((TestDuplexConnection) c)
+                        return ((TestConnection) c)
                                 .receive()
                                 .next()
                                 .doOnNext(__ -> firstHandled.set(true))
@@ -307,7 +307,7 @@ public class ClientChannelSessionTests {
               .typeOf(FrameType.ERROR)
               .matches(ReferenceCounted::release);
 
-      resumableDuplexConnection
+      resumableConnection
               .onClose()
               .as(StepVerifier::create)
               .expectErrorMessage("RESUME_OK frame must be received before any others")
@@ -330,20 +330,20 @@ public class ClientChannelSessionTests {
 
       transport.connect().subscribe();
 
-      final ResumableDuplexConnection resumableDuplexConnection =
-              new ResumableDuplexConnection(
+      final ResumableConnection resumableConnection =
+              new ResumableConnection(
                       "test", Unpooled.EMPTY_BUFFER, transport.testConnection(), framesStore);
 
-      resumableDuplexConnection.receive().subscribe();
+      resumableConnection.receive().subscribe();
 
       final ClientChannelSession session =
               new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
-                      resumableDuplexConnection,
+                      resumableConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
                       c -> {
                         AtomicBoolean firstHandled = new AtomicBoolean();
-                        return ((TestDuplexConnection) c)
+                        return ((TestConnection) c)
                                 .receive()
                                 .next()
                                 .doOnNext(__ -> firstHandled.set(true))
@@ -404,7 +404,7 @@ public class ClientChannelSessionTests {
       assertThat(session.s).isNotNull();
       assertThat(session.isDisposed()).isTrue();
 
-      resumableDuplexConnection
+      resumableConnection
               .onClose()
               .as(StepVerifier::create)
               .expectError(RejectedResumeException.class)
@@ -427,20 +427,20 @@ public class ClientChannelSessionTests {
 
       transport.connect().subscribe();
 
-      final ResumableDuplexConnection resumableDuplexConnection =
-              new ResumableDuplexConnection(
+      final ResumableConnection resumableConnection =
+              new ResumableConnection(
                       "test", Unpooled.EMPTY_BUFFER, transport.testConnection(), framesStore);
 
-      resumableDuplexConnection.receive().subscribe();
+      resumableConnection.receive().subscribe();
 
       final ClientChannelSession session =
               new ClientChannelSession(
                       Unpooled.EMPTY_BUFFER,
-                      resumableDuplexConnection,
+                      resumableConnection,
                       transport.connect().delaySubscription(Duration.ofMillis(1)),
                       c -> {
                         AtomicBoolean firstHandled = new AtomicBoolean();
-                        return ((TestDuplexConnection) c)
+                        return ((TestConnection) c)
                                 .receive()
                                 .next()
                                 .doOnNext(__ -> firstHandled.set(true))
@@ -482,7 +482,7 @@ public class ClientChannelSessionTests {
               .typeOf(FrameType.ERROR)
               .matches(ReferenceCounted::release);
 
-      resumableDuplexConnection.onClose().as(StepVerifier::create).expectError().verify();
+      resumableConnection.onClose().as(StepVerifier::create).expectError().verify();
       keepAliveSupport.dispose();
       transport.alloc().assertHasNoLeaks();
     }

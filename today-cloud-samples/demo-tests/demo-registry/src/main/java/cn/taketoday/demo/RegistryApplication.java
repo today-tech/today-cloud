@@ -17,7 +17,6 @@
 
 package cn.taketoday.demo;
 
-import infra.cloud.registry.EnableHttpRegistry;
 import infra.app.Application;
 import infra.app.InfraApplication;
 
@@ -25,7 +24,6 @@ import infra.app.InfraApplication;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2022/10/18 00:02
  */
-@EnableHttpRegistry
 @InfraApplication
 public class RegistryApplication {
 

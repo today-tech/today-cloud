@@ -68,12 +68,12 @@ public class PingClient {
           final Recorder histogram) {
     return Flux.usingWhen(
                     client,
-                    rsocket ->
+                    channel ->
                             Flux.range(1, count)
                                     .flatMap(
                                             i -> {
                                               long start = System.nanoTime();
-                                              return Flux.from(interaction.apply(rsocket, payload.retain()))
+                                              return Flux.from(interaction.apply(channel, payload.retain()))
                                                       .doOnNext(Payload::release)
                                                       .doFinally(
                                                               signalType -> {
@@ -82,9 +82,9 @@ public class PingClient {
                                                               });
                                             },
                                             64),
-                    rsocket -> {
-                      rsocket.dispose();
-                      return rsocket.onClose();
+                    channel -> {
+                      channel.dispose();
+                      return channel.onClose();
                     })
             .doOnError(Throwable::printStackTrace);
   }

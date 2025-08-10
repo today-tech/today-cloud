@@ -126,6 +126,13 @@ public final class DefaultPayload implements Payload {
   }
 
   @Override
+  public int length() {
+    return metadata == null
+            ? data.remaining()
+            : metadata.remaining() + data.remaining();
+  }
+
+  @Override
   public boolean hasMetadata() {
     return metadata != null;
   }

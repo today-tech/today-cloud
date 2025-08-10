@@ -28,18 +28,8 @@ dependencies {
   api project(':today-remoting')
 
   testImplementation 'io.projectreactor:reactor-test'
-  testImplementation 'org.assertj:assertj-core'
-  testImplementation 'org.junit.jupiter:junit-jupiter-api'
 
   testRuntimeOnly 'ch.qos.logback:logback-classic'
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
   testImplementation testFixtures(project(":today-remoting"))
 }
-
-jar {
-  manifest {
-    attributes("Automatic-Module-Name": "infra.remoting.transport.local")
-  }
-}
-

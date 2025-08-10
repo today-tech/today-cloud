@@ -22,12 +22,9 @@ dependencies {
 
   api project(":today-remoting")
   api project(":today-cloud-core")
+  api project(":today-service-api")
 
-  implementation project(":today-service-client")
   implementation project(":today-service-registry")
-
-  optional 'cn.taketoday:today-web'
-  implementation 'cn.taketoday:today-framework'
 
   optional 'io.netty:netty-transport'
   optional 'io.netty:netty-codec'

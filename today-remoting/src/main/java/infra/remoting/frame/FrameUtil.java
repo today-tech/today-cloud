@@ -22,7 +22,8 @@ import io.netty.buffer.Unpooled;
 
 public class FrameUtil {
 
-  private FrameUtil() { }
+  private FrameUtil() {
+  }
 
   public static String toString(ByteBuf frame) {
     FrameType frameType = FrameHeaderCodec.frameType(frame);

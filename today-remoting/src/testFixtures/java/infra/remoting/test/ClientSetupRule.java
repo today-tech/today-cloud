@@ -48,7 +48,7 @@ public class ClientSetupRule<T, S extends Closeable> {
 
     this.serverInit =
             address ->
-                    RemotingServer.create((setup, rsocket) -> Mono.just(new TestChannel(data, metadata)))
+                    RemotingServer.create((setup, channel) -> Mono.just(new TestChannel(data, metadata)))
                             .bind(serverTransportSupplier.apply(address))
                             .block();
 
@@ -69,7 +69,7 @@ public class ClientSetupRule<T, S extends Closeable> {
     server.dispose();
   }
 
-  public Channel getRSocket() {
+  public Channel getChannel() {
     return client;
   }
 

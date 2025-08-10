@@ -1,22 +1,6 @@
-/*
- * Copyright 2021 - 2024 the original author or authors.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
- */
-
 plugins {
   id 'de.undercouch.download' version '5.4.0'
+  id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
 }
 
 ext {
@@ -32,8 +16,9 @@ configure(allprojects) {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://repo.spring.io/milestone" }
     if (version.endsWith('-SNAPSHOT')) {
+      maven { url = "https://central.sonatype.com/repository/maven-snapshots/" }
+      maven { url "https://repo.spring.io/milestone" }
       maven { url "https://repo.spring.io/snapshot" }
     }
   }
@@ -64,6 +49,8 @@ configure(javaProjects) {
     testImplementation("org.mockito:mockito-core")
     testImplementation("org.mockito:mockito-junit-jupiter")
     testImplementation("org.assertj:assertj-core")
+    testImplementation("cn.taketoday:today-test")
+    testImplementation("cn.taketoday:today-test-support")
     testImplementation 'org.projectlombok:lombok'
     testAnnotationProcessor("org.projectlombok:lombok")
 
@@ -71,6 +58,16 @@ configure(javaProjects) {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("org.junit.platform:junit-platform-suite-engine")
+
+    // 去除 测试警告
+    testRuntimeOnly("com.google.code.findbugs:jsr305")
+    testRuntimeOnly("com.google.code.findbugs:findbugs")
+    testRuntimeOnly('org.jboss.logging:jboss-logging:3.5.3.Final')
+
+    // JSR-305 only used for non-required meta-annotations
+    compileOnly("com.google.code.findbugs:jsr305")
+    compileOnly("com.google.code.findbugs:findbugs")
+    compileOnly('org.jboss.logging:jboss-logging:3.5.3.Final')
   }
 }
 
@@ -82,3 +79,16 @@ configure(rootProject) {
   description = "TODAY Cloud"
 }
 
+nexusPublishing {
+  String repoUsername = project.properties["repoUsername"] ?: System.getenv("SNAPSHOTS_USERNAME")
+  String repoPassword = project.properties["repoPassword"] ?: System.getenv("SNAPSHOTS_TOKEN")
+
+  repositories {
+    sonatype {
+      username.set(repoUsername)
+      password.set(repoPassword)
+      nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+    }
+  }
+}

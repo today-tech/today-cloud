@@ -37,7 +37,7 @@ public class ProtocolErrorException extends RemotingException {
   /**
    * Constructor with a protocol error code and a message.
    *
-   * @param errorCode the RSocket protocol error code
+   * @param errorCode the protocol error code
    * @param message error explanation
    */
   public ProtocolErrorException(int errorCode, String message) {
@@ -47,7 +47,7 @@ public class ProtocolErrorException extends RemotingException {
   /**
    * Alternative to {@link #ProtocolErrorException(int, String)} with a root cause.
    *
-   * @param errorCode the RSocket protocol error code
+   * @param errorCode the protocol error code
    * @param message error explanation
    * @param cause a root cause for the error
    */

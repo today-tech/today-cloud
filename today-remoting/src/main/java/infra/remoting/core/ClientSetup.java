@@ -19,7 +19,7 @@ package infra.remoting.core;
 
 import java.nio.channels.ClosedChannelException;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import reactor.core.Disposable;
@@ -29,13 +29,13 @@ import reactor.util.function.Tuples;
 
 abstract class ClientSetup {
 
-  abstract Mono<Tuple2<ByteBuf, DuplexConnection>> init(DuplexConnection connection);
+  abstract Mono<Tuple2<ByteBuf, Connection>> init(Connection connection);
 }
 
 class DefaultClientSetup extends ClientSetup {
 
   @Override
-  Mono<Tuple2<ByteBuf, DuplexConnection>> init(DuplexConnection connection) {
+  Mono<Tuple2<ByteBuf, Connection>> init(Connection connection) {
     return Mono.create(sink -> sink.onRequest(__ -> sink.success(Tuples.of(Unpooled.EMPTY_BUFFER, connection))));
   }
 }
@@ -43,9 +43,9 @@ class DefaultClientSetup extends ClientSetup {
 class ResumableClientSetup extends ClientSetup {
 
   @Override
-  Mono<Tuple2<ByteBuf, DuplexConnection>> init(DuplexConnection connection) {
+  Mono<Tuple2<ByteBuf, Connection>> init(Connection connection) {
     return Mono.create(sink -> {
-      sink.onRequest(__ -> new SetupHandlingDuplexConnection(connection, sink));
+      sink.onRequest(__ -> new SetupHandlingConnection(connection, sink));
 
       Disposable subscribe = connection.onClose()
               .doFinally(__ -> sink.error(new ClosedChannelException()))

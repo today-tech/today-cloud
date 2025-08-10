@@ -34,11 +34,11 @@ import io.netty.buffer.ByteBufAllocator;
 import infra.remoting.Payload;
 import infra.remoting.Channel;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
-import infra.remoting.exceptions.ApplicationErrorException;
-import infra.remoting.exceptions.CustomProtocolException;
+import infra.remoting.error.ApplicationErrorException;
+import infra.remoting.error.CustomProtocolException;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.LocalDuplexConnection;
+import infra.remoting.test.util.LocalConnection;
 import infra.remoting.util.DefaultPayload;
 import infra.remoting.util.EmptyPayload;
 import reactor.core.Disposable;
@@ -53,7 +53,7 @@ import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 public class ChannelTests {
 
-  public final SocketRule rule = new SocketRule();
+  public final ChannelRule rule = new ChannelRule();
 
   @BeforeEach
   public void setup() {
@@ -66,7 +66,7 @@ public class ChannelTests {
   }
 
   @Test
-  public void rsocketDisposalShouldEndupWithNoErrorsOnClose() {
+  public void channelDisposalShouldEndupWithNoErrorsOnClose() {
     Channel requestHandlingChannel =
             new Channel() {
               final Disposable disposable = Disposables.single();
@@ -506,14 +506,14 @@ public class ChannelTests {
     responderPublisher.assertNoSubscribers();
   }
 
-  public static class SocketRule {
+  public static class ChannelRule {
 
     Sinks.Many<ByteBuf> serverProcessor;
     Sinks.Many<ByteBuf> clientProcessor;
-    private ChannelRequester crs;
+    private RequesterChannel crs;
 
     @SuppressWarnings("unused")
-    private ChannelResponder srs;
+    private ResponderChannel srs;
 
     private Channel requestAcceptor;
 
@@ -533,10 +533,10 @@ public class ChannelTests {
       this.thisClosedSink = Sinks.empty();
       this.otherClosedSink = Sinks.empty();
 
-      LocalDuplexConnection serverConnection =
-              new LocalDuplexConnection("server", allocator, clientProcessor, serverProcessor);
-      LocalDuplexConnection clientConnection =
-              new LocalDuplexConnection("client", allocator, serverProcessor, clientProcessor);
+      LocalConnection serverConnection =
+              new LocalConnection("server", allocator, clientProcessor, serverProcessor);
+      LocalConnection clientConnection =
+              new LocalConnection("client", allocator, serverProcessor, clientProcessor);
 
       clientConnection.onClose().doFinally(__ -> serverConnection.dispose()).subscribe();
       serverConnection.onClose().doFinally(__ -> clientConnection.dispose()).subscribe();
@@ -572,7 +572,7 @@ public class ChannelTests {
                       };
 
       srs =
-              new ChannelResponder(
+              new ResponderChannel(
                       serverConnection,
                       requestAcceptor,
                       PayloadDecoder.DEFAULT,
@@ -584,7 +584,7 @@ public class ChannelTests {
                       otherClosedSink);
 
       crs =
-              new ChannelRequester(
+              new RequesterChannel(
                       clientConnection,
                       PayloadDecoder.DEFAULT,
                       StreamIdProvider.forClient(),

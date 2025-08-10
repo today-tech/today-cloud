@@ -23,7 +23,7 @@ import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-/** A contract for RSocket lease, which is sent by a request acceptor and is time bound. */
+/** A contract for lease, which is sent by a request acceptor and is time bound. */
 public final class Lease {
 
   public static Lease create(

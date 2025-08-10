@@ -17,12 +17,16 @@
 
 package infra.cloud.registry;
 
-import infra.cloud.Registration;
-
 /**
- * @author TODAY 2021/7/4 23:12
+ * Contract to register and deregister instances with a Service Registry.
+ *
+ * @param <R> registration meta data
+ * @param <S> The type of the status.
+ * @author Spencer Gibb
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 2021/7/4 23:12
  */
-public interface ServiceRegistry<R extends Registration> {
+public interface ServiceRegistry<R extends Registration, S> {
 
   /**
    * Registers the registration. A registration typically has information about an
@@ -39,5 +43,27 @@ public interface ServiceRegistry<R extends Registration> {
    * @param registration registration meta data
    */
   void unregister(R registration);
+
+  /**
+   * Sets the status of the registration. The status values are determined by the
+   * individual implementations.
+   *
+   * @param registration The registration to update.
+   * @param status The status to set.
+   */
+  void setStatus(R registration, S status);
+
+  /**
+   * Gets the status of a particular registration.
+   *
+   * @param registration The registration to query.
+   * @return The status of the registration.
+   */
+  S getStatus(R registration);
+
+  /**
+   * Closes the ServiceRegistry. This is a lifecycle method.
+   */
+  void close();
 
 }

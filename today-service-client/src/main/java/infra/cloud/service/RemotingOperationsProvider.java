@@ -17,37 +17,14 @@
 
 package infra.cloud.service;
 
-import java.util.Collections;
-import java.util.List;
+import infra.remoting.RemotingOperations;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2025/8/9 21:59
+ * @since 1.0 2025/8/10 22:10
  */
-public class ServiceInterfaceMetadata<M extends ServiceMethod> {
+public interface RemotingOperationsProvider {
 
-  private final ServiceMetadata serviceMetadata;
-
-  private final Class<?> serviceInterface;
-
-  private final List<M> serviceMethods;
-
-  public ServiceInterfaceMetadata(Class<?> serviceInterface, ServiceMetadata serviceMetadata, List<M> serviceMethods) {
-    this.serviceInterface = serviceInterface;
-    this.serviceMetadata = serviceMetadata;
-    this.serviceMethods = serviceMethods;
-  }
-
-  public Class<?> getServiceInterface() {
-    return serviceInterface;
-  }
-
-  public ServiceMetadata getServiceMetadata() {
-    return serviceMetadata;
-  }
-
-  public List<M> getServiceMethods() {
-    return Collections.unmodifiableList(serviceMethods);
-  }
+  RemotingOperations getRemotingOperations(String serviceName);
 
 }

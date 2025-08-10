@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import infra.cloud.client.DiscoveryClient;
 import infra.lang.Assert;
 import infra.lang.Nullable;
 import infra.util.ReflectionUtils;
@@ -36,16 +35,16 @@ import infra.util.ReflectionUtils;
  */
 public class DefaultServiceProxyFactory implements ServiceProxyFactory {
 
-  private final DiscoveryClient discoveryClient;
-
   private final ClientInterceptor[] interceptors;
+
+  private final RemotingOperationsProvider remotingOperationsProvider;
 
   private final ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider;
 
-  public DefaultServiceProxyFactory(DiscoveryClient discoveryClient,
+  public DefaultServiceProxyFactory(RemotingOperationsProvider remotingOperationsProvider,
           ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider, List<ClientInterceptor> interceptors) {
-    this.discoveryClient = discoveryClient;
     this.metadataProvider = metadataProvider;
+    this.remotingOperationsProvider = remotingOperationsProvider;
     this.interceptors = interceptors.toArray(new ClientInterceptor[0]);
   }
 
@@ -54,7 +53,7 @@ public class DefaultServiceProxyFactory implements ServiceProxyFactory {
   public <S> S getService(Class<S> serviceInterface) {
     Assert.isTrue(serviceInterface.isInterface(), "service must be an interface");
     var metadata = metadataProvider.getMetadata(serviceInterface);
-    ServiceInvoker serviceInvoker = new ServiceMethodInvoker(metadata, discoveryClient, interceptors);
+    ServiceInvoker serviceInvoker = new ServiceMethodInvoker(metadata, interceptors, remotingOperationsProvider);
     List<ServiceInterfaceMethod> serviceMethods = metadata.getServiceMethods();
 
     return (S) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class[] { serviceInterface },

@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */
-public interface Channel extends Availability, Closeable, RemotingOperations {
+public interface Channel extends Availability, Closeable {
 
   /**
    * Fire and Forget interaction model of protocol.

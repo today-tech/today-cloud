@@ -19,18 +19,9 @@ package infra.cloud.service;
 
 import org.reactivestreams.Publisher;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-
-import infra.cloud.client.DiscoveryClient;
-import infra.cloud.client.ServiceInstance;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
-import infra.remoting.core.RemotingClient;
-import infra.remoting.lb.LoadBalanceTarget;
-import infra.remoting.transport.netty.client.TcpClientTransport;
+import infra.remoting.RemotingOperations;
 import infra.util.concurrent.Future;
 import infra.util.concurrent.Promise;
 import reactor.core.publisher.Flux;
@@ -43,26 +34,17 @@ import reactor.core.publisher.Mono;
  */
 public class ServiceMethodInvoker implements ServiceInvoker {
 
-  private final DiscoveryClient discoveryClient;
+  private final ClientInterceptor[] interceptors;
+
+  private final RemotingOperationsProvider remotingOperationsProvider;
 
   private final ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata;
 
-  private final ClientInterceptor[] interceptors;
-
-  private Duration discoveryPeriod = Duration.ofSeconds(10);
-
   ServiceMethodInvoker(ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata,
-          DiscoveryClient discoveryClient, ClientInterceptor[] interceptors) {
+          ClientInterceptor[] interceptors, RemotingOperationsProvider remotingOperationsProvider) {
     this.metadata = metadata;
-    this.discoveryClient = discoveryClient;
     this.interceptors = interceptors;
-  }
-
-  /**
-   * service discovery reload period
-   */
-  public void setDiscoveryPeriod(Duration discoveryPeriod) {
-    this.discoveryPeriod = discoveryPeriod;
+    this.remotingOperationsProvider = remotingOperationsProvider;
   }
 
   @Override
@@ -72,8 +54,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     return invocation.proceed();
   }
 
-  class MethodServiceInvocation0 extends MethodServiceInvocation
-          implements Function<List<ServiceInstance>, List<LoadBalanceTarget>> {
+  class MethodServiceInvocation0 extends MethodServiceInvocation {
 
     public MethodServiceInvocation0(ServiceInterfaceMethod serviceMethod, Object[] args, ClientInterceptor[] interceptors) {
       super(serviceMethod, args, interceptors);
@@ -81,40 +62,30 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     @Override
     protected InvocationResult invokeRemoting(Object[] args) {
-      RemotingClient client = RemotingClient.forLoadBalance(Flux.interval(discoveryPeriod)
-                      .map(i -> discoveryClient.getInstances(getServiceMetadata().getName()))
-                      .map(this))
-              .roundRobinLoadBalanceStrategy()
-              .build();
+      RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceName());
 
       Publisher<Payload> publisher = switch (getType()) {
-        case FIRE_AND_FORGET -> client.fireAndForget(createMonoPayload(args)).cast(Payload.class);
-        case REQUEST_RESPONSE -> client.requestResponse(createMonoPayload(args));
-        case RESPONSE_STREAMING -> client.requestStream(createMonoPayload(args));
-        case DUPLEX_STREAMING -> client.requestChannel(createChannelPayload(args));
+        case FIRE_AND_FORGET -> operations.fireAndForget(createMonoPayload(args)).cast(Payload.class);
+        case REQUEST_RESPONSE -> operations.requestResponse(createMonoPayload(args));
+        case RESPONSE_STREAMING -> operations.requestStream(createMonoPayload(args));
+        case DUPLEX_STREAMING -> operations.requestChannel(createChannelPayload(args));
       };
 
       return new InvocationResult0(null, getType(), publisher);
     }
 
     private Mono<Payload> createMonoPayload(Object[] args) {
+
       return null;
     }
 
+    @SuppressWarnings("unchecked")
     private Publisher<Payload> createChannelPayload(Object[] args) {
+      Flux<Object> flux = (Flux<Object>) args[0];
 
       return null;
     }
 
-    @Override
-    public List<LoadBalanceTarget> apply(List<ServiceInstance> serviceInstances) {
-      var targets = new ArrayList<LoadBalanceTarget>(serviceInstances.size());
-      for (ServiceInstance instance : serviceInstances) {
-        targets.add(LoadBalanceTarget.of(instance.getInstanceId(),
-                TcpClientTransport.create(instance.getHost(), instance.getPort())));
-      }
-      return targets;
-    }
   }
 
   private Object deserialize(Payload payload) {

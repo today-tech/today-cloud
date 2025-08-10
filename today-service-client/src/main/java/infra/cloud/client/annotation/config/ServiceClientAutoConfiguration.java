@@ -22,9 +22,11 @@ import infra.cloud.client.DiscoveryClient;
 import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
 import infra.cloud.client.simple.SimpleDiscoveryProperties;
 import infra.cloud.service.ClientInterceptor;
+import infra.cloud.service.DefaultRemotingOperationsProvider;
 import infra.cloud.service.DefaultServiceInterfaceMetadataProvider;
 import infra.cloud.service.DefaultServiceProxyFactory;
 import infra.cloud.service.PackageInfoServiceMetadataProvider;
+import infra.cloud.service.RemotingOperationsProvider;
 import infra.cloud.service.ReturnValueResolver;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMethod;
@@ -48,8 +50,14 @@ public class ServiceClientAutoConfiguration {
   @Component
   public static DefaultServiceProxyFactory serviceProxyFactory(
           ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider,
-          DiscoveryClient discoveryClient, ObjectProvider<ClientInterceptor> clientInterceptors) {
-    return new DefaultServiceProxyFactory(discoveryClient, metadataProvider, clientInterceptors.orderedList());
+          RemotingOperationsProvider remotingOperationsProvider, ObjectProvider<ClientInterceptor> clientInterceptors) {
+    return new DefaultServiceProxyFactory(remotingOperationsProvider, metadataProvider, clientInterceptors.orderedList());
+  }
+
+  @Component
+  @ConditionalOnMissingBean
+  public static RemotingOperationsProvider remotingOperationsProvider(DiscoveryClient discoveryClient) {
+    return new DefaultRemotingOperationsProvider(discoveryClient);
   }
 
   @Component

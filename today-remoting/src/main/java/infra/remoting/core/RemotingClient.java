@@ -24,6 +24,7 @@ import java.util.List;
 import infra.remoting.Channel;
 import infra.remoting.Closeable;
 import infra.remoting.Payload;
+import infra.remoting.RemotingOperations;
 import infra.remoting.lb.LoadBalanceRemotingClient;
 import infra.remoting.lb.LoadBalanceTarget;
 import reactor.core.publisher.Flux;
@@ -75,7 +76,7 @@ import reactor.core.publisher.Mono;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @see LoadBalanceRemotingClient
  */
-public interface RemotingClient extends Closeable {
+public interface RemotingClient extends Closeable, RemotingOperations {
 
   /**
    * Connect to the remote endpoint, if not yet connected. This method is a shortcut for
@@ -101,30 +102,35 @@ public interface RemotingClient extends Closeable {
    * Perform a Fire-and-Forget interaction via {@link Channel#fireAndForget(Payload)}. Allows
    * multiple subscriptions and performs a request per subscriber.
    */
+  @Override
   Mono<Void> fireAndForget(Mono<Payload> payloadMono);
 
   /**
    * Perform a Request-Response interaction via {@link Channel#requestResponse(Payload)}. Allows
    * multiple subscriptions and performs a request per subscriber.
    */
+  @Override
   Mono<Payload> requestResponse(Mono<Payload> payloadMono);
 
   /**
    * Perform a Request-Stream interaction via {@link Channel#requestStream(Payload)}. Allows
    * multiple subscriptions and performs a request per subscriber.
    */
+  @Override
   Flux<Payload> requestStream(Mono<Payload> payloadMono);
 
   /**
    * Perform a Request-Channel interaction via {@link Channel#requestChannel(Publisher)}. Allows
    * multiple subscriptions and performs a request per subscriber.
    */
+  @Override
   Flux<Payload> requestChannel(Publisher<Payload> payloads);
 
   /**
    * Perform a Metadata Push via {@link Channel#metadataPush(Payload)}. Allows multiple
    * subscriptions and performs a request per subscriber.
    */
+  @Override
   Mono<Void> metadataPush(Mono<Payload> payloadMono);
 
   /**

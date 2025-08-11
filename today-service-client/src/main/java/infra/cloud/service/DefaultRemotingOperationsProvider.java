@@ -55,8 +55,12 @@ public class DefaultRemotingOperationsProvider implements RemotingOperationsProv
   }
 
   @Override
-  public RemotingOperations getRemotingOperations(String serviceName) {
-    return remotingClientMap.computeIfAbsent(serviceName, name -> RemotingClient.forLoadBalance(Flux.interval(discoveryPeriod)
+  public RemotingOperations getRemotingOperations(ServiceMethod serviceMethod) {
+    return getRemotingOperations(serviceMethod.getServiceId());
+  }
+
+  public RemotingOperations getRemotingOperations(String serviceId) {
+    return remotingClientMap.computeIfAbsent(serviceId, name -> RemotingClient.forLoadBalance(Flux.interval(discoveryPeriod)
                     .map(i -> discoveryClient.getInstances(name))
                     .map(this))
             .roundRobinLoadBalanceStrategy()

@@ -23,17 +23,17 @@ package infra.cloud.service;
  */
 public class ServiceMetadata {
 
-  private final String name;
+  private final String id;
 
   private final String version;
 
-  public ServiceMetadata(String name, String version) {
-    this.name = name;
+  public ServiceMetadata(String id, String version) {
+    this.id = id;
     this.version = version;
   }
 
-  public String getName() {
-    return name;
+  public String getId() {
+    return id;
   }
 
   public String getVersion() {

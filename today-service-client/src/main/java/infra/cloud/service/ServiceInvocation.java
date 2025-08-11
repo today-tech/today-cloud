@@ -37,9 +37,8 @@ public interface ServiceInvocation extends AttributeAccessor {
 
   /**
    * Service name
-   *
    */
-  String getServiceName();
+  String getServiceId();
 
   /**
    * Service metadata
@@ -49,7 +48,7 @@ public interface ServiceInvocation extends AttributeAccessor {
   /**
    * service method metadata
    */
-  ServiceInterfaceMethod getMethod();
+  ServiceInterfaceMethod getServiceMethod();
 
   /**
    * Get the arguments as an array object. It is possible to change element values

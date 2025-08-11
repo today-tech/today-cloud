@@ -54,7 +54,7 @@ public abstract class MethodServiceInvocation extends AttributeAccessorSupport i
   protected abstract InvocationResult invokeRemoting(Object[] args);
 
   @Override
-  public ServiceInterfaceMethod getMethod() {
+  public ServiceInterfaceMethod getServiceMethod() {
     return serviceMethod;
   }
 
@@ -64,8 +64,8 @@ public abstract class MethodServiceInvocation extends AttributeAccessorSupport i
   }
 
   @Override
-  public String getServiceName() {
-    return serviceMethod.serviceMetadata.getName();
+  public String getServiceId() {
+    return serviceMethod.getServiceId();
   }
 
   @Override

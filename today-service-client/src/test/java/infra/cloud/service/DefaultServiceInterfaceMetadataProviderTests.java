@@ -49,7 +49,7 @@ class DefaultServiceInterfaceMetadataProviderTests {
     List<ServiceInterfaceMethod> serviceMethods = metadata.getServiceMethods();
 
     assertThat(metadata.getServiceMetadata().getVersion()).isEqualTo("1.0");
-    assertThat(metadata.getServiceMetadata().getName()).isEqualTo("demo-user-service");
+    assertThat(metadata.getServiceMetadata().getId()).isEqualTo("demo-user-service");
     assertThat(metadata.getServiceInterface()).isEqualTo(DemoUserService.class);
 
     assertThat(serviceMethods).hasSize(4);

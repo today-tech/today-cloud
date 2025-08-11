@@ -25,6 +25,6 @@ import infra.remoting.RemotingOperations;
  */
 public interface RemotingOperationsProvider {
 
-  RemotingOperations getRemotingOperations(String serviceName);
+  RemotingOperations getRemotingOperations(ServiceMethod serviceMethod);
 
 }

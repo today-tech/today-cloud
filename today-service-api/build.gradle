@@ -13,4 +13,5 @@ dependencies {
 
   optional "com.google.protobuf:protobuf-java"
 
+  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 }

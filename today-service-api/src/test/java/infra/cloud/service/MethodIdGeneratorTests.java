@@ -17,40 +17,26 @@
 
 package infra.cloud.service;
 
+import org.junit.jupiter.api.Test;
+
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Set;
+
+import cn.taketoday.demo.service.UserService;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2025/8/10 08:20
+ * @since 1.0 2025/8/11 15:20
  */
-public class ServiceMethod {
+class MethodIdGeneratorTests {
 
-  protected final ServiceMetadata serviceMetadata;
-
-  protected final Class<?> serviceInterface;
-
-  protected final Method method;
-
-  public ServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
-    this.serviceMetadata = serviceMetadata;
-    this.serviceInterface = serviceInterface;
-    this.method = method;
-  }
-
-  public String getServiceId() {
-    return serviceMetadata.getId();
-  }
-
-  public ServiceMetadata getServiceMetadata() {
-    return serviceMetadata;
-  }
-
-  public Class<?> getServiceInterface() {
-    return serviceInterface;
-  }
-
-  public Method getMethod() {
-    return method;
+  @Test
+  void test() {
+    Map<Method, Integer> methodIntegerMap = MethodIdGenerator.generateMethodIds(Set.of(UserService.class));
+    methodIntegerMap.forEach((key, value) -> {
+      System.out.println(value + " -> " + key);
+    });
   }
 
 }

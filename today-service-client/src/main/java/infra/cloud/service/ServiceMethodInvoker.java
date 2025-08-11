@@ -62,7 +62,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     @Override
     protected InvocationResult invokeRemoting(Object[] args) {
-      RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceName());
+      RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceMethod());
 
       Publisher<Payload> publisher = switch (getType()) {
         case FIRE_AND_FORGET -> operations.fireAndForget(createMonoPayload(args)).cast(Payload.class);

@@ -32,7 +32,7 @@ public interface ServiceInstance {
    * @return The unique instance ID as registered.
    */
   default String getInstanceId() {
-    return getHost() + ":" + getPort();
+    return getHost() + ":" + getPort() + ":" + getServiceId();
   }
 
   /**

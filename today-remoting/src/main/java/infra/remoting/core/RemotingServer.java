@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;
-import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.Connection;
+import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.Payload;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.error.InvalidSetupException;
@@ -412,11 +412,10 @@ public final class RemotingServer {
                         ? new ResponderLeaseTracker(SERVER_TAG, clientConnection, leases.sender)
                         : null;
 
-                Channel channelResponder = new ResponderChannel(clientConnection, wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
-                        mtu, maxFrameLength, maxInboundPayloadSize,
-                        leaseEnabled && leases.sender instanceof TrackingLeaseSender
-                                ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)
-                                : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
+                new ResponderChannel(clientConnection, wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
+                        mtu, maxFrameLength, maxInboundPayloadSize, leaseEnabled && leases.sender instanceof TrackingLeaseSender
+                        ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)
+                        : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
               })
               .doFinally(signalType -> setupPayload.release())
               .then();

@@ -29,7 +29,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 
-class ChannelSupport {
+class ChannelSupport implements Channel {
 
   public final int mtu;
 
@@ -63,7 +63,7 @@ class ChannelSupport {
     this.allocator = connection.alloc();
     this.streamIdProvider = streamIdProvider;
     this.connection = connection;
-    this.requestInterceptor = requestInterceptorFunction.apply((Channel) this);
+    this.requestInterceptor = requestInterceptorFunction.apply(this);
   }
 
   public int getMtu() {

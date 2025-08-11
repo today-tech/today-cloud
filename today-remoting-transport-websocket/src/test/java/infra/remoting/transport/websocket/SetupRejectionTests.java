@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
-package infra.remoting.transport.netty;
+package infra.remoting.transport.websocket;
 
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -24,19 +24,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
+import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.error.RejectedSetupException;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
 import infra.remoting.transport.netty.client.TcpClientTransport;
-import infra.remoting.transport.netty.client.WebsocketClientTransport;
-import infra.remoting.transport.netty.server.CloseableChannel;
 import infra.remoting.transport.netty.server.TcpServerTransport;
-import infra.remoting.transport.netty.server.WebsocketServerTransport;
 import infra.remoting.util.DefaultPayload;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -92,10 +89,8 @@ public class SetupRejectionTests {
   }
 
   static Stream<Arguments> transports() {
-    Function<InetSocketAddress, ServerTransport<CloseableChannel>> tcpServer =
-            TcpServerTransport::create;
-    Function<InetSocketAddress, ServerTransport<CloseableChannel>> wsServer =
-            WebsocketServerTransport::create;
+    Function<InetSocketAddress, ServerTransport<infra.remoting.transport.netty.server.CloseableChannel>> tcpServer = TcpServerTransport::create;
+    Function<InetSocketAddress, ServerTransport<CloseableChannel>> wsServer = WebsocketServerTransport::create;
     Function<InetSocketAddress, ClientTransport> tcpClient = TcpClientTransport::create;
     Function<InetSocketAddress, ClientTransport> wsClient = WebsocketClientTransport::create;
 

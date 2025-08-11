@@ -19,11 +19,10 @@ package infra.remoting.examples.tcp.lease.advanced.common;
 
 import com.netflix.concurrency.limits.Limit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 
+import infra.logging.Logger;
+import infra.logging.LoggerFactory;
 import infra.remoting.lease.Lease;
 import infra.remoting.lease.TrackingLeaseSender;
 import reactor.core.publisher.Flux;
@@ -46,7 +45,7 @@ public class LimitBasedLeaseSender extends LimitBasedStatsCollector implements T
 
   @Override
   public Flux<Lease> send() {
-    logger.info("Received new leased Connection[" + connectionId + "]");
+    logger.info("Received new leased Connection[{}]", connectionId);
 
     leaseManager.register(this);
 

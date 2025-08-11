@@ -205,9 +205,9 @@ public class TaskProcessingWithServerSideNotificationsExample {
               ConcurrentMap<String, Channel> idToChannelMap,
               Sinks.Many<Task> tasksToProcess,
               String id,
-              Channel sendingSocket) {
+              Channel channel) {
         this.id = id;
-        this.channel = sendingSocket;
+        this.channel = channel;
         this.idToChannelMap = idToChannelMap;
         this.tasksToProcess = tasksToProcess;
       }

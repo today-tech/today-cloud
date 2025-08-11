@@ -19,7 +19,6 @@ package infra.remoting.core;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.frame.MetadataPushFrameCodec;
@@ -188,7 +187,6 @@ final class MetadataPushRequesterMono extends Mono<Void> implements Scannable {
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(MetadataPushMono)";
   }

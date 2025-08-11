@@ -20,7 +20,6 @@ import org.reactivestreams.Subscription;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
@@ -242,7 +241,6 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(FireAndForgetMono)";
   }

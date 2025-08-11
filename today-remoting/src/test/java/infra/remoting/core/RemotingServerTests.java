@@ -141,7 +141,7 @@ public class RemotingServerTests {
     Closeable server =
             RemotingServer.create()
                     .acceptor(
-                            (setup, sendingSocket) -> {
+                            (setup, channel) -> {
                               connectedSink.tryEmitEmpty();
                               return Mono.just(new Channel() { });
                             })
@@ -176,7 +176,7 @@ public class RemotingServerTests {
   public void ensuresErrorFrameDeliveredPriorConnectionDisposal() {
     TestServerTransport transport = new TestServerTransport();
     Closeable server = RemotingServer.create()
-            .acceptor((setup, sendingSocket) -> Mono.error(new RejectedSetupException("ACCESS_DENIED")))
+            .acceptor((setup, channel) -> Mono.error(new RejectedSetupException("ACCESS_DENIED")))
             .bind(transport)
             .block();
 

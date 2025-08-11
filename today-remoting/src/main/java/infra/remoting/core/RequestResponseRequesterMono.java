@@ -20,7 +20,6 @@ import org.reactivestreams.Subscription;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
 import infra.lang.Nullable;
 import infra.remoting.Connection;
 import infra.remoting.Payload;
@@ -395,7 +394,6 @@ final class RequestResponseRequesterMono extends Mono<Payload>
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(RequestResponseMono)";
   }

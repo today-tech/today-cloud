@@ -49,7 +49,7 @@ public class TcpIntegrationTests {
 
   @BeforeEach
   public void startup() {
-    server = RemotingServer.create((setup, sendingSocket) -> Mono.just(new ChannelWrapper(handler)))
+    server = RemotingServer.create((setup, channel) -> Mono.just(new ChannelWrapper(handler)))
             .bind(TcpServerTransport.create("localhost", 0))
             .block();
   }

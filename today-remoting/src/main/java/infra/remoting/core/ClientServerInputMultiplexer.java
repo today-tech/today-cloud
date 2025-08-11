@@ -65,8 +65,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
   private static final AtomicIntegerFieldUpdater<ClientServerInputMultiplexer> STATE =
           AtomicIntegerFieldUpdater.newUpdater(ClientServerInputMultiplexer.class, "state");
 
-  public ClientServerInputMultiplexer(
-          Connection source, InitializingInterceptorRegistry registry, boolean isClient) {
+  public ClientServerInputMultiplexer(Connection source, InitializingInterceptorRegistry registry, boolean isClient) {
     this.source = source;
     this.isClient = isClient;
 
@@ -224,11 +223,11 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
             + '}';
   }
 
-  private static class InternalConnection extends Flux<ByteBuf>
-          implements Subscription, Connection {
+  private static class InternalConnection extends Flux<ByteBuf> implements Subscription, Connection {
+
     private final Type type;
-    private final ClientServerInputMultiplexer clientServerInputMultiplexer;
     private final Connection source;
+    private final ClientServerInputMultiplexer clientServerInputMultiplexer;
 
     private volatile int state;
     static final AtomicIntegerFieldUpdater<InternalConnection> STATE =
@@ -236,10 +235,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
 
     CoreSubscriber<? super ByteBuf> actual;
 
-    public InternalConnection(
-            Type type,
-            ClientServerInputMultiplexer clientServerInputMultiplexer,
-            Connection source) {
+    public InternalConnection(Type type, ClientServerInputMultiplexer clientServerInputMultiplexer, Connection source) {
       this.type = type;
       this.clientServerInputMultiplexer = clientServerInputMultiplexer;
       this.source = source;
@@ -252,9 +248,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
         actual.onSubscribe(this);
       }
       else {
-        Operators.error(
-                actual,
-                new IllegalStateException("InternalConnection allows only single subscription"));
+        Operators.error(actual, new IllegalStateException("InternalConnection allows only single subscription"));
       }
     }
 
@@ -342,14 +336,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
 
     @Override
     public String toString() {
-      return "InternalConnection{"
-              + "type="
-              + type
-              + ", source="
-              + source
-              + ", state="
-              + state
-              + '}';
+      return "InternalConnection{type=%s, source=%s, state=%d}".formatted(type, source, state);
     }
   }
 }

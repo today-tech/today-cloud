@@ -24,7 +24,6 @@ import java.net.SocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import infra.lang.NonNull;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Connection;
@@ -155,7 +154,6 @@ public class TestConnection implements Connection {
     return sent.isEmpty();
   }
 
-  @NonNull
   public ByteBuf awaitFrame() {
     try {
       return sent.take();

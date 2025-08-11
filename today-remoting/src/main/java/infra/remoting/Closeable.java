@@ -17,8 +17,6 @@
 
 package infra.remoting;
 
-import org.reactivestreams.Subscriber;
-
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
@@ -31,7 +29,7 @@ public interface Closeable extends Disposable {
    * Returns a {@link Mono} that terminates when the instance is terminated by any reason. Note, in
    * case of error termination, the cause of error will be propagated as an error signal through
    * {@link org.reactivestreams.Subscriber#onError(Throwable)}. Otherwise, {@link
-   * Subscriber#onComplete()} will be called.
+   * org.reactivestreams.Subscriber#onComplete()} will be called.
    *
    * @return a {@link Mono} to track completion with success or error of the underlying resource.
    * When the underlying resource is an `Channel`, the {@code Mono} exposes stream 0 (i.e.

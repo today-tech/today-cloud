@@ -141,7 +141,7 @@ public class ResponderChannelTests {
     final int streamId = 4;
     rule.connection.clearSendReceiveBuffers();
     final TestPublisher<Payload> testPublisher = TestPublisher.create();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
@@ -172,7 +172,7 @@ public class ResponderChannelTests {
     ByteBufAllocator allocator = rule.alloc();
     final int streamId = 4;
     final AtomicBoolean cancelled = new AtomicBoolean();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
@@ -232,7 +232,7 @@ public class ResponderChannelTests {
                 return Flux.just(payload).doOnCancel(() -> cancelled.set(true));
               }
             };
-    rule.setAcceptingSocket(acceptingSocket);
+    rule.setAcceptingChannel(acceptingSocket);
 
     final Runnable[] runnables = {
             () -> rule.sendRequest(streamId, FrameType.REQUEST_RESPONSE),
@@ -268,7 +268,7 @@ public class ResponderChannelTests {
       AssertSubscriber<Payload> assertSubscriber = AssertSubscriber.create();
       final Sinks.One<Payload> sink = Sinks.one();
 
-      rule.setAcceptingSocket(
+      rule.setAcceptingChannel(
               new Channel() {
                 @Override
                 public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
@@ -328,7 +328,7 @@ public class ResponderChannelTests {
 
       FluxSink<Payload>[] sinks = new FluxSink[1];
 
-      rule.setAcceptingSocket(
+      rule.setAcceptingChannel(
               new Channel() {
                 @Override
                 public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
@@ -371,7 +371,7 @@ public class ResponderChannelTests {
 
       FluxSink<Payload>[] sinks = new FluxSink[1];
 
-      rule.setAcceptingSocket(
+      rule.setAcceptingChannel(
               new Channel() {
                 @Override
                 public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
@@ -414,7 +414,7 @@ public class ResponderChannelTests {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       FluxSink<Payload>[] sinks = new FluxSink[1];
       AssertSubscriber<Payload> assertSubscriber = AssertSubscriber.create();
-      rule.setAcceptingSocket(
+      rule.setAcceptingChannel(
               new Channel() {
                 @Override
                 public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
@@ -509,7 +509,7 @@ public class ResponderChannelTests {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       FluxSink<Payload>[] sinks = new FluxSink[1];
 
-      rule.setAcceptingSocket(
+      rule.setAcceptingChannel(
               new Channel() {
                 @Override
                 public Flux<Payload> requestStream(Payload payload) {
@@ -548,7 +548,7 @@ public class ResponderChannelTests {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
       Operators.MonoSubscriber<Payload, Payload>[] sources = new Operators.MonoSubscriber[1];
 
-      rule.setAcceptingSocket(
+      rule.setAcceptingChannel(
               new Channel() {
                 @Override
                 public Mono<Payload> requestResponse(Payload payload) {
@@ -594,7 +594,7 @@ public class ResponderChannelTests {
     ByteBufAllocator allocator = rule.alloc();
     FluxSink<Payload>[] sinks = new FluxSink[1];
 
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Flux<Payload> requestStream(Payload payload) {
@@ -623,7 +623,7 @@ public class ResponderChannelTests {
   public void simpleDiscardRequestChannelTest() {
     ByteBufAllocator allocator = rule.alloc();
 
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
@@ -673,7 +673,7 @@ public class ResponderChannelTests {
     AssertSubscriber<Payload> assertSubscriber = AssertSubscriber.create(framesCnt);
     TestPublisher<Payload> testPublisher = TestPublisher.create();
 
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Void> fireAndForget(Payload payload) {
@@ -768,7 +768,7 @@ public class ResponderChannelTests {
   @ParameterizedTest
   @MethodSource("refCntCases")
   public void ensureSendsErrorOnIllegalRefCntPayload(FrameType frameType) {
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
@@ -818,7 +818,7 @@ public class ResponderChannelTests {
 
     TestPublisher<Payload> testPublisher = TestPublisher.create();
 
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
@@ -855,7 +855,7 @@ public class ResponderChannelTests {
   @MethodSource("requestCases")
   void reassemblePayload(FrameType frameType) {
     AtomicReference<Payload> receivedPayload = new AtomicReference<>();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Void> fireAndForget(Payload payload) {
@@ -910,7 +910,7 @@ public class ResponderChannelTests {
   @MethodSource("requestCases")
   void reassembleMetadataOnly(FrameType frameType) {
     AtomicReference<Payload> receivedPayload = new AtomicReference<>();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Void> fireAndForget(Payload payload) {
@@ -970,7 +970,7 @@ public class ResponderChannelTests {
     final int maxInboundPayloadSize = ThreadLocalRandom.current().nextInt(mtu + 1, 4096);
     AtomicReference<Payload> receivedPayload = new AtomicReference<>();
     rule.setMaxInboundPayloadSize(maxInboundPayloadSize);
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Void> fireAndForget(Payload payload) {
@@ -1021,7 +1021,7 @@ public class ResponderChannelTests {
   public void errorFragmentTooSmall(FrameType frameType) {
     final int mtu = 32;
     AtomicReference<Payload> receivedPayload = new AtomicReference<>();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Void> fireAndForget(Payload payload) {
@@ -1071,7 +1071,7 @@ public class ResponderChannelTests {
           FrameType requestType) {
     AtomicReference<Payload> receivedPayload = new AtomicReference<>();
     final Sinks.Empty<Void> delayer = Sinks.empty();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
 
               @Override
@@ -1141,7 +1141,7 @@ public class ResponderChannelTests {
     Assumptions.assumeThat(requestType).isNotEqualTo(REQUEST_FNF);
     AtomicReference<Payload> receivedPayload = new AtomicReference<>();
     final Sinks.One<Object> delayer = Sinks.one();
-    rule.setAcceptingSocket(
+    rule.setAcceptingChannel(
             new Channel() {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
@@ -1184,14 +1184,14 @@ public class ResponderChannelTests {
 
   public static class ServerChannelRule extends AbstractChannelRule<ResponderChannel> {
 
-    private Channel acceptingSocket;
+    private Channel acceptingChannel;
     private volatile int prefetch;
     private RequestInterceptor requestInterceptor;
     protected Sinks.Empty<Void> onCloseSink;
 
     @Override
     protected void doInit() {
-      acceptingSocket =
+      acceptingChannel =
               new Channel() {
                 @Override
                 public Mono<Payload> requestResponse(Payload payload) {
@@ -1201,8 +1201,8 @@ public class ResponderChannelTests {
       super.doInit();
     }
 
-    public void setAcceptingSocket(Channel acceptingSocket) {
-      this.acceptingSocket = acceptingSocket;
+    public void setAcceptingChannel(Channel acceptingSocket) {
+      this.acceptingChannel = acceptingSocket;
       connection = new TestConnection(alloc());
       connectSub = TestSubscriber.create();
       this.prefetch = Integer.MAX_VALUE;
@@ -1214,8 +1214,8 @@ public class ResponderChannelTests {
       super.doInit();
     }
 
-    public void setAcceptingSocket(Channel acceptingSocket, int prefetch) {
-      this.acceptingSocket = acceptingSocket;
+    public void setAcceptingChannel(Channel channel, int prefetch) {
+      this.acceptingChannel = channel;
       connection = new TestConnection(alloc());
       connectSub = TestSubscriber.create();
       this.prefetch = prefetch;
@@ -1227,7 +1227,7 @@ public class ResponderChannelTests {
       onCloseSink = Sinks.empty();
       return new ResponderChannel(
               connection,
-              acceptingSocket,
+              acceptingChannel,
               PayloadDecoder.ZERO_COPY,
               null,
               0,

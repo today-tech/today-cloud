@@ -45,8 +45,7 @@ import reactor.util.context.Context;
 /**
  * Default implementation of {@link RemotingClient}
  */
-class DefaultRemotingClient extends ResolvingOperator<Channel>
-        implements CoreSubscriber<Channel>, CorePublisher<Channel>, RemotingClient {
+class DefaultRemotingClient extends ResolvingOperator<Channel> implements CoreSubscriber<Channel>, CorePublisher<Channel>, RemotingClient {
 
   static final Consumer<?> DISCARD_ELEMENTS_CONSUMER = data -> {
     if (data instanceof ReferenceCounted rc) {

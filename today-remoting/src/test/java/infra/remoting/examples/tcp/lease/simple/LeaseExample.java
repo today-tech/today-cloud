@@ -69,7 +69,7 @@ public class LeaseExample {
 
     workerThread.start();
 
-    CloseableChannel server = RemotingServer.create((setup, sendingSocket) ->
+    CloseableChannel server = RemotingServer.create((setup, channel) ->
                     Mono.just(new Channel() {
                       @Override
                       public Mono<Void> fireAndForget(Payload payload) {
@@ -79,7 +79,7 @@ public class LeaseExample {
                         try {
                           if (!messagesQueue.offer(payload.getDataUtf8())) {
                             logger.error("Queue has been overflowed. Terminating execution");
-                            sendingSocket.dispose();
+                            channel.dispose();
                             workerThread.interrupt();
                           }
                         }

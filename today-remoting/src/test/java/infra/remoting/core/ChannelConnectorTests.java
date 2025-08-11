@@ -118,7 +118,7 @@ public class ChannelConnectorTests {
 
     ChannelConnector.create()
             .setupPayload(ByteBufPayload.create(data))
-            .acceptor((setup, sendingSocket) -> {
+            .acceptor((setup, channel) -> {
               retainedSetupPayload.set(setup.retain());
               return Mono.just(new Channel() { });
             })

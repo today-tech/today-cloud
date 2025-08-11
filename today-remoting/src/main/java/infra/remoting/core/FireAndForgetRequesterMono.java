@@ -21,7 +21,6 @@ import org.reactivestreams.Subscription;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
@@ -280,7 +279,6 @@ final class FireAndForgetRequesterMono extends Mono<Void> implements Subscriptio
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(FireAndForgetMono)";
   }

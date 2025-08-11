@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
 import infra.lang.Nullable;
 import infra.remoting.Connection;
 import infra.remoting.Payload;
@@ -795,7 +794,6 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
   }
 
   @Override
-  @NonNull
   public Context currentContext() {
     long state = this.state;
 
@@ -837,7 +835,6 @@ final class RequestChannelRequesterFlux extends Flux<Payload>
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(RequestChannelFlux)";
   }

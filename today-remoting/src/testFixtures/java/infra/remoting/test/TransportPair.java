@@ -127,7 +127,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
               if (runServerWithAsyncInterceptors && !withResumability) {
                 logger.info("Perform Integration Test with Async Interceptors Enabled For Server");
                 registry.forConnection((type, duplexConnection) -> new AsyncConnection(duplexConnection, "server"))
-                        .forChannelAcceptor(delegate -> (connectionSetupPayload, sendingSocket) -> delegate.accept(connectionSetupPayload, sendingSocket)
+                        .forChannelAcceptor(delegate -> (connectionSetupPayload, channel) -> delegate.accept(connectionSetupPayload, channel)
                                 .subscribeOn(Schedulers.parallel()));
               }
 
@@ -163,8 +163,8 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
                         logger.info("Perform Integration Test with Async Interceptors Enabled For Client");
                         registry.forConnection((type, duplexConnection) ->
                                         new AsyncConnection(duplexConnection, "client"))
-                                .forChannelAcceptor(delegate -> (connectionSetupPayload, sendingSocket) ->
-                                        delegate.accept(connectionSetupPayload, sendingSocket)
+                                .forChannelAcceptor(delegate -> (connectionSetupPayload, channel) ->
+                                        delegate.accept(connectionSetupPayload, channel)
                                                 .subscribeOn(Schedulers.parallel()));
                       }
 

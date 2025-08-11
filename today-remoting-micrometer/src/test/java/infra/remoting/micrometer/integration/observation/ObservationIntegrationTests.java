@@ -134,8 +134,8 @@ public class ObservationIntegrationTests extends SampleTestRunner {
   public SampleTestRunnerConsumer yourCode() {
     return (bb, meterRegistry) -> {
       counter = new AtomicInteger();
-      server = RemotingServer.create((setup, sendingSocket) -> {
-                sendingSocket.onClose().subscribe();
+      server = RemotingServer.create((setup, channel) -> {
+                channel.onClose().subscribe();
 
                 return Mono.just(
                         new Channel() {

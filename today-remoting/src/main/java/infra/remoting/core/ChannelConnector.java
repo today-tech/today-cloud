@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
+import infra.remoting.Closeable;
 import infra.remoting.Connection;
 import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.Payload;
@@ -47,7 +48,6 @@ import infra.remoting.util.DefaultPayload;
 import infra.remoting.util.EmptyPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.util.function.Tuples;
@@ -540,22 +540,16 @@ public class ChannelConnector {
                   resumeToken = Unpooled.EMPTY_BUFFER;
                 }
 
-                ByteBuf setupFrame = SetupFrameCodec.encode(sourceConnection.alloc(),
-                        leaseEnabled,
-                        (int) keepAliveInterval.toMillis(),
-                        (int) keepAliveMaxLifeTime.toMillis(),
-                        resumeToken,
-                        metadataMimeType,
-                        dataMimeType,
-                        setupPayload);
+                ByteBuf setupFrame = SetupFrameCodec.encode(sourceConnection.alloc(), leaseEnabled,
+                        (int) keepAliveInterval.toMillis(), (int) keepAliveMaxLifeTime.toMillis(),
+                        resumeToken, metadataMimeType, dataMimeType, setupPayload);
 
                 sourceConnection.sendFrame(0, setupFrame.retainedSlice());
 
                 return clientSetup.init(sourceConnection).flatMap(tuple -> {
                   final Connection clientServerConnection = tuple.getT2();
-                  final KeepAliveHandler keepAliveHandler;
                   final Connection wrappedConnection;
-                  final InitializingInterceptorRegistry interceptors = this.interceptors;
+                  final KeepAliveHandler keepAliveHandler;
 
                   if (resumeEnabled) {
                     final ResumableClientSetup resumableClientSetup = new ResumableClientSetup();
@@ -572,6 +566,7 @@ public class ChannelConnector {
                     wrappedConnection = clientServerConnection;
                   }
 
+                  final InitializingInterceptorRegistry interceptors = this.interceptors;
                   var multiplexer = new ClientServerInputMultiplexer(wrappedConnection, interceptors, true);
 
                   final LeaseSpec leases;
@@ -609,11 +604,10 @@ public class ChannelConnector {
                                     ? new ResponderLeaseTracker(CLIENT_TAG, wrappedConnection, leases.sender)
                                     : null;
 
-                            Channel responderChannel = new ResponderChannel(multiplexer.asServerConnection(), wrappedChannelHandler,
-                                    payloadDecoder, responderLeaseTracker, mtu, maxFrameLength, maxInboundPayloadSize,
-                                    leaseEnabled && leases.sender instanceof TrackingLeaseSender
-                                            ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)
-                                            : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
+                            new ResponderChannel(multiplexer.asServerConnection(), wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
+                                    mtu, maxFrameLength, maxInboundPayloadSize, leaseEnabled && leases.sender instanceof TrackingLeaseSender
+                                    ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)
+                                    : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
 
                             return wrappedChannelRequester;
                           })
@@ -623,7 +617,7 @@ public class ChannelConnector {
     }).as(source -> {
       if (retrySpec != null) {
         return new ReconnectMono<>(
-                source.retryWhen(retrySpec), Disposable::dispose, INVALIDATE_FUNCTION);
+                source.retryWhen(retrySpec), Closeable::dispose, INVALIDATE_FUNCTION);
       }
       else {
         return source;

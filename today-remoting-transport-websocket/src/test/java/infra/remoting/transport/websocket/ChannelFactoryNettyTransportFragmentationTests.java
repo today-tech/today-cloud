@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.remoting.transport.netty;
+package infra.remoting.transport.websocket;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,18 +29,13 @@ import infra.remoting.ChannelAcceptor;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.transport.ServerTransport;
-import infra.remoting.transport.netty.client.TcpClientTransport;
-import infra.remoting.transport.netty.server.CloseableChannel;
-import infra.remoting.transport.netty.server.TcpServerTransport;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 class ChannelFactoryNettyTransportFragmentationTests {
 
   static Stream<? extends ServerTransport<CloseableChannel>> arguments() {
-    return Stream.of(TcpServerTransport.create(0)
-//            , WebsocketServerTransport.create(0)
-    );
+    return Stream.of(WebsocketServerTransport.create(0));
   }
 
   @ParameterizedTest
@@ -75,7 +70,7 @@ class ChannelFactoryNettyTransportFragmentationTests {
     Mono<Channel> channel =
             ChannelConnector.create()
                     .fragment(100)
-                    .connect(TcpClientTransport.create(server.address()))
+                    .connect(WebsocketClientTransport.create(server.address()))
                     .doFinally(s -> server.dispose());
     StepVerifier.create(channel).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
   }
@@ -86,7 +81,7 @@ class ChannelFactoryNettyTransportFragmentationTests {
     CloseableChannel server = RemotingServer.create(mockAcceptor()).bind(serverTransport).block();
 
     Mono<Channel> channel =
-            ChannelConnector.connectWith(TcpClientTransport.create(server.address()))
+            ChannelConnector.connectWith(WebsocketClientTransport.create(server.address()))
                     .doFinally(s -> server.dispose());
     StepVerifier.create(channel).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
   }

@@ -56,8 +56,8 @@ public class RateLimitDecorator implements ChannelDecorator {
   }
 
   @Override
-  public Channel decorate(Channel socket) {
-    return requesterProxy ? new RequesterChannel(socket) : new ResponderChannel(socket);
+  public Channel decorate(Channel channel) {
+    return requesterProxy ? new RequesterChannel(channel) : new ResponderChannel(channel);
   }
 
   /**

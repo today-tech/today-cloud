@@ -81,13 +81,13 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
   protected void doOnDispose() {
     Operators.terminate(S, this);
 
-    Channel[] activeSockets = ACTIVE_CHANNELS.getAndSet(this, TERMINATED);
-    for (Channel channel : activeSockets) {
+    Channel[] activeChannels = ACTIVE_CHANNELS.getAndSet(this, TERMINATED);
+    for (Channel channel : activeChannels) {
       channel.dispose();
     }
 
-    if (activeSockets.length > 0) {
-      Mono.whenDelayError(Arrays.stream(activeSockets).map(Channel::onClose).collect(Collectors.toList()))
+    if (activeChannels.length > 0) {
+      Mono.whenDelayError(Arrays.stream(activeChannels).map(Channel::onClose).collect(Collectors.toList()))
               .subscribe(null, onAllClosedSink::tryEmitError, onAllClosedSink::tryEmitEmpty);
     }
     else {
@@ -111,9 +111,9 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
     // This operation should happen less frequently than calls to select() (which are per request)
     // and therefore it is acceptable somewhat less efficient.
 
-    PooledChannel[] previouslyActiveSockets;
-    PooledChannel[] inactiveSockets;
-    PooledChannel[] socketsToUse;
+    PooledChannel[] previouslyActiveChannels;
+    PooledChannel[] inactiveChannels;
+    PooledChannel[] channelsToUse;
     for (; ; ) {
       HashMap<LoadBalanceTarget, Integer> channelSuppliersCopy = new HashMap<>(targets.size());
 
@@ -123,32 +123,32 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
       }
 
       // Intersect current and new list of targets and find the ones to keep vs dispose
-      previouslyActiveSockets = this.activeChannels;
-      inactiveSockets = new PooledChannel[previouslyActiveSockets.length];
-      PooledChannel[] nextActiveSockets =
-              new PooledChannel[previouslyActiveSockets.length + channelSuppliersCopy.size()];
-      int activeSocketsPosition = 0;
-      int inactiveSocketsPosition = 0;
-      for (PooledChannel channel : previouslyActiveSockets) {
+      previouslyActiveChannels = this.activeChannels;
+      inactiveChannels = new PooledChannel[previouslyActiveChannels.length];
+      PooledChannel[] nextActiveChannels =
+              new PooledChannel[previouslyActiveChannels.length + channelSuppliersCopy.size()];
+      int activeChannelsPosition = 0;
+      int inactiveChannelsPosition = 0;
+      for (PooledChannel channel : previouslyActiveChannels) {
         Integer index = channelSuppliersCopy.remove(channel.target());
         if (index == null) {
           // if one of the active channels is not included, we remove it and put in the
           // pending removal
           if (!channel.isDisposed()) {
-            inactiveSockets[inactiveSocketsPosition++] = channel;
+            inactiveChannels[inactiveChannelsPosition++] = channel;
             // TODO: provide a meaningful algo for keeping removed channel in the list
-            //  nextActiveSockets[position++] = channel;
+            //  nextActiveChannels[position++] = channel;
           }
         }
         else {
           if (!channel.isDisposed()) {
             // keep old Channel instance
-            nextActiveSockets[activeSocketsPosition++] = channel;
+            nextActiveChannels[activeChannelsPosition++] = channel;
           }
           else {
             // put newly create Channel instance
             LoadBalanceTarget target = targets.get(index);
-            nextActiveSockets[activeSocketsPosition++] =
+            nextActiveChannels[activeChannelsPosition++] =
                     new PooledChannel(this, this.connector.connect(target.getTransport()), target);
           }
         }
@@ -156,32 +156,32 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
 
       // The remainder are the brand new targets
       for (LoadBalanceTarget target : channelSuppliersCopy.keySet()) {
-        nextActiveSockets[activeSocketsPosition++] =
+        nextActiveChannels[activeChannelsPosition++] =
                 new PooledChannel(this, this.connector.connect(target.getTransport()), target);
       }
 
-      if (activeSocketsPosition == 0) {
-        socketsToUse = EMPTY;
+      if (activeChannelsPosition == 0) {
+        channelsToUse = EMPTY;
       }
       else {
-        socketsToUse = Arrays.copyOf(nextActiveSockets, activeSocketsPosition);
+        channelsToUse = Arrays.copyOf(nextActiveChannels, activeChannelsPosition);
       }
-      if (ACTIVE_CHANNELS.compareAndSet(this, previouslyActiveSockets, socketsToUse)) {
+      if (ACTIVE_CHANNELS.compareAndSet(this, previouslyActiveChannels, channelsToUse)) {
         break;
       }
     }
 
-    for (PooledChannel inactiveSocket : inactiveSockets) {
-      if (inactiveSocket == null) {
+    for (PooledChannel inactiveChannel : inactiveChannels) {
+      if (inactiveChannel == null) {
         break;
       }
 
-      inactiveSocket.dispose();
+      inactiveChannel.dispose();
     }
 
     if (isPending()) {
       // notifies that upstream is resolved
-      if (socketsToUse != EMPTY) {
+      if (channelsToUse != EMPTY) {
         //noinspection ConstantConditions
         complete(this);
       }
@@ -217,7 +217,7 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
         invalidate();
 
         // check since it is possible that between doSelect() and invalidate() we might
-        // have received new sockets
+        // have received new channels
         selected = doSelect();
         if (selected != null) {
           return selected;
@@ -231,13 +231,13 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
 
   @Nullable
   public Channel doSelect() {
-    PooledChannel[] sockets = this.activeChannels;
+    PooledChannel[] channels = this.activeChannels;
 
-    if (sockets == EMPTY || sockets == TERMINATED) {
+    if (channels == EMPTY || channels == TERMINATED) {
       return null;
     }
 
-    return this.loadbalanceStrategy.select(WrappingList.wrap(sockets));
+    return this.loadbalanceStrategy.select(WrappingList.wrap(channels));
   }
 
   static class DeferredResolutionChannel implements Channel {
@@ -397,50 +397,50 @@ class ChannelPool extends ResolvingOperator<Object> implements CoreSubscriber<Li
 
     static final ThreadLocal<WrappingList> INSTANCE = ThreadLocal.withInitial(WrappingList::new);
 
-    private PooledChannel[] activeSockets;
+    private PooledChannel[] activeChannels;
 
-    static List<Channel> wrap(PooledChannel[] activeSockets) {
-      final WrappingList sockets = INSTANCE.get();
-      sockets.activeSockets = activeSockets;
-      return sockets;
+    static List<Channel> wrap(PooledChannel[] activeChannels) {
+      final WrappingList channels = INSTANCE.get();
+      channels.activeChannels = activeChannels;
+      return channels;
     }
 
     @Override
     public Channel get(int index) {
-      final PooledChannel socket = activeSockets[index];
+      final PooledChannel channel = activeChannels[index];
 
-      Channel realValue = socket.value;
+      Channel realValue = channel.value;
       if (realValue != null) {
         return realValue;
       }
 
-      realValue = socket.valueIfResolved();
+      realValue = channel.valueIfResolved();
       if (realValue != null) {
         return realValue;
       }
 
-      return socket;
+      return channel;
     }
 
     @Override
     public int size() {
-      return activeSockets.length;
+      return activeChannels.length;
     }
 
     @Override
     public boolean isEmpty() {
-      return activeSockets.length == 0;
+      return activeChannels.length == 0;
     }
 
     @Override
     public Object[] toArray() {
-      return activeSockets;
+      return activeChannels;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
-      return (T[]) activeSockets;
+      return (T[]) activeChannels;
     }
 
     @Override

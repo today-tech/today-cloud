@@ -21,7 +21,7 @@ import infra.remoting.ChannelAcceptor;
 
 /**
  * Contract to decorate a {@link ChannelAcceptor}, providing access to connection {@code setup}
- * information and the ability to also decorate the sockets for requesting and responding.
+ * information and the ability to also decorate the channels for requesting and responding.
  *
  * <p>This could be used as an alternative to registering an individual "requester" {@code
  * ChannelInterceptor} and "responder" {@code ChannelInterceptor}.

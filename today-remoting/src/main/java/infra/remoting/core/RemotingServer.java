@@ -400,8 +400,7 @@ public final class RemotingServer {
       return interceptors
               .decorateAcceptor(acceptor)
               .accept(setupPayload, wrappedChannelRequester)
-              .onErrorResume(err -> Mono.fromRunnable(() -> serverSetup.sendError(
-                              wrappedConnection, rejectedSetupError(err)))
+              .onErrorResume(err -> Mono.fromRunnable(() -> serverSetup.sendError(wrappedConnection, rejectedSetupError(err)))
                       .then(wrappedConnection.onClose())
                       .then(Mono.error(err)))
               .doOnNext(channelHandler -> {

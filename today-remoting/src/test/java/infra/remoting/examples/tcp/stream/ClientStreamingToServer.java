@@ -43,20 +43,20 @@ public final class ClientStreamingToServer {
                                             .map(aLong -> DefaultPayload.create("Interval: " + aLong))))
             .bindNow(TcpServerTransport.create("localhost", 7000));
 
-    Channel socket =
+    Channel channel =
             ChannelConnector.create()
                     .setupPayload(DefaultPayload.create("test", "test"))
                     .connect(TcpClientTransport.create("localhost", 7000))
                     .block();
 
     final Payload payload = DefaultPayload.create("Hello");
-    socket
+    channel
             .requestStream(payload)
             .map(Payload::getDataUtf8)
             .doOnNext(logger::debug)
             .take(10)
             .then()
-            .doFinally(signalType -> socket.dispose())
+            .doFinally(signalType -> channel.dispose())
             .then()
             .block();
 

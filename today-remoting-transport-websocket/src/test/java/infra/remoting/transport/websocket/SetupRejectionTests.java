@@ -76,7 +76,7 @@ public class SetupRejectionTests {
 
     StepVerifier.create(clientRequester.onClose()).expectComplete().verify(Duration.ofSeconds(5));
 
-    StepVerifier.create(serverRequester.flatMap(socket -> socket.onClose()))
+    StepVerifier.create(serverRequester.flatMap(Channel::onClose))
             .expectComplete()
             .verify(Duration.ofSeconds(5));
 

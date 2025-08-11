@@ -60,7 +60,7 @@ public class LimitRateInterceptorExample {
             .interceptors(registry -> registry.forResponder(RateLimitDecorator.forResponder(64)))
             .bindNow(TcpServerTransport.create("localhost", 7000));
 
-    Channel socket =
+    Channel channel =
             ChannelConnector.create()
                     .interceptors(registry -> registry.forRequester(RateLimitDecorator.forRequester(64)))
                     .connect(TcpClientTransport.create("localhost", 7000))
@@ -69,7 +69,7 @@ public class LimitRateInterceptorExample {
     logger.debug(
             "\n\nStart of requestStream interaction\n" + "----------------------------------\n");
 
-    socket
+    channel
             .requestStream(DefaultPayload.create("Hello"))
             .doOnRequest(e -> logger.debug("Client sends requestN(" + e + ")"))
             .map(Payload::getDataUtf8)
@@ -81,7 +81,7 @@ public class LimitRateInterceptorExample {
     logger.debug(
             "\n\nStart of requestChannel interaction\n" + "-----------------------------------\n");
 
-    socket
+    channel
             .requestChannel(
                     Flux.<Payload, Long>generate(
                                     () -> 1L,
@@ -95,7 +95,7 @@ public class LimitRateInterceptorExample {
             .doOnNext(logger::debug)
             .take(10)
             .then()
-            .doFinally(signalType -> socket.dispose())
+            .doFinally(signalType -> channel.dispose())
             .then()
             .block();
   }

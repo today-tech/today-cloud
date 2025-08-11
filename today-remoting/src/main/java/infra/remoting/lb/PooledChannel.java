@@ -131,12 +131,12 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
     final ChannelPool parent = this.parent;
     for (; ; ) {
-      final PooledChannel[] sockets = parent.activeChannels;
-      final int activeSocketsCount = sockets.length;
+      final PooledChannel[] channels = parent.activeChannels;
+      final int activeChannelsCount = channels.length;
 
       int index = -1;
-      for (int i = 0; i < activeSocketsCount; i++) {
-        if (sockets[i] == this) {
+      for (int i = 0; i < activeChannelsCount; i++) {
+        if (channels[i] == this) {
           index = i;
           break;
         }
@@ -146,24 +146,24 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
         break;
       }
 
-      final PooledChannel[] newSockets;
-      if (activeSocketsCount == 1) {
-        newSockets = ChannelPool.EMPTY;
+      final PooledChannel[] newChannels;
+      if (activeChannelsCount == 1) {
+        newChannels = ChannelPool.EMPTY;
       }
       else {
-        final int lastIndex = activeSocketsCount - 1;
+        final int lastIndex = activeChannelsCount - 1;
 
-        newSockets = new PooledChannel[lastIndex];
+        newChannels = new PooledChannel[lastIndex];
         if (index != 0) {
-          System.arraycopy(sockets, 0, newSockets, 0, index);
+          System.arraycopy(channels, 0, newChannels, 0, index);
         }
 
         if (index != lastIndex) {
-          System.arraycopy(sockets, index + 1, newSockets, index, lastIndex - index);
+          System.arraycopy(channels, index + 1, newChannels, index, lastIndex - index);
         }
       }
 
-      if (ChannelPool.ACTIVE_CHANNELS.compareAndSet(parent, sockets, newSockets)) {
+      if (ChannelPool.ACTIVE_CHANNELS.compareAndSet(parent, channels, newChannels)) {
         break;
       }
     }
@@ -230,8 +230,8 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
   @Override
   public double availability() {
-    final Channel socket = valueIfResolved();
-    return socket != null ? socket.availability() : 0.0d;
+    final Channel channel = valueIfResolved();
+    return channel != null ? channel.availability() : 0.0d;
   }
 
   static final class MonoInner<RESULT> extends MonoDeferredResolution<RESULT, Channel> {

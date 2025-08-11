@@ -230,7 +230,7 @@ class RequesterChannel extends ChannelSupport implements Channel {
         }
         break;
       default:
-        // Ignore unknown frames. Throwing an error will close the socket.
+        // Ignore unknown frames. Throwing an error will close the channel.
         if (LOGGER.isInfoEnabled()) {
           LOGGER.info("Requester received unsupported frame on stream 0: {}", frame.toString());
         }

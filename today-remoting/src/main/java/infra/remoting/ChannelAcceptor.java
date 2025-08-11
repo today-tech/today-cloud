@@ -38,9 +38,9 @@ public interface ChannelAcceptor {
    *
    * @param setup the {@code setup} received from a client in a server scenario, or in a client
    * scenario this is the setup about to be sent to the server.
-   * @param channel socket for sending requests to the remote peer.
+   * @param channel channel for sending requests to the remote peer.
    * @return {@code Channel} to accept requests with.
-   * @throws SetupException If the acceptor needs to reject the setup of this socket.
+   * @throws SetupException If the acceptor needs to reject the setup of this channel.
    */
   Mono<Channel> accept(ConnectionSetupPayload setup, Channel channel);
 

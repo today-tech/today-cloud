@@ -28,6 +28,9 @@ import infra.remoting.Channel;
 @FunctionalInterface
 public interface ChannelDecorator {
 
+  /**
+   * Decorate Channel
+   */
   Channel decorate(Channel channel);
 
 }

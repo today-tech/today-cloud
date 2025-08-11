@@ -53,11 +53,11 @@ public final class HelloWorldClient {
     RemotingServer.create(ChannelAcceptor.with(channel))
             .bindNow(TcpServerTransport.create("localhost", 7000));
 
-    Channel socket =
+    Channel channel1 =
             ChannelConnector.connectWith(TcpClientTransport.create("localhost", 7000)).block();
 
     for (int i = 0; i < 3; i++) {
-      socket
+      channel1
               .requestResponse(DefaultPayload.create("Hello"))
               .map(Payload::getDataUtf8)
               .onErrorReturn("error")
@@ -65,6 +65,6 @@ public final class HelloWorldClient {
               .block();
     }
 
-    socket.dispose();
+    channel1.dispose();
   }
 }

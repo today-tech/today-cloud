@@ -47,16 +47,16 @@ public final class ChannelEchoClient {
 
     RemotingServer.create(echoAcceptor).bindNow(TcpServerTransport.create("localhost", 7000));
 
-    Channel socket =
+    Channel channel =
             ChannelConnector.connectWith(TcpClientTransport.create("localhost", 7000)).block();
 
-    socket
+    channel
             .requestChannel(
                     Flux.interval(Duration.ofMillis(1000)).map(i -> DefaultPayload.create("Hello")))
             .map(Payload::getDataUtf8)
             .doOnNext(logger::debug)
             .take(10)
-            .doFinally(signalType -> socket.dispose())
+            .doFinally(signalType -> channel.dispose())
             .then()
             .block();
   }

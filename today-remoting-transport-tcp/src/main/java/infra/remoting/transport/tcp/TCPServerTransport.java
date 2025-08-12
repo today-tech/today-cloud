@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
+import infra.core.FutureMono;
 import infra.lang.Assert;
 import infra.lang.Nullable;
 import infra.logging.Logger;
@@ -28,7 +29,6 @@ import infra.logging.LoggerFactory;
 import infra.remoting.transport.ConnectionAcceptor;
 import infra.remoting.transport.ServerTransport;
 import infra.remoting.transport.netty.server.CloseableChannel;
-import infra.remoting.util.FutureMono;
 import infra.util.ClassUtils;
 import infra.util.concurrent.Future;
 import io.netty.bootstrap.ServerBootstrap;

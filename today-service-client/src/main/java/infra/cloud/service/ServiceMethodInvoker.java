@@ -18,14 +18,19 @@
 package infra.cloud.service;
 
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
+import infra.core.ReactiveAdapterRegistry;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
 import infra.util.concurrent.Future;
+import infra.util.concurrent.FutureListener;
 import infra.util.concurrent.Promise;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Operators;
 
 /**
  * Service Method Invoker
@@ -61,27 +66,27 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     }
 
     @Override
-    protected InvocationResult invokeRemoting(Object[] args) {
+    protected InvocationResult invokeRemoting() {
       RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceMethod());
 
       Publisher<Payload> publisher = switch (getType()) {
-        case FIRE_AND_FORGET -> operations.fireAndForget(createMonoPayload(args)).cast(Payload.class);
-        case REQUEST_RESPONSE -> operations.requestResponse(createMonoPayload(args));
-        case RESPONSE_STREAMING -> operations.requestStream(createMonoPayload(args));
-        case DUPLEX_STREAMING -> operations.requestChannel(createChannelPayload(args));
+        case FIRE_AND_FORGET -> operations.fireAndForget(createMonoPayload()).cast(Payload.class);
+        case REQUEST_RESPONSE -> operations.requestResponse(createMonoPayload());
+        case RESPONSE_STREAMING -> operations.requestStream(createMonoPayload());
+        case DUPLEX_STREAMING -> operations.requestChannel(createChannelPayload());
       };
 
-      return new InvocationResult0(null, getType(), publisher);
+      return new InvocationResult0(getType(), publisher);
     }
 
-    private Mono<Payload> createMonoPayload(Object[] args) {
+    private Mono<Payload> createMonoPayload() {
 
       return null;
     }
 
     @SuppressWarnings("unchecked")
-    private Publisher<Payload> createChannelPayload(Object[] args) {
-      Flux<Object> flux = (Flux<Object>) args[0];
+    private Publisher<Payload> createChannelPayload() {
+      Flux<Object> flux = (Flux<Object>) getArguments()[0];
 
       return null;
     }
@@ -92,10 +97,10 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     return null;
   }
 
-  class InvocationResult0 extends AbstractInvocationResult {
+  class InvocationResult0 extends AbstractInvocationResult implements Subscriber<Payload>, FutureListener<Future<Object>> {
 
     @Nullable
-    private final Throwable throwable;
+    private Throwable throwable;
 
     private final InvocationType invocationType;
 
@@ -103,10 +108,14 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     private final Promise<Object> resultPromise = Future.forPromise();
 
-    public InvocationResult0(@Nullable Throwable throwable, InvocationType invocationType, Publisher<Payload> publisher) {
-      this.throwable = throwable;
+    @Nullable
+    private Subscription payloadSubscription;
+
+    public InvocationResult0(InvocationType invocationType, Publisher<Payload> publisher) {
       this.invocationType = invocationType;
       this.publisher = publisher;
+      publisher.subscribe(this);
+      resultPromise.onCompleted(this);
     }
 
     @Override
@@ -138,6 +147,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     @Override
     public Publisher<Object> publisher() {
+      ReactiveAdapterRegistry sharedInstance = ReactiveAdapterRegistry.getSharedInstance();
       return switch (getType()) {
         case FIRE_AND_FORGET -> Mono.from(publisher);
         case REQUEST_RESPONSE -> Mono.from(publisher).map(ServiceMethodInvoker.this::deserialize);
@@ -145,6 +155,37 @@ public class ServiceMethodInvoker implements ServiceInvoker {
       };
     }
 
+    @Override
+    public void onSubscribe(Subscription s) {
+      if (Operators.validate(payloadSubscription, s)) {
+        this.payloadSubscription = s;
+        s.request(Long.MAX_VALUE);
+      }
+    }
+
+    @Override
+    public void onNext(Payload payload) {
+
+    }
+
+    @Override
+    public void onError(Throwable t) {
+
+    }
+
+    @Override
+    public void onComplete() {
+
+    }
+
+    @Override
+    public void operationComplete(Future<Object> completed) {
+      if (completed.isCancelled()) {
+        if (payloadSubscription != null) {
+          payloadSubscription.cancel();
+        }
+      }
+    }
   }
 
 }

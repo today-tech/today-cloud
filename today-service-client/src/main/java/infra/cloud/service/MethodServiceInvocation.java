@@ -48,10 +48,10 @@ public abstract class MethodServiceInvocation extends AttributeAccessorSupport i
       return interceptors[currentIndex++].intercept(this);
     }
 
-    return invokeRemoting(args);
+    return invokeRemoting();
   }
 
-  protected abstract InvocationResult invokeRemoting(Object[] args);
+  protected abstract InvocationResult invokeRemoting();
 
   @Override
   public ServiceInterfaceMethod getServiceMethod() {

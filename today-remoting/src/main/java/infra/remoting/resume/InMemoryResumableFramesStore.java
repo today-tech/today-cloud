@@ -464,7 +464,8 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf> implements Resum
   }
 
   @Override
-  public void request(long n) { }
+  public void request(long n) {
+  }
 
   @Override
   public void cancel() {

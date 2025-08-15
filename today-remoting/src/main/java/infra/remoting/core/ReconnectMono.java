@@ -36,14 +36,13 @@ import reactor.util.context.Context;
 
 final class ReconnectMono<T> extends Mono<T> implements Invalidatable, Disposable, Scannable {
 
-  final Mono<T> source;
+  public final Mono<T> source;
+
   final BiConsumer<? super T, Invalidatable> onValueReceived;
   final Consumer<? super T> onValueExpired;
   final ResolvingInner<T> resolvingInner;
 
-  ReconnectMono(
-          Mono<T> source,
-          Consumer<? super T> onValueExpired,
+  ReconnectMono(Mono<T> source, Consumer<? super T> onValueExpired,
           BiConsumer<? super T, Invalidatable> onValueReceived) {
     this.source = source;
     this.onValueExpired = onValueExpired;
@@ -51,10 +50,7 @@ final class ReconnectMono<T> extends Mono<T> implements Invalidatable, Disposabl
     this.resolvingInner = new ResolvingInner<>(this);
   }
 
-  public Mono<T> getSource() {
-    return source;
-  }
-
+  @Nullable
   @Override
   public Object scanUnsafe(Attr key) {
     if (key == Attr.PARENT)
@@ -269,6 +265,7 @@ final class ReconnectMono<T> extends Mono<T> implements Invalidatable, Disposabl
       this.parent.source.subscribe(this.mainSubscriber);
     }
 
+    @Nullable
     @Override
     public Object scanUnsafe(Attr key) {
       if (key == Attr.PARENT)

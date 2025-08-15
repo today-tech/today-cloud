@@ -78,7 +78,7 @@ class DefaultRemotingClient extends ResolvingOperator<Channel> implements CoreSu
   }
 
   private Mono<Channel> unwrapReconnectMono(Mono<Channel> source) {
-    return source instanceof ReconnectMono ? ((ReconnectMono<Channel>) source).getSource() : source;
+    return source instanceof ReconnectMono ? ((ReconnectMono<Channel>) source).source : source;
   }
 
   @Override
@@ -405,7 +405,7 @@ class DefaultRemotingClient extends ResolvingOperator<Channel> implements CoreSu
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void accept(Channel channel, Throwable t) {
+    public void accept(Channel channel, @Nullable Throwable t) {
       if (isCancelled()) {
         return;
       }
@@ -494,7 +494,7 @@ class DefaultRemotingClient extends ResolvingOperator<Channel> implements CoreSu
     }
 
     @Override
-    public void accept(Channel channel, Throwable t) {
+    public void accept(Channel channel, @Nullable Throwable t) {
       if (isCancelled()) {
         return;
       }
@@ -504,16 +504,12 @@ class DefaultRemotingClient extends ResolvingOperator<Channel> implements CoreSu
         return;
       }
 
-      Flux<Payload> source;
       if (interactionType == FrameType.REQUEST_CHANNEL) {
-        source = channel.requestChannel(upstream);
+        channel.requestChannel(upstream).subscribe(this);
       }
       else {
         onError(new IllegalStateException("Should never happen"));
-        return;
       }
-
-      source.subscribe(this);
     }
   }
 

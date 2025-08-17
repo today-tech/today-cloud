@@ -31,9 +31,6 @@ dependencies {
   optional 'io.netty:netty-handler'
   optional 'io.netty:netty-transport-classes-epoll'
 
-  implementation 'io.protostuff:protostuff-core:1.7.4'
-  implementation 'io.protostuff:protostuff-runtime:1.7.4'
-
 }
 
 // --add-opens=java.base/java.nio=ALL-UNNAMED

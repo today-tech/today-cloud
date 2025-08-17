@@ -15,34 +15,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.core.serialize;
-
-import java.io.Serial;
-
-import infra.cloud.RemotingException;
+package infra.cloud.serialize.format.value;
 
 /**
- * Deserialize Failed
+ * Immutable base interface of {@link ImmutableIntegerValue} and {@link ImmutableFloatValue} interfaces. To extract primitive type values, call toXXX methods, which may lose some information by rounding or truncation.
  *
- * @author TODAY 2021/7/11 23:54
+ * @see ImmutableIntegerValue
+ * @see ImmutableFloatValue
  */
-public class DeserializeFailedException extends RemotingException {
-  @Serial
-  private static final long serialVersionUID = 1L;
-
-  public DeserializeFailedException() {
-    super();
-  }
-
-  public DeserializeFailedException(String message) {
-    super(message);
-  }
-
-  public DeserializeFailedException(Throwable cause) {
-    super(cause);
-  }
-
-  public DeserializeFailedException(String message, Throwable cause) {
-    super(message, cause);
-  }
+public interface ImmutableNumberValue
+        extends NumberValue, ImmutableValue {
 }

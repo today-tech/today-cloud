@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Objects;
 
 import infra.cloud.RpcRequest;
-import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.cloud.serialize.RpcArgumentSerialization;
+import infra.cloud.serialize.SerializationException;
 import infra.lang.Nullable;
 import infra.reflect.MethodInvoker;
 import infra.util.ClassUtils;
@@ -48,7 +48,7 @@ public class RpcRequestDeserializer {
     this.argumentSerializations = argumentSerializations;
   }
 
-  public RpcRequest deserialize(ByteBuf payload) throws DeserializeFailedException {
+  public RpcRequest deserialize(ByteBuf payload) throws SerializationException {
     RpcRequest rpcRequest = new RpcRequest();
 //    ByteBufInput input = new ByteBufInput(payload);
 

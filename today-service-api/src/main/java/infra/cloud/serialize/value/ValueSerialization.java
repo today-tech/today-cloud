@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import infra.cloud.core.serialize.DeserializeFailedException;
+import infra.cloud.serialize.SerializationException;
 import infra.core.MethodParameter;
 import infra.lang.Assert;
 import io.netty.buffer.ByteBuf;
@@ -34,7 +34,7 @@ public interface ValueSerialization<T> {
 
   void serialize(MethodParameter parameter, T value, ByteBuf payload) throws IOException;
 
-  T deserialize(MethodParameter parameter, ByteBuf payload) throws DeserializeFailedException;
+  T deserialize(MethodParameter parameter, ByteBuf payload) throws SerializationException;
 
   static <T> ValueSerialization<T> map(Function<ByteBuf, T> reader, BiConsumer<ByteBuf, T> writer) {
     Assert.notNull(reader, "reader Function is required");

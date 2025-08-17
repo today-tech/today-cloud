@@ -45,6 +45,10 @@ public interface InvocationResult extends AttributeAccessor {
     return getType() == InvocationType.REQUEST_RESPONSE;
   }
 
+  default boolean isStreaming() {
+    return !getType().serverSendsOneMessage();
+  }
+
   /**
    * Only for {@link InvocationType#REQUEST_RESPONSE}
    *

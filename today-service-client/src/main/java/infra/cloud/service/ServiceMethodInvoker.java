@@ -21,7 +21,7 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import infra.core.ReactiveAdapterRegistry;
+import infra.cloud.serialize.RpcRequestSerialization;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
@@ -44,6 +44,8 @@ public class ServiceMethodInvoker implements ServiceInvoker {
   private final RemotingOperationsProvider remotingOperationsProvider;
 
   private final ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata;
+
+  private RpcRequestSerialization requestSerialization;
 
   ServiceMethodInvoker(ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata,
           ClientInterceptor[] interceptors, RemotingOperationsProvider remotingOperationsProvider) {
@@ -68,15 +70,12 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     @Override
     protected InvocationResult invokeRemoting() {
       RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceMethod());
-
-      Publisher<Payload> publisher = switch (getType()) {
-        case FIRE_AND_FORGET -> operations.fireAndForget(createMonoPayload()).cast(Payload.class);
-        case REQUEST_RESPONSE -> operations.requestResponse(createMonoPayload());
-        case RESPONSE_STREAMING -> operations.requestStream(createMonoPayload());
-        case DUPLEX_STREAMING -> operations.requestChannel(createChannelPayload());
+      return switch (getType()) {
+        case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload()));
+        case REQUEST_RESPONSE -> new RequestResponseResult(operations.requestResponse(createMonoPayload()));
+        case RESPONSE_STREAMING -> new ResponseStreamingResult(operations.requestStream(createMonoPayload()));
+        case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload()));
       };
-
-      return new InvocationResult0(getType(), publisher);
     }
 
     private Mono<Payload> createMonoPayload() {
@@ -97,27 +96,30 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     return null;
   }
 
-  class InvocationResult0 extends AbstractInvocationResult implements Subscriber<Payload>, FutureListener<Future<Object>> {
+  class InvocationResult0 extends AbstractInvocationResult implements Publisher<Object>,
+          Subscriber<Payload>, FutureListener<Future<Object>>, Subscription {
 
     @Nullable
     private Throwable throwable;
 
     private final InvocationType invocationType;
 
-    private final Publisher<Payload> publisher;
+    private final Publisher<Payload> payloadPublisher;
 
-    private final Promise<Object> resultPromise = Future.forPromise();
+    @Nullable
+    private Promise<Object> resultPromise;
 
     @Nullable
     private Subscription payloadSubscription;
 
+    private Subscriber<? super Object> downstream;
+
     public InvocationResult0(InvocationType invocationType, Publisher<Payload> publisher) {
       this.invocationType = invocationType;
-      this.publisher = publisher;
-      publisher.subscribe(this);
-      resultPromise.onCompleted(this);
+      this.payloadPublisher = publisher;
     }
 
+    @Nullable
     @Override
     public Object getValue() {
       return future().join();
@@ -141,41 +143,73 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     @Override
     public Future<Object> future() {
-      // TODO
+      if (resultPromise == null) {
+        resultPromise = Future.forPromise();
+      }
       return resultPromise;
     }
 
     @Override
     public Publisher<Object> publisher() {
-      ReactiveAdapterRegistry sharedInstance = ReactiveAdapterRegistry.getSharedInstance();
-      return switch (getType()) {
-        case FIRE_AND_FORGET -> Mono.from(publisher);
-        case REQUEST_RESPONSE -> Mono.from(publisher).map(ServiceMethodInvoker.this::deserialize);
-        case RESPONSE_STREAMING, DUPLEX_STREAMING -> Flux.from(publisher).map(ServiceMethodInvoker.this::deserialize);
-      };
+      return this;
+    }
+
+    @Override
+    public void subscribe(Subscriber<? super Object> downstream) {
+      this.downstream = downstream;
+      downstream.onSubscribe(this);
+      payloadPublisher.subscribe(this);
+      if (resultPromise != null) {
+        resultPromise.onCompleted(this);
+      }
+    }
+
+    @Override
+    public void request(long n) {
+      if (Operators.validate(n) && payloadSubscription != null) {
+        payloadSubscription.request(n);
+      }
+    }
+
+    @Override
+    public void cancel() {
+      if (payloadSubscription != null) {
+        payloadSubscription.cancel();
+        payloadSubscription = null;
+      }
+
+      if (resultPromise != null) {
+        resultPromise.cancel();
+      }
     }
 
     @Override
     public void onSubscribe(Subscription s) {
       if (Operators.validate(payloadSubscription, s)) {
         this.payloadSubscription = s;
-        s.request(Long.MAX_VALUE);
       }
     }
 
     @Override
     public void onNext(Payload payload) {
-
+      Object result = deserialize(payload);
+      downstream.onNext(result);
+      if (resultPromise != null) {
+        resultPromise.trySuccess(result);
+      }
     }
 
     @Override
     public void onError(Throwable t) {
-
+      downstream.onError(t);
     }
 
     @Override
     public void onComplete() {
-
+      downstream.onComplete();
+      if (resultPromise != null && !resultPromise.isDone()) {
+        resultPromise.trySuccess(null);
+      }
     }
 
     @Override

@@ -1,0 +1,13 @@
+description = "TODAY Service serialization API and default format based on msgpack specification"
+
+dependencies {
+  api "cn.taketoday:today-core"
+
+}
+
+compileJava {
+  options.compilerArgs += [
+      "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+  ]
+}
+

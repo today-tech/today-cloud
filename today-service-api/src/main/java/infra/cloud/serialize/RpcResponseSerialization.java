@@ -23,7 +23,6 @@ import java.util.List;
 import infra.cloud.RpcMethod;
 import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
-import infra.cloud.core.serialize.DeserializeFailedException;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -55,11 +54,11 @@ public class RpcResponseSerialization {
 
       var serialization = findSerialization(rpcMethod);
       Object result = response.getResult();
-      serialization.serialize(rpcMethod, result, payload, new ByteBufOutput(payload));
+      serialization.serialize(rpcMethod, result, payload, new DefaultByteBufOutput(payload));
     }
   }
 
-  public RpcResponse deserialize(RpcRequest rpcRequest, ByteBuf body) throws DeserializeFailedException {
+  public RpcResponse deserialize(RpcRequest rpcRequest, ByteBuf body) throws SerializationException {
     RpcMethod rpcMethod = rpcRequest.getRpcMethod();
     RpcResponse response = new RpcResponse();
     response.setRpcMethod(rpcMethod);
@@ -70,7 +69,7 @@ public class RpcResponseSerialization {
     }
     else {
       var serialization = findSerialization(rpcMethod);
-      Object result = serialization.deserialize(rpcMethod, body, new ByteBufInput(body));
+      Object result = serialization.deserialize(rpcMethod, body, new DefaultByteBufInput(body));
       response.setResult(result);
     }
     return response;

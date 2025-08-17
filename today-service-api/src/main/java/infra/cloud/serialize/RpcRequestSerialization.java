@@ -25,7 +25,6 @@ import infra.cloud.RpcMethod;
 import infra.cloud.RpcRequest;
 import infra.core.MethodParameter;
 import io.netty.buffer.ByteBuf;
-import io.protostuff.Output;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -56,7 +55,7 @@ public class RpcRequestSerialization {
     int idx = 0;
     Object[] arguments = request.getArguments();
 
-    Output output = new ByteBufOutput(payload);
+    Output output = new DefaultByteBufOutput(payload);
     beforeSerializeArguments(output, arguments);
     for (MethodParameter parameter : rpcMethod.getParameters()) {
       var serialization = findArgumentSerialization(parameter);

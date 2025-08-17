@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import infra.cloud.core.serialize.DeserializeFailedException;
+import infra.cloud.serialize.SerializationException;
 import infra.core.MethodParameter;
 import io.netty.buffer.ByteBuf;
 
@@ -46,7 +46,7 @@ final class FuncValueSerialization<T> implements ValueSerialization<T> {
   }
 
   @Override
-  public T deserialize(MethodParameter parameter, ByteBuf payload) throws DeserializeFailedException {
+  public T deserialize(MethodParameter parameter, ByteBuf payload) throws SerializationException {
     return reader.apply(payload);
   }
 

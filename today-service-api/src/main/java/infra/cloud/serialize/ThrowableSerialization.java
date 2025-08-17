@@ -19,7 +19,6 @@ package infra.cloud.serialize;
 
 import java.io.IOException;
 
-import infra.cloud.core.serialize.DeserializeFailedException;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -32,7 +31,7 @@ public class ThrowableSerialization {
 
   }
 
-  public Throwable deserialize(ByteBuf body) throws DeserializeFailedException {
+  public Throwable deserialize(ByteBuf body) throws SerializationException {
     return null;
   }
 

@@ -44,7 +44,7 @@ public enum InvocationType {
   DUPLEX_STREAMING;
 
   /**
-   * Returns {@code true} for {@code UNARY} and {@code RESPONSE_STREAMING}, which do not permit the
+   * Returns {@code true} for {@code REQUEST_RESPONSE} and {@code RESPONSE_STREAMING}, which do not permit the
    * client to stream.
    */
   public final boolean clientSendsOneMessage() {
@@ -52,7 +52,7 @@ public enum InvocationType {
   }
 
   /**
-   * Returns {@code true} for {@code UNARY} and {@code CLIENT_STREAMING}, which do not permit the
+   * Returns {@code true} for {@code REQUEST_RESPONSE}, which do not permit the
    * server to stream.
    */
   public final boolean serverSendsOneMessage() {

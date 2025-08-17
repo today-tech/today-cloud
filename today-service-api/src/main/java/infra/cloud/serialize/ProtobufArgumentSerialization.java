@@ -24,13 +24,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 import infra.cloud.RpcMethod;
-import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.core.MethodParameter;
 import infra.lang.Nullable;
 import infra.util.ConcurrentReferenceHashMap;
 import io.netty.buffer.ByteBuf;
-import io.protostuff.Input;
-import io.protostuff.Output;
 
 /**
  * Serialization for protobuf
@@ -53,7 +50,7 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public Message deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws DeserializeFailedException {
+  public Message deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException {
     Class<?> parameterType = parameter.getParameterType();
     Message.Builder messageBuilder = getMessageBuilder(parameterType);
 
@@ -75,7 +72,7 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
       return (Message.Builder) method.invoke(clazz);
     }
     catch (Exception ex) {
-      throw new DeserializeFailedException(
+      throw new SerializationException(
               "Invalid Protobuf Message type: no invocable newBuilder() method on " + clazz, ex);
     }
   }
@@ -90,20 +87,20 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public void serialize(RpcMethod method, Message value, ByteBuf payload, Output output) throws IOException {
-
+  public void serialize(RpcMethod method, Message value, ByteBuf payload, Output output) {
+    output.write(value.toByteArray());
   }
 
   @Override
-  public Message deserialize(RpcMethod method, ByteBuf payload, Input input) throws DeserializeFailedException {
+  public Message deserialize(RpcMethod method, ByteBuf payload, Input input) throws SerializationException {
     Class<?> parameterType = method.getReturnType().getParameterType();
     Message.Builder messageBuilder = getMessageBuilder(parameterType);
 
     try {
-      return messageBuilder.mergeFrom(payload.array()).build();
+      return messageBuilder.mergeFrom(input.read()).build();
     }
     catch (InvalidProtocolBufferException e) {
-      throw new DeserializeFailedException(e);
+      throw new SerializationException("Invalid protocol buffer", e);
     }
   }
 

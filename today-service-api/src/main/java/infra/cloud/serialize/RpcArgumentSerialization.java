@@ -19,12 +19,9 @@ package infra.cloud.serialize;
 
 import java.io.IOException;
 
-import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.core.MethodParameter;
 import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
-import io.protostuff.Input;
-import io.protostuff.Output;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -43,6 +40,6 @@ public interface RpcArgumentSerialization<T> {
   void serialize(MethodParameter parameter, @Nullable T value, ByteBuf payload, Output output) throws IOException;
 
   @Nullable
-  T deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws DeserializeFailedException;
+  T deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException;
 
 }

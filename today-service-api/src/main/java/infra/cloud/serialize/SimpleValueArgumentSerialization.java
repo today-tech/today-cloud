@@ -22,13 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import infra.beans.BeanUtils;
-import infra.cloud.core.serialize.DeserializeFailedException;
 import infra.cloud.serialize.value.ValueSerialization;
 import infra.core.MethodParameter;
 import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
-import io.protostuff.Input;
-import io.protostuff.Output;
 
 import static infra.cloud.serialize.value.ValueSerialization.map;
 
@@ -69,7 +66,7 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
 
   @Nullable
   @Override
-  public Object deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws DeserializeFailedException {
+  public Object deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException {
     boolean isNull = payload.readBoolean();
     if (isNull) {
       return null;

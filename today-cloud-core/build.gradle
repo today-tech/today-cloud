@@ -6,9 +6,5 @@ dependencies {
 
   implementation 'cn.taketoday:today-context'
 
-//  implementation 'org.msgpack:msgpack-core:0.9.8'
-  implementation 'io.protostuff:protostuff-core:1.7.4'
-  implementation 'io.protostuff:protostuff-runtime:1.7.4'
-
   annotationProcessor 'cn.taketoday:infra-configuration-processor'
 }

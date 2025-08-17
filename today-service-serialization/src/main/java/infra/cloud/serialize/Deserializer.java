@@ -15,32 +15,22 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.core.serialize;
+package infra.cloud.serialize;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 /**
- * A strategy interface for streaming an object to an OutputStream.
+ * A strategy interface for converting from data in an Input to an Object.
  *
- * @author Gary Russell
- * @author Mark Fisher
- * @author TODAY 2021/7/8 22:52
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/16 16:59
  */
-@Deprecated
-@FunctionalInterface
-public interface Serializer {
+public interface Deserializer {
 
   /**
-   * Write an object of type T to the given OutputStream.
-   * <p>Note: Implementations should not close the given OutputStream
-   * (or any decorators of that OutputStream) but rather leave this up
-   * to the caller.
-   *
-   * @param object the object to serialize
-   * @param output the output stream
-   * @throws IOException in case of errors writing to the stream
+   * @return the deserialized object
+   * @throws IOException in case of errors reading from the stream
    */
-  void serialize(Object object, OutputStream output) throws IOException;
+  Object read(Input input) throws IOException;
 
 }

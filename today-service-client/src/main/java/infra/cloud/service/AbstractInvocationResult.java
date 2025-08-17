@@ -18,11 +18,16 @@
 package infra.cloud.service;
 
 import infra.core.AttributeAccessorSupport;
+import infra.remoting.Payload;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 16:17
  */
-public abstract class AbstractInvocationResult extends AttributeAccessorSupport implements InvocationResult {
+abstract class AbstractInvocationResult extends AttributeAccessorSupport implements InvocationResult {
+
+  protected final Object deserialize(Payload payload) {
+    return null;
+  }
 
 }

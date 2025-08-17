@@ -17,13 +17,8 @@
 
 package infra.cloud.serialize;
 
-import java.io.IOException;
-
 import infra.cloud.RpcMethod;
-import infra.cloud.core.serialize.DeserializeFailedException;
 import io.netty.buffer.ByteBuf;
-import io.protostuff.Input;
-import io.protostuff.Output;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -39,8 +34,10 @@ public interface ReturnValueSerialization<T> {
    */
   boolean supportsArgument(RpcMethod method);
 
-  void serialize(RpcMethod method, T returnValue, ByteBuf payload, Output output) throws IOException;
-
-  T deserialize(RpcMethod method, ByteBuf payload, Input input) throws DeserializeFailedException;
+  void serialize(RpcMethod method, T returnValue, ByteBuf payload, Output output)
+          throws SerializationException;
+  
+  T deserialize(RpcMethod method, ByteBuf payload, Input input)
+          throws SerializationException;
 
 }

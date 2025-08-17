@@ -27,8 +27,8 @@ package infra.cloud.service;
  * interceptor (traces all the calls on the intercepted method(s)):
  *
  * <pre>{@code
- * class TracingInterceptor implements ServiceInterceptor {
- *    public Object intercept(ServiceInvocation i) throws Throwable {
+ * class TracingInterceptor implements ClientInterceptor {
+ *    public InvocationResult intercept(ServiceInvocation i) throws Throwable {
  *         System.out.println("before service " + i + " with args " + i.getArguments());
  *         Object ret = i.proceed();
  *         System.out.println("after service " + i + " returns " + ret);

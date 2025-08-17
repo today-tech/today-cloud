@@ -110,8 +110,8 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
     }
 
     @Override
-    public Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
-      return Mono.fromFuture(result.future().completable());
+    public Mono<?> resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
+      return Mono.from(result.publisher());
     }
 
     @Override
@@ -137,7 +137,7 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
     }
 
     @Override
-    public Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
+    public Flux<?> resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
       return Flux.from(result.publisher());
     }
 

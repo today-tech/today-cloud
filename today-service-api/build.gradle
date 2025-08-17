@@ -4,12 +4,10 @@ description = "TODAY Service API"
 dependencies {
   api project(":today-remoting")
   api project(":today-cloud-core")
+  api project(":today-service-serialization")
 
   implementation 'cn.taketoday:today-beans'
   implementation 'cn.taketoday:today-context'
-
-  implementation 'io.protostuff:protostuff-core:1.7.4'
-  implementation 'io.protostuff:protostuff-runtime:1.7.4'
 
   optional "com.google.protobuf:protobuf-java"
 

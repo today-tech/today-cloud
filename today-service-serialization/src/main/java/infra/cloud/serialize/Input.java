@@ -17,6 +17,12 @@
 
 package infra.cloud.serialize;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 /**
  * An Input lets an application read primitive data types and objects from a source of data.
  *
@@ -36,7 +42,7 @@ public interface Input {
    * @param b the buffer into which the data is read.
    * @throws NullPointerException if {@code b} is {@code null}.
    */
-  void read(byte[] b) throws SerializationException;
+  void read(byte[] b);
 
   /**
    * Reads {@code len} bytes from an input.
@@ -49,224 +55,149 @@ public interface Input {
    * {@code len} is negative, or {@code len} is greater than
    * {@code b.length - off}.
    */
-  void read(byte[] b, int off, int len) throws SerializationException;
-
-  byte[] read();
-
-  default void read(Message message) throws SerializationException {
-    message.readFrom(this);
-  }
+  void read(byte[] b, int off, int len);
 
   /**
-   * Makes an attempt to skip over
-   * {@code n} bytes
-   * of data from the input
-   * stream, discarding the skipped bytes. However,
-   * it may skip
-   * over some smaller number of
-   * bytes, possibly zero. This may result from
-   * any of a
-   * number of conditions; reaching
-   * end of file before {@code n} bytes
-   * have been skipped is
-   * only one possibility.
-   * This method never throws an {@code EOFException}.
-   * The actual
-   * number of bytes skipped is returned.
+   * Reads byte array
+   */
+  byte[] read();
+
+  /**
+   * Reads bytes with given length
+   */
+  byte[] read(int len);
+
+  /**
+   * Reads all left bytes
+   */
+  byte[] readFully();
+
+  /**
+   * Skip bytes
    *
    * @param n the number of bytes to be skipped.
    * @return the number of bytes actually skipped.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  int skipBytes(int n) throws SerializationException;
+  int skipBytes(int n);
 
   /**
-   * Reads one input byte and returns
-   * {@code true} if that byte is nonzero,
-   * {@code false} if that byte is zero.
-   * This method is suitable for reading
-   * the byte written by the {@code writeBoolean}
-   * method of interface {@code Input}.
+   * Reads a {@code boolean} value.
    *
    * @return the {@code boolean} value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  boolean readBoolean() throws SerializationException;
+  boolean readBoolean();
 
   /**
-   * Reads and returns one input byte.
-   * The byte is treated as a signed value in
-   * the range {@code -128} through {@code 127},
-   * inclusive.
-   * This method is suitable for
-   * reading the byte written by the {@code writeByte}
-   * method of interface {@code Input}.
+   * Reads a {@code byte} value.
    *
    * @return the 8-bit value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  byte readByte() throws SerializationException;
+  byte readByte();
 
   /**
-   * Reads one input byte, zero-extends
-   * it to type {@code int}, and returns
-   * the result, which is therefore in the range
-   * {@code 0}
-   * through {@code 255}.
-   * This method is suitable for reading
-   * the byte written by the {@code writeByte}
-   * method of interface {@code Input}
-   * if the argument to {@code writeByte}
-   * was intended to be a value in the range
-   * {@code 0} through {@code 255}.
+   * Reads a unsigned {@code byte} value.
    *
    * @return the unsigned 8-bit value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  int readUnsignedByte() throws SerializationException;
+  int readUnsignedByte();
 
   /**
-   * Reads two input bytes and returns
-   * a {@code short} value. Let {@code a}
-   * be the first byte read and {@code b}
-   * be the second byte. The value
-   * returned
-   * is:
-   * <pre>{@code (short)((a << 8) | (b & 0xff))
-   * }</pre>
-   * This method
-   * is suitable for reading the bytes written
-   * by the {@code writeShort} method of
-   * interface {@code Input}.
+   * Reads a {@code short} value.
    *
    * @return the 16-bit value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  short readShort() throws SerializationException;
+  short readShort();
 
   /**
-   * Reads two input bytes and returns
-   * an {@code int} value in the range {@code 0}
-   * through {@code 65535}. Let {@code a}
-   * be the first byte read and
-   * {@code b}
-   * be the second byte. The value returned is:
-   * <pre>{@code (((a & 0xff) << 8) | (b & 0xff))
-   * }</pre>
-   * This method is suitable for reading the bytes
-   * written by the {@code writeShort} method
-   * of interface {@code Input}  if
-   * the argument to {@code writeShort}
-   * was intended to be a value in the range
-   * {@code 0} through {@code 65535}.
+   * Reads a unsigned {@code short} value.
    *
    * @return the unsigned 16-bit value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  int readUnsignedShort() throws SerializationException;
+  int readUnsignedShort();
 
   /**
-   * Reads two input bytes and returns a {@code char} value.
-   * Let {@code a}
-   * be the first byte read and {@code b}
-   * be the second byte. The value
-   * returned is:
-   * <pre>{@code (char)((a << 8) | (b & 0xff))
-   * }</pre>
-   * This method
-   * is suitable for reading bytes written by
-   * the {@code writeChar} method of interface
-   * {@code Input}.
-   *
-   * @return the {@code char} value read.
-   * @throws SerializationException if an I/O error occurs.
-   */
-  char readChar() throws SerializationException;
-
-  /**
-   * Reads four input bytes and returns an
-   * {@code int} value. Let {@code a-d}
-   * be the first through fourth bytes read. The value returned is:
-   * <pre>{@code
-   * (((a & 0xff) << 24) | ((b & 0xff) << 16) |
-   *  ((c & 0xff) <<  8) | (d & 0xff))
-   * }</pre>
-   * This method is suitable
-   * for reading bytes written by the {@code writeInt}
-   * method of interface {@code Input}.
+   * Reads a {@code int} value.
    *
    * @return the {@code int} value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  int readInt() throws SerializationException;
+  int readInt();
 
   /**
-   * Reads eight input bytes and returns
-   * a {@code long} value. Let {@code a-h}
-   * be the first through eighth bytes read.
-   * The value returned is:
-   * <pre>{@code
-   * (((long)(a & 0xff) << 56) |
-   *  ((long)(b & 0xff) << 48) |
-   *  ((long)(c & 0xff) << 40) |
-   *  ((long)(d & 0xff) << 32) |
-   *  ((long)(e & 0xff) << 24) |
-   *  ((long)(f & 0xff) << 16) |
-   *  ((long)(g & 0xff) <<  8) |
-   *  ((long)(h & 0xff)))
-   * }</pre>
-   * <p>
-   * This method is suitable
-   * for reading bytes written by the {@code writeLong}
-   * method of interface {@code Input}.
+   * Reads a {@code long} value.
    *
    * @return the {@code long} value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  long readLong() throws SerializationException;
+  long readLong();
 
   /**
-   * Reads four input bytes and returns
-   * a {@code float} value. It does this
-   * by first constructing an {@code int}
-   * value in exactly the manner
-   * of the {@code readInt}
-   * method, then converting this {@code int}
-   * value to a {@code float} in
-   * exactly the manner of the method {@code Float.intBitsToFloat}.
-   * This method is suitable for reading
-   * bytes written by the {@code writeFloat}
-   * method of interface {@code Input}.
+   * Reads a {@code float} value.
    *
    * @return the {@code float} value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  float readFloat() throws SerializationException;
+  float readFloat();
 
   /**
-   * Reads eight input bytes and returns
-   * a {@code double} value. It does this
-   * by first constructing a {@code long}
-   * value in exactly the manner
-   * of the {@code readLong}
-   * method, then converting this {@code long}
-   * value to a {@code double} in exactly
-   * the manner of the method {@code Double.longBitsToDouble}.
-   * This method is suitable for reading
-   * bytes written by the {@code writeDouble}
-   * method of interface {@code Input}.
+   * Reads a {@code double} value.
    *
    * @return the {@code double} value read.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  double readDouble() throws SerializationException;
+  double readDouble();
 
   /**
-   * Reads a {@link String} field value.
+   * Reads a {@link String} value.
    *
    * @return a string.
-   * @throws SerializationException if an I/O error occurs.
+   * @throws SerializationException if a serialization error occurs.
    */
-  String readString() throws SerializationException;
+  String readString();
+
+  /**
+   * Reads a {@link Instant} value.
+   *
+   * @return an Instant object.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  Instant readTimestamp();
+
+  /**
+   * Reads a {@link Message} value.
+   *
+   * @throws SerializationException if a serialization error occurs.
+   */
+  void read(Message message);
+
+  /**
+   * Reads a {@link List} value.
+   *
+   * @return a List object.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <T> List<T> read(Function<Input, T> mapper);
+
+  /**
+   * Reads a {@link List} value.
+   *
+   * @return a List object.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <T> List<T> read(Supplier<T> supplier);
+
+  /**
+   * Reads a {@link Map} value.
+   *
+   * @return a Map object.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <K, V> Map<K, V> read(Function<Input, K> keyMapper, Function<Input, V> valueMapper);
 
 }

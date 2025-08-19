@@ -18,7 +18,15 @@
 package infra.cloud.serialize;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import infra.util.CollectionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 
@@ -41,12 +49,22 @@ public class DefaultByteBufInput implements Input {
 
   @Override
   public byte[] read() {
-    return ByteBufUtil.getBytes(buffer);
+    return read(buffer.readInt());
   }
 
   @Override
   public void read(byte[] b, int off, int len) {
     buffer.readBytes(b, off, len);
+  }
+
+  @Override
+  public byte[] read(int len) {
+    return ByteBufUtil.getBytes(buffer, buffer.readerIndex(), len);
+  }
+
+  @Override
+  public byte[] readFully() {
+    return ByteBufUtil.getBytes(buffer);
   }
 
   @Override
@@ -82,11 +100,6 @@ public class DefaultByteBufInput implements Input {
   }
 
   @Override
-  public char readChar() {
-    return buffer.readChar();
-  }
-
-  @Override
   public int readInt() {
     return buffer.readInt();
   }
@@ -109,6 +122,46 @@ public class DefaultByteBufInput implements Input {
   @Override
   public String readString() {
     return buffer.readString(readUnsignedShort(), StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public void read(Message message) {
+    message.readFrom(this);
+  }
+
+  @Override
+  public Instant readTimestamp() {
+    return Instant.ofEpochSecond(buffer.readLong(), buffer.readInt());
+  }
+
+  @Override
+  public <T> List<T> read(Function<Input, T> mapper) {
+    int size = readInt();
+    ArrayList<T> result = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      result.add(mapper.apply(this));
+    }
+    return result;
+  }
+
+  @Override
+  public <T> List<T> read(Supplier<T> supplier) {
+    int size = readInt();
+    ArrayList<T> result = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      result.add(supplier.get());
+    }
+    return result;
+  }
+
+  @Override
+  public <K, V> Map<K, V> read(Function<Input, K> keyMapper, Function<Input, V> valueMapper) {
+    int size = readInt();
+    LinkedHashMap<K, V> result = CollectionUtils.newLinkedHashMap(size);
+    for (int i = 0; i < size; i++) {
+      result.put(keyMapper.apply(this), valueMapper.apply(this));
+    }
+    return result;
   }
 
 }

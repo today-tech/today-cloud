@@ -17,8 +17,6 @@
 
 package infra.cloud.serialize;
 
-import java.io.IOException;
-
 import infra.core.MethodParameter;
 import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
@@ -37,7 +35,7 @@ public interface RpcArgumentSerialization<T> {
    */
   boolean supportsArgument(MethodParameter parameter);
 
-  void serialize(MethodParameter parameter, @Nullable T value, ByteBuf payload, Output output) throws IOException;
+  void serialize(MethodParameter parameter, @Nullable T value, ByteBuf payload, Output output) throws SerializationException;
 
   @Nullable
   T deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException;

@@ -17,6 +17,7 @@
 
 package infra.cloud.serialize;
 
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import infra.lang.Constant;
 import infra.util.CollectionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -59,6 +61,9 @@ public class DefaultByteBufInput implements Input {
 
   @Override
   public byte[] read(int len) {
+    if (len == 0) {
+      return Constant.EMPTY_BYTES;
+    }
     return ByteBufUtil.getBytes(buffer, buffer.readerIndex(), len);
   }
 
@@ -121,7 +126,12 @@ public class DefaultByteBufInput implements Input {
 
   @Override
   public String readString() {
-    return buffer.readString(readUnsignedShort(), StandardCharsets.UTF_8);
+    int length = readUnsignedShort();
+    if (length == 0) {
+      return Constant.BLANK;
+    }
+    byte[] array = read(length);
+    return new String(array, StandardCharsets.UTF_8);
   }
 
   @Override
@@ -132,6 +142,28 @@ public class DefaultByteBufInput implements Input {
   @Override
   public Instant readTimestamp() {
     return Instant.ofEpochSecond(buffer.readLong(), buffer.readInt());
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T[] read(Class<T> type, Function<Input, T> mapper) {
+    int size = readInt();
+    T[] array = (T[]) Array.newInstance(type, size);
+    for (int i = 0; i < size; i++) {
+      array[i] = mapper.apply(this);
+    }
+    return array;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T[] read(Class<T> type, Supplier<T> supplier) {
+    int size = readInt();
+    T[] array = (T[]) Array.newInstance(type, size);
+    for (int i = 0; i < size; i++) {
+      array[i] = supplier.get();
+    }
+    return array;
   }
 
   @Override

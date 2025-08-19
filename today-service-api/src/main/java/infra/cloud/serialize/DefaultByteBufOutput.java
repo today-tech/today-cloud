@@ -102,10 +102,15 @@ public class DefaultByteBufOutput implements Output {
   }
 
   @Override
-  public void write(String s) {
-    int length = s.length();
-    buffer.writeShort(length);
-    buffer.writeCharSequence(s, StandardCharsets.UTF_8);
+  public void write(@Nullable String s) {
+    if (s == null || s.isEmpty()) {
+      buffer.writeShort(0);
+    }
+    else {
+      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      buffer.writeShort(bytes.length);
+      writeFully(bytes);
+    }
   }
 
   @Override
@@ -127,6 +132,22 @@ public class DefaultByteBufOutput implements Output {
   @Override
   public void write(Message message) {
     message.writeTo(this);
+  }
+
+  @Override
+  public <T> void write(T[] array, Consumer<T> mapper) {
+    buffer.writeInt(array.length);
+    for (T t : array) {
+      mapper.accept(t);
+    }
+  }
+
+  @Override
+  public <T> void write(T[] array, BiConsumer<Output, T> mapper) {
+    buffer.writeInt(array.length);
+    for (T t : array) {
+      mapper.accept(this, t);
+    }
   }
 
   @Override

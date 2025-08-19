@@ -17,8 +17,6 @@
 
 package infra.cloud.serialize;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import infra.cloud.RpcMethod;
@@ -40,22 +38,15 @@ public class RpcRequestSerialization {
   }
 
   @SuppressWarnings("unchecked")
-  public void serialize(RpcRequest request, ByteBuf payload) throws IOException {
-//    output.writeString(1, request.getMethodName(), true);
-//    output.writeString(2, request.getServiceName(), true);
-
-    payload.writeInt(request.getMethodName().length());
-    payload.writeCharSequence(request.getMethodName(), StandardCharsets.UTF_8);
-
-    payload.writeInt(request.getServiceName().length());
-    payload.writeCharSequence(request.getServiceName(), StandardCharsets.UTF_8);
+  public void serialize(RpcRequest request, ByteBuf payload) {
+    Output output = new MessagePackOutput(payload);
+    request.writeTo(output);
 
     RpcMethod rpcMethod = request.getRpcMethod();
 
     int idx = 0;
     Object[] arguments = request.getArguments();
 
-    Output output = new DefaultByteBufOutput(payload);
     beforeSerializeArguments(output, arguments);
     for (MethodParameter parameter : rpcMethod.getParameters()) {
       var serialization = findArgumentSerialization(parameter);

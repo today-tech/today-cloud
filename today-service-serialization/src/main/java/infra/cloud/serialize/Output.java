@@ -122,7 +122,7 @@ public interface Output {
    * @param s the string value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  void write(String s);
+  void write(@Nullable String s);
 
   /**
    * Writes a Timestamp value.
@@ -156,6 +156,22 @@ public interface Output {
    * @throws SerializationException if a serialization error occurs.
    */
   void write(Message message);
+
+  /**
+   * Writes a {@code array} value.
+   *
+   * @param array the array value to be written.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <T> void write(T[] array, Consumer<T> mapper);
+
+  /**
+   * Writes a {@code array} value.
+   *
+   * @param array the array value to be written.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <T> void write(T[] array, BiConsumer<Output, T> mapper);
 
   /**
    * Writes a {@code List} value.

@@ -177,6 +177,22 @@ public interface Input {
   void read(Message message);
 
   /**
+   * Reads a {@code array} value.
+   *
+   * @return a array object.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <T> T[] read(Class<T> type, Function<Input, T> mapper);
+
+  /**
+   * Reads a {@code array} value.
+   *
+   * @return a array object.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <T> T[] read(Class<T> type, Supplier<T> supplier);
+
+  /**
    * Reads a {@link List} value.
    *
    * @return a List object.

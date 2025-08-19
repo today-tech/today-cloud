@@ -25,7 +25,7 @@ import infra.core.AttributeAccessorSupport;
  */
 public abstract class MethodServiceInvocation extends AttributeAccessorSupport implements ServiceInvocation {
 
-  private final ServiceInterfaceMethod serviceMethod;
+  protected final ServiceInterfaceMethod serviceMethod;
 
   private final Object[] args;
 

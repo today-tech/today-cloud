@@ -20,7 +20,6 @@ package infra.cloud.serialize;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 
 import infra.cloud.RpcMethod;
@@ -45,17 +44,21 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public void serialize(MethodParameter parameter, @Nullable Message value, ByteBuf payload, Output output) throws IOException {
-
+  public void serialize(MethodParameter parameter, @Nullable Message value, ByteBuf payload, Output output) throws SerializationException {
+    output.write(value == null ? null : value.toByteArray());
   }
 
   @Override
   public Message deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException {
     Class<?> parameterType = parameter.getParameterType();
     Message.Builder messageBuilder = getMessageBuilder(parameterType);
-
-//    return messageBuilder.mergeFrom();
-    return null;
+    try {
+      byte[] bytes = input.read();
+      return messageBuilder.mergeFrom(bytes).build();
+    }
+    catch (InvalidProtocolBufferException e) {
+      throw new SerializationException("Invalid protocol buffer", e);
+    }
   }
 
   /**
@@ -93,15 +96,7 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
 
   @Override
   public Message deserialize(RpcMethod method, ByteBuf payload, Input input) throws SerializationException {
-    Class<?> parameterType = method.getReturnType().getParameterType();
-    Message.Builder messageBuilder = getMessageBuilder(parameterType);
-
-    try {
-      return messageBuilder.mergeFrom(input.read()).build();
-    }
-    catch (InvalidProtocolBufferException e) {
-      throw new SerializationException("Invalid protocol buffer", e);
-    }
+    return deserialize(method.getReturnType(), payload, input);
   }
 
 }

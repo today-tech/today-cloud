@@ -17,6 +17,7 @@
 
 package infra.cloud.serialize;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.time.Instant;
@@ -81,6 +82,9 @@ public class MessagePackInput implements Input {
 
   @Override
   public byte[] read(int len) {
+    if (len == 0) {
+      return Constant.EMPTY_BYTES;
+    }
     return ByteBufUtil.getBytes(buffer, buffer.readerIndex(), len);
   }
 
@@ -367,6 +371,28 @@ public class MessagePackInput implements Input {
         throw new MessageFormatException("Timestamp extension type (%d) expects 4, 8, or 12 bytes of payload but got %d bytes"
                 .formatted(EXT_TIMESTAMP, ext.getLength()));
     }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T[] read(Class<T> type, Function<Input, T> mapper) {
+    int size = readArrayHeader();
+    T[] array = (T[]) Array.newInstance(type, size);
+    for (int i = 0; i < size; i++) {
+      array[i] = mapper.apply(this);
+    }
+    return array;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T[] read(Class<T> type, Supplier<T> supplier) {
+    int size = readArrayHeader();
+    T[] array = (T[]) Array.newInstance(type, size);
+    for (int i = 0; i < size; i++) {
+      array[i] = supplier.get();
+    }
+    return array;
   }
 
   @Override

@@ -18,14 +18,14 @@
 package infra.cloud.provider;
 
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import infra.cloud.RpcRequest;
+import infra.cloud.serialize.MessagePackInput;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.SerializationException;
+import infra.core.MethodParameter;
 import infra.lang.Nullable;
 import infra.reflect.MethodInvoker;
 import infra.util.ClassUtils;
@@ -49,25 +49,46 @@ public class RpcRequestDeserializer {
   }
 
   public RpcRequest deserialize(ByteBuf payload) throws SerializationException {
-    RpcRequest rpcRequest = new RpcRequest();
-//    ByteBufInput input = new ByteBufInput(payload);
+    MessagePackInput input = new MessagePackInput(payload);
 
-    rpcRequest.setMethodName(payload.readCharSequence(payload.readInt(), StandardCharsets.UTF_8).toString());
-    rpcRequest.setServiceName(payload.readCharSequence(payload.readInt(), StandardCharsets.UTF_8).toString());
+    RpcRequest request = new RpcRequest();
+    request.readFrom(input);
 
-    InvocableRpcMethod rpcMethod = methodMapCache.get(new MethodCacheKey(rpcRequest), null);
+    InvocableRpcMethod rpcMethod = methodMapCache.get(new MethodKey(request.getMethodName(), request.getParamTypes()), null);
 
-//    body.readInt();
-//    body.readCharSequence();
+    if (rpcMethod == null) {
+      throw new IllegalStateException("No method found for method: " + request.getMethodName());
+    }
 
-    return rpcRequest;
+    request.setRpcMethod(rpcMethod);
+
+    MethodParameter[] parameters = rpcMethod.getParameters();
+    Object[] args = new Object[parameters.length];
+
+    int idx = 0;
+    for (MethodParameter parameter : parameters) {
+      var serialization = findArgumentSerialization(parameter);
+      args[idx++] = serialization.deserialize(parameter, payload, input);
+    }
+
+    request.setArguments(args);
+    return request;
   }
 
-  private static final class MethodMapCache extends MapCache<MethodCacheKey, InvocableRpcMethod, Object> {
+  private RpcArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
+    for (var argumentSerialization : argumentSerializations) {
+      if (argumentSerialization.supportsArgument(parameter)) {
+        return argumentSerialization;
+      }
+    }
+    throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
+  }
+
+  private static final class MethodMapCache extends MapCache<MethodKey, InvocableRpcMethod, Object> {
 
     @Nullable
     @Override
-    protected InvocableRpcMethod createValue(MethodCacheKey key, @Nullable Object service) {
+    protected InvocableRpcMethod createValue(MethodKey key, @Nullable Object service) {
       Method methodToUse = getMethod(key, service);
       if (methodToUse == null) {
         return null;
@@ -76,7 +97,7 @@ public class RpcRequestDeserializer {
       return new InvocableRpcMethod(methodToUse, methodInvoker);
     }
 
-    private static Method getMethod(MethodCacheKey key, Object service) {
+    private static Method getMethod(MethodKey key, Object service) {
       String method = key.method;
       String[] paramTypes = key.paramTypes;
       int parameterLength = paramTypes.length;
@@ -103,30 +124,8 @@ public class RpcRequestDeserializer {
     }
   }
 
-  private static class MethodCacheKey {
-    public final String method;
+  private record MethodKey(String method, String[] paramTypes) {
 
-    public final String[] paramTypes;
-
-    MethodCacheKey(RpcRequest request) {
-      this.method = request.getMethodName();
-      this.paramTypes = request.getParamTypes();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o)
-        return true;
-      if (!(o instanceof MethodCacheKey that))
-        return false;
-      return Objects.equals(method, that.method)
-              && Arrays.equals(paramTypes, that.paramTypes);
-    }
-
-    @Override
-    public int hashCode() {
-      return 31 * Objects.hash(method) + Arrays.hashCode(paramTypes);
-    }
   }
 
 }

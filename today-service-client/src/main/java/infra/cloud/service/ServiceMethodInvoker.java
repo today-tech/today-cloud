@@ -21,13 +21,17 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import infra.cloud.RpcRequest;
 import infra.cloud.serialize.RpcRequestSerialization;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
+import infra.remoting.util.ByteBufPayload;
 import infra.util.concurrent.Future;
 import infra.util.concurrent.FutureListener;
 import infra.util.concurrent.Promise;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
@@ -79,8 +83,16 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     }
 
     private Mono<Payload> createMonoPayload() {
+      return Mono.defer(() -> {
+        RpcRequest request = new RpcRequest();
+        request.setServiceClass(serviceMethod.getServiceInterface().getName());
+        request.setMethodName(serviceMethod.getMethod().getName());
 
-      return null;
+        ByteBuf buffer = Unpooled.buffer();
+        Payload payload = ByteBufPayload.create(buffer);
+        requestSerialization.serialize(request, buffer);
+        return Mono.just(payload);
+      });
     }
 
     @SuppressWarnings("unchecked")

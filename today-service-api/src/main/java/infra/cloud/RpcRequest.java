@@ -22,17 +22,21 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
+import infra.cloud.serialize.Input;
+import infra.cloud.serialize.Message;
+import infra.cloud.serialize.Output;
+
 /**
  * @author TODAY 2021/7/4 01:19
  */
-public class RpcRequest implements Serializable {
+public class RpcRequest implements Serializable, Message {
 
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private String methodName;
+  private String serviceClass;
 
-  private String serviceName;
+  private String methodName;
 
   private Object[] arguments;
 
@@ -72,12 +76,26 @@ public class RpcRequest implements Serializable {
     return rpcMethod;
   }
 
-  public void setServiceName(String serviceName) {
-    this.serviceName = serviceName;
+  public void setServiceClass(String serviceName) {
+    this.serviceClass = serviceName;
   }
 
-  public String getServiceName() {
-    return serviceName;
+  public String getServiceClass() {
+    return serviceClass;
+  }
+
+  @Override
+  public void writeTo(Output output) {
+    output.write(serviceClass);
+    output.write(methodName);
+    output.write(paramTypes, Output::write);
+  }
+
+  @Override
+  public void readFrom(Input input) {
+    this.serviceClass = input.readString();
+    this.methodName = input.readString();
+    this.paramTypes = input.read(String.class, Input::readString);
   }
 
   @Override
@@ -87,14 +105,14 @@ public class RpcRequest implements Serializable {
     if (!(o instanceof RpcRequest request))
       return false;
     return Objects.equals(methodName, request.methodName)
-            && Objects.equals(serviceName, request.serviceName)
+            && Objects.equals(serviceClass, request.serviceClass)
             && Arrays.equals(paramTypes, request.paramTypes)
             && Arrays.equals(arguments, request.arguments);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(methodName, serviceName);
+    int result = Objects.hash(methodName, serviceClass);
     result = 31 * result + Arrays.hashCode(paramTypes);
     result = 31 * result + Arrays.hashCode(arguments);
     return result;
@@ -104,7 +122,7 @@ public class RpcRequest implements Serializable {
   public String toString() {
     return "RpcRequest{" +
             "method='" + methodName + '\'' +
-            ", serviceName='" + serviceName + '\'' +
+            ", serviceName='" + serviceClass + '\'' +
             ", paramTypes=" + Arrays.toString(paramTypes) +
             ", arguments=" + Arrays.toString(arguments) +
             '}';

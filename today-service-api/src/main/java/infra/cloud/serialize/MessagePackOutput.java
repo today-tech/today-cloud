@@ -325,6 +325,22 @@ public class MessagePackOutput implements Output {
   }
 
   @Override
+  public <T> void write(T[] array, Consumer<T> mapper) {
+    writeArrayHeader(array.length);
+    for (T t : array) {
+      mapper.accept(t);
+    }
+  }
+
+  @Override
+  public <T> void write(T[] array, BiConsumer<Output, T> mapper) {
+    writeArrayHeader(array.length);
+    for (T t : array) {
+      mapper.accept(this, t);
+    }
+  }
+
+  @Override
   public <T> void write(List<T> list, Consumer<T> mapper) {
     int size = list.size();
     writeArrayHeader(size);

@@ -19,8 +19,8 @@ package infra.cloud.serialize;
 
 import java.util.List;
 
-import infra.cloud.RpcMethod;
 import infra.cloud.RpcRequest;
+import infra.cloud.service.ServiceMethod;
 import infra.core.MethodParameter;
 import io.netty.buffer.ByteBuf;
 
@@ -42,15 +42,15 @@ public class RpcRequestSerialization {
     Output output = new MessagePackOutput(payload);
     request.writeTo(output);
 
-    RpcMethod rpcMethod = request.getRpcMethod();
+    ServiceMethod method = request.getMethod();
 
     int idx = 0;
     Object[] arguments = request.getArguments();
 
     beforeSerializeArguments(output, arguments);
-    for (MethodParameter parameter : rpcMethod.getParameters()) {
+    for (MethodParameter parameter : method.getParameters()) {
       var serialization = findArgumentSerialization(parameter);
-      serialization.serialize(parameter, arguments[idx++], payload, output);
+      serialization.serialize(parameter, arguments[idx++], output);
     }
     afterSerializeArguments(output, arguments);
   }

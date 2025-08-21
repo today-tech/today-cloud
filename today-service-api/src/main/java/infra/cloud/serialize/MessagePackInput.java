@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import infra.cloud.serialize.format.ExtensionTypeHeader;
 import infra.cloud.serialize.format.MessageFormat;
 import infra.cloud.serialize.format.MessageFormatException;
+import infra.cloud.serialize.format.MessageInsufficientBufferException;
 import infra.cloud.serialize.format.MessageIntegerOverflowException;
 import infra.cloud.serialize.format.MessageNeverUsedFormatException;
 import infra.cloud.serialize.format.MessagePack.Code;
@@ -38,6 +39,7 @@ import infra.cloud.serialize.format.MessagePackException;
 import infra.cloud.serialize.format.MessageSizeException;
 import infra.cloud.serialize.format.MessageTypeException;
 import infra.lang.Constant;
+import infra.lang.Nullable;
 import infra.lang.TodayStrategies;
 import infra.util.CollectionUtils;
 import io.netty.buffer.ByteBuf;
@@ -96,6 +98,15 @@ public class MessagePackInput implements Input {
   @Override
   public void read(Message message) {
     message.readFrom(this);
+  }
+
+  @Nullable
+  @Override
+  public <V> V readNullable(Function<Input, V> valueMapper) {
+    if (tryReadNull()) {
+      return null;
+    }
+    return valueMapper.apply(this);
   }
 
   @Override
@@ -620,6 +631,43 @@ public class MessagePackInput implements Input {
     }
 
     throw unexpected("Binary", b);
+  }
+
+  /**
+   * Reads a Nil byte.
+   *
+   * @throws MessageTypeException when value is not MessagePack Nil type
+   */
+  public void unpackNil() {
+    byte b = readInt8();
+    if (b == Code.NIL) {
+      return;
+    }
+    throw unexpected("Nil", b);
+  }
+
+  /**
+   * Peeks a Nil byte and reads it if next byte is a nil value.
+   * <p>
+   * The difference from {@link #unpackNil()} is that unpackNil throws an exception if the next byte is not nil value
+   * while this tryUnpackNil method returns false without changing position.
+   *
+   * @return true if a {@code null} value is read
+   * @throws MessageInsufficientBufferException when the end of file reached
+   */
+  public boolean tryReadNull() {
+    // makes sure that buffer has at least 1 byte
+    ByteBuf buffer = this.buffer;
+    if (!buffer.isReadable(1)) {
+      throw new MessageInsufficientBufferException();
+    }
+    int index = buffer.readerIndex();
+    byte b = buffer.getByte(index);
+    if (b == Code.NIL) {
+      buffer.readerIndex(index + 1);
+      return true;
+    }
+    return false;
   }
 
   /**

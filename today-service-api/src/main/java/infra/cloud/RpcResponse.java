@@ -20,6 +20,7 @@ package infra.cloud;
 import java.io.Serial;
 import java.io.Serializable;
 
+import infra.cloud.service.ServiceMethod;
 import infra.lang.Nullable;
 
 /**
@@ -27,40 +28,42 @@ import infra.lang.Nullable;
  */
 public class RpcResponse implements Serializable {
 
-  public static final RpcResponse empty = new RpcResponse();
-
   @Serial
   private static final long serialVersionUID = 1L;
 
   /** service result */
+
+  @Nullable
   private Object result;
 
   @Nullable
   private Throwable exception;
 
   @Nullable
-  private RpcMethod rpcMethod;
+  private ServiceMethod method;
 
-  public RpcResponse() { }
+  public RpcResponse() {
+  }
 
-  public RpcResponse(@Nullable RpcMethod rpcMethod, Object result) {
-    this.rpcMethod = rpcMethod;
+  public RpcResponse(@Nullable ServiceMethod method, Object result) {
+    this.method = method;
     this.result = result;
   }
 
-  public void setRpcMethod(@Nullable RpcMethod rpcMethod) {
-    this.rpcMethod = rpcMethod;
+  public void setMethod(@Nullable ServiceMethod rpcMethod) {
+    this.method = rpcMethod;
   }
 
   @Nullable
-  public RpcMethod getRpcMethod() {
-    return rpcMethod;
+  public ServiceMethod getMethod() {
+    return method;
   }
 
-  public void setResult(Object result) {
+  public void setResult(@Nullable Object result) {
     this.result = result;
   }
 
+  @Nullable
   public Object getResult() {
     return result;
   }
@@ -72,21 +75,6 @@ public class RpcResponse implements Serializable {
 
   public void setException(@Nullable Throwable exception) {
     this.exception = exception;
-  }
-
-  // static
-
-  public static RpcResponse ofThrowable(@Nullable Throwable throwable) {
-    final RpcResponse rpcResponse = new RpcResponse();
-    rpcResponse.setException(throwable);
-    return rpcResponse;
-  }
-
-  public static RpcResponse ofThrowable(RpcMethod rpcMethod, @Nullable Throwable throwable) {
-    final RpcResponse rpcResponse = new RpcResponse();
-    rpcResponse.setException(throwable);
-    rpcResponse.setRpcMethod(rpcMethod);
-    return rpcResponse;
   }
 
 }

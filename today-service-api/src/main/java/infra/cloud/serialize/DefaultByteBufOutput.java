@@ -102,12 +102,12 @@ public class DefaultByteBufOutput implements Output {
   }
 
   @Override
-  public void write(@Nullable String s) {
-    if (s == null || s.isEmpty()) {
+  public void write(@Nullable String v) {
+    if (v == null || v.isEmpty()) {
       buffer.writeShort(0);
     }
     else {
-      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      byte[] bytes = v.getBytes(StandardCharsets.UTF_8);
       buffer.writeShort(bytes.length);
       writeFully(bytes);
     }
@@ -119,8 +119,8 @@ public class DefaultByteBufOutput implements Output {
   }
 
   @Override
-  public void write(Instant instant) {
-    writeTimestamp(instant.getEpochSecond(), instant.getNano());
+  public void write(Instant v) {
+    writeTimestamp(v.getEpochSecond(), v.getNano());
   }
 
   @Override
@@ -130,59 +130,59 @@ public class DefaultByteBufOutput implements Output {
   }
 
   @Override
-  public void write(Message message) {
-    message.writeTo(this);
+  public void write(Message v) {
+    v.writeTo(this);
   }
 
   @Override
-  public <T> void write(T[] array, Consumer<T> mapper) {
-    buffer.writeInt(array.length);
-    for (T t : array) {
+  public <T> void write(T[] v, Consumer<T> mapper) {
+    buffer.writeInt(v.length);
+    for (T t : v) {
       mapper.accept(t);
     }
   }
 
   @Override
-  public <T> void write(T[] array, BiConsumer<Output, T> mapper) {
-    buffer.writeInt(array.length);
-    for (T t : array) {
+  public <T> void write(T[] v, BiConsumer<Output, T> mapper) {
+    buffer.writeInt(v.length);
+    for (T t : v) {
       mapper.accept(this, t);
     }
   }
 
   @Override
-  public <T> void write(List<T> list, Consumer<T> mapper) {
-    int size = list.size();
+  public <T> void write(List<T> v, Consumer<T> mapper) {
+    int size = v.size();
     buffer.writeInt(size);
-    for (T t : list) {
+    for (T t : v) {
       mapper.accept(t);
     }
   }
 
   @Override
-  public <T> void write(List<T> list, BiConsumer<Output, T> mapper) {
-    int size = list.size();
+  public <T> void write(List<T> v, BiConsumer<Output, T> mapper) {
+    int size = v.size();
     buffer.writeInt(size);
-    for (T t : list) {
+    for (T t : v) {
       mapper.accept(this, t);
     }
   }
 
   @Override
-  public <K, V> void write(Map<K, V> map, BiConsumer<Output, K> keyMapper, BiConsumer<Output, V> valueMapper) {
-    int size = map.size();
+  public <K, V> void write(Map<K, V> v, BiConsumer<Output, K> keyMapper, BiConsumer<Output, V> valueMapper) {
+    int size = v.size();
     buffer.writeInt(size);
-    for (Map.Entry<K, V> entry : map.entrySet()) {
+    for (Map.Entry<K, V> entry : v.entrySet()) {
       keyMapper.accept(this, entry.getKey());
       valueMapper.accept(this, entry.getValue());
     }
   }
 
   @Override
-  public <K, V> void write(Map<K, V> map, Consumer<K> keyMapper, Consumer<V> valueMapper) {
-    int size = map.size();
+  public <K, V> void write(Map<K, V> v, Consumer<K> keyMapper, Consumer<V> valueMapper) {
+    int size = v.size();
     buffer.writeInt(size);
-    for (Map.Entry<K, V> entry : map.entrySet()) {
+    for (Map.Entry<K, V> entry : v.entrySet()) {
       keyMapper.accept(entry.getKey());
       valueMapper.accept(entry.getValue());
     }

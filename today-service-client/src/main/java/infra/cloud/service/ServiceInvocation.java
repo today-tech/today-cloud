@@ -36,7 +36,7 @@ public interface ServiceInvocation extends AttributeAccessor {
   InvocationResult proceed() throws Throwable;
 
   /**
-   * Service name
+   * Service ID
    */
   String getServiceId();
 

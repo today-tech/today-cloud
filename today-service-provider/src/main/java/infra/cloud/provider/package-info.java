@@ -15,29 +15,9 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.serialize;
+@NonNullApi
+@NonNullFields
+package infra.cloud.provider;
 
-import infra.core.MethodParameter;
-import infra.lang.Nullable;
-
-/**
- * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2024/12/20 16:29
- */
-public interface RpcArgumentSerialization<T> {
-
-  /**
-   * Whether the given parameter is supported by this resolver.
-   * <p>
-   * static match
-   * </p>
-   */
-  boolean supportsArgument(MethodParameter parameter);
-
-  void serialize(MethodParameter parameter, @Nullable T value, Output output)
-          throws SerializationException;
-
-  @Nullable
-  T deserialize(MethodParameter parameter, Input input) throws SerializationException;
-
-}
+import infra.lang.NonNullApi;
+import infra.lang.NonNullFields;

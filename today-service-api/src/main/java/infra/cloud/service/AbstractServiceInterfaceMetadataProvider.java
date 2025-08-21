@@ -48,7 +48,7 @@ public abstract class AbstractServiceInterfaceMetadataProvider<M extends Service
     return new ServiceInterfaceMetadata<>(serviceInterface, serviceMetadata, serviceMethods);
   }
 
-  protected abstract M createServiceMethod(ServiceMetadata serviceMetadata, Class<?> service, Method method);
+  protected abstract M createServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method);
 
   protected boolean isServiceMethod(Method method) {
     return !ReflectionUtils.isObjectMethod(method);

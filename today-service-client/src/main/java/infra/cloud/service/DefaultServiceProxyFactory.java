@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import infra.lang.Assert;
 import infra.lang.Nullable;
 import infra.util.ReflectionUtils;
+import io.netty.buffer.ByteBufAllocator;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -41,6 +42,8 @@ public class DefaultServiceProxyFactory implements ServiceProxyFactory {
 
   private final ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider;
 
+  private final ByteBufAllocator allocator = ByteBufAllocator.DEFAULT;
+
   public DefaultServiceProxyFactory(RemotingOperationsProvider remotingOperationsProvider,
           ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider, List<ClientInterceptor> interceptors) {
     this.metadataProvider = metadataProvider;
@@ -53,7 +56,7 @@ public class DefaultServiceProxyFactory implements ServiceProxyFactory {
   public <S> S getService(Class<S> serviceInterface) {
     Assert.isTrue(serviceInterface.isInterface(), "service must be an interface");
     var metadata = metadataProvider.getMetadata(serviceInterface);
-    ServiceInvoker serviceInvoker = new ServiceMethodInvoker(metadata, interceptors, remotingOperationsProvider);
+    ServiceInvoker serviceInvoker = new ServiceMethodInvoker(metadata, interceptors, remotingOperationsProvider, allocator);
     List<ServiceInterfaceMethod> serviceMethods = metadata.getServiceMethods();
 
     return (S) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class[] { serviceInterface },

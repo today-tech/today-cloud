@@ -15,29 +15,28 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.serialize;
+package infra.cloud.provider;
 
-import infra.core.MethodParameter;
-import infra.lang.Nullable;
+import java.lang.reflect.Method;
+
+import infra.cloud.service.AbstractServiceInterfaceMetadataProvider;
+import infra.cloud.service.ServiceMetadata;
+import infra.cloud.service.ServiceMetadataProvider;
+import infra.cloud.service.ServiceMethod;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2024/12/20 16:29
+ * @since 1.0 2025/8/20 22:12
  */
-public interface RpcArgumentSerialization<T> {
+public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInterfaceMetadataProvider<ServiceMethod> {
 
-  /**
-   * Whether the given parameter is supported by this resolver.
-   * <p>
-   * static match
-   * </p>
-   */
-  boolean supportsArgument(MethodParameter parameter);
+  public DefaultServiceInterfaceMetadataProvider(ServiceMetadataProvider serviceMetadataProvider) {
+    super(serviceMetadataProvider);
+  }
 
-  void serialize(MethodParameter parameter, @Nullable T value, Output output)
-          throws SerializationException;
-
-  @Nullable
-  T deserialize(MethodParameter parameter, Input input) throws SerializationException;
+  @Override
+  protected ServiceMethod createServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
+    return new ServiceMethod(serviceMetadata, serviceInterface, method);
+  }
 
 }

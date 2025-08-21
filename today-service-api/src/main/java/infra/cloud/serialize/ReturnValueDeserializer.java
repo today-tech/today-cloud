@@ -15,28 +15,19 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.provider;
+package infra.cloud.serialize;
 
-import java.lang.reflect.Method;
-
-import infra.cloud.RpcMethod;
-import infra.reflect.MethodInvoker;
+import infra.cloud.service.ServiceMethod;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2024/12/20 21:49
+ * @since 1.0 2025/8/20 22:01
  */
-public class InvocableRpcMethod extends RpcMethod {
+public interface ReturnValueDeserializer<T> {
 
-  private final MethodInvoker invoker;
+  boolean supportsReturnValue(ServiceMethod method);
 
-  public InvocableRpcMethod(Method method, MethodInvoker invoker) {
-    super(method);
-    this.invoker = invoker;
-  }
-
-  public Object invokeAndHandle(Object serviceInstance, Object[] args) throws Throwable {
-    return invoker.invoke(serviceInstance, args);
-  }
+  T deserialize(ServiceMethod method, Input input)
+          throws SerializationException;
 
 }

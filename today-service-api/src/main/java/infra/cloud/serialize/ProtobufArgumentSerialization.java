@@ -22,11 +22,10 @@ import com.google.protobuf.Message;
 
 import java.lang.reflect.Method;
 
-import infra.cloud.RpcMethod;
+import infra.cloud.service.ServiceMethod;
 import infra.core.MethodParameter;
 import infra.lang.Nullable;
 import infra.util.ConcurrentReferenceHashMap;
-import io.netty.buffer.ByteBuf;
 
 /**
  * Serialization for protobuf
@@ -34,7 +33,7 @@ import io.netty.buffer.ByteBuf;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2024/12/20 17:46
  */
-public class ProtobufArgumentSerialization implements RpcArgumentSerialization<Message>, ReturnValueSerialization<Message> {
+public class ProtobufArgumentSerialization implements RpcArgumentSerialization<Message>, ReturnValueSerializer<Message> {
 
   private static final ConcurrentReferenceHashMap<Class<?>, Method> methodCache = new ConcurrentReferenceHashMap<>();
 
@@ -44,12 +43,12 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public void serialize(MethodParameter parameter, @Nullable Message value, ByteBuf payload, Output output) throws SerializationException {
+  public void serialize(MethodParameter parameter, @Nullable Message value, Output output) throws SerializationException {
     output.write(value == null ? null : value.toByteArray());
   }
 
   @Override
-  public Message deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException {
+  public Message deserialize(MethodParameter parameter, Input input) throws SerializationException {
     Class<?> parameterType = parameter.getParameterType();
     Message.Builder messageBuilder = getMessageBuilder(parameterType);
     try {
@@ -85,18 +84,18 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   // ----------------------------------------------------------------------------------------
 
   @Override
-  public boolean supportsArgument(RpcMethod method) {
+  public boolean supportsReturnValue(ServiceMethod method) {
     return Message.class.isAssignableFrom(method.getReturnType().getParameterType());
   }
 
   @Override
-  public void serialize(RpcMethod method, Message value, ByteBuf payload, Output output) {
+  public void serialize(ServiceMethod method, Message value, Output output) {
     output.write(value.toByteArray());
   }
 
-  @Override
-  public Message deserialize(RpcMethod method, ByteBuf payload, Input input) throws SerializationException {
-    return deserialize(method.getReturnType(), payload, input);
-  }
+//  @Override
+//  public Message deserialize(RpcMethod method, ByteBuf payload, Input input) throws SerializationException {
+//    return deserialize(method.getReturnType(), payload, input);
+//  }
 
 }

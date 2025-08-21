@@ -45,8 +45,8 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
   }
 
   @Override
-  protected ServiceInterfaceMethod createServiceMethod(ServiceMetadata serviceMetadata, Class<?> service, Method method) {
-    return new ServiceInterfaceMethod(serviceMetadata, service, method, resolvers);
+  protected ServiceInterfaceMethod createServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
+    return new ServiceInterfaceMethod(serviceMetadata, serviceInterface, method, resolvers);
   }
 
   static class FutureReturnValueResolver implements ReturnValueResolver {

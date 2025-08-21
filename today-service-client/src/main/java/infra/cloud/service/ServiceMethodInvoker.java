@@ -23,6 +23,7 @@ import org.reactivestreams.Subscription;
 
 import infra.cloud.RpcRequest;
 import infra.cloud.serialize.RpcRequestSerialization;
+import infra.cloud.serialize.RpcResponseSerialization;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
@@ -31,7 +32,7 @@ import infra.util.concurrent.Future;
 import infra.util.concurrent.FutureListener;
 import infra.util.concurrent.Promise;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufAllocator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
@@ -49,13 +50,18 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   private final ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata;
 
+  private final ByteBufAllocator allocator;
+
   private RpcRequestSerialization requestSerialization;
 
+  private RpcResponseSerialization responseSerialization;
+
   ServiceMethodInvoker(ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata,
-          ClientInterceptor[] interceptors, RemotingOperationsProvider remotingOperationsProvider) {
+          ClientInterceptor[] interceptors, RemotingOperationsProvider remotingOperationsProvider, ByteBufAllocator allocator) {
     this.metadata = metadata;
     this.interceptors = interceptors;
     this.remotingOperationsProvider = remotingOperationsProvider;
+    this.allocator = allocator;
   }
 
   @Override
@@ -88,7 +94,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
         request.setServiceClass(serviceMethod.getServiceInterface().getName());
         request.setMethodName(serviceMethod.getMethod().getName());
 
-        ByteBuf buffer = Unpooled.buffer();
+        ByteBuf buffer = allocator.ioBuffer();
         Payload payload = ByteBufPayload.create(buffer);
         requestSerialization.serialize(request, buffer);
         return Mono.just(payload);
@@ -105,6 +111,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
   }
 
   private Object deserialize(Payload payload) {
+//    responseSerialization.deserialize();
     return null;
   }
 

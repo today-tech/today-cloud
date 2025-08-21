@@ -25,6 +25,9 @@ import infra.beans.factory.SmartInitializingSingleton;
 import infra.context.ApplicationContext;
 import infra.context.support.ApplicationObjectSupport;
 import infra.lang.Nullable;
+import infra.remoting.core.RemotingServer;
+import infra.remoting.frame.decoder.PayloadDecoder;
+import infra.remoting.transport.netty.server.TcpServerTransport;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
 
@@ -36,10 +39,17 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
 
   private final HashMap<Class<?>, Object> localServices = new HashMap<>();
 
+  private final HashMap<String, Class<?>> classNameMap = new HashMap<>();
+
   @Nullable
   @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> serviceInterface) {
     return (T) localServices.get(serviceInterface);
+  }
+
+  @Nullable
+  public Class<?> getServiceInterface(String serviceClass) {
+    return classNameMap.get(serviceClass);
   }
 
   @Override
@@ -57,14 +67,25 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
       for (final Class<?> anInterface : interfaces) {
         if (anInterface.isAnnotationPresent(Service.class)) {
           Object object = localServices.put(anInterface, service);
+          String interfaceName = anInterface.getName();
           if (object != null) {
-            throw new IllegalStateException("Service '%s' is already registered: [%s]".formatted(anInterface.getName(), object));
+            throw new IllegalStateException("Service '%s' is already registered: [%s]".formatted(interfaceName, object));
           }
-          logger.info("add service: [{}] to interface: [{}]", service, anInterface.getName());
+          classNameMap.put(interfaceName, anInterface);
+          logger.info("add service: [{}] to interface: [{}]", service, interfaceName);
         }
       }
     }
 
+    startServer();
+  }
+
+  private void startServer() {
+    RemotingServer.create()
+            .payloadDecoder(PayloadDecoder.ZERO_COPY)
+            .bind(TcpServerTransport.create(1))
+            .subscribe()
+    ;
   }
 
 }

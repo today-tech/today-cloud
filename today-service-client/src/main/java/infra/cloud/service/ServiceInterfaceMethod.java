@@ -20,7 +20,6 @@ package infra.cloud.service;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import infra.core.MethodParameter;
 import infra.lang.Nullable;
 
 /**
@@ -29,20 +28,14 @@ import infra.lang.Nullable;
  */
 public class ServiceInterfaceMethod extends ServiceMethod {
 
-  private final MethodParameter[] parameters;
-
   private final InvocationType invocationType;
 
   private final ReturnValueResolver returnValueResolver;
 
   private final boolean blocking;
 
-  @Nullable
-  private MethodParameter returnTypeParameter;
-
   ServiceInterfaceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method, ArrayList<ReturnValueResolver> resolvers) {
     super(serviceMetadata, serviceInterface, method);
-    this.parameters = initMethodParameters(method);
     this.returnValueResolver = findReturnValueResolver(resolvers);
     this.blocking = returnValueResolver.isBlocking();
     this.invocationType = returnValueResolver.getInvocationType(this);
@@ -56,35 +49,9 @@ public class ServiceInterfaceMethod extends ServiceMethod {
     return invocationType;
   }
 
-  public MethodParameter[] getParameters() {
-    return parameters;
-  }
-
-  public MethodParameter getReturnType() {
-    MethodParameter returnType = returnTypeParameter;
-    if (returnType == null) {
-      returnType = MethodParameter.forExecutable(method, -1);
-      this.returnTypeParameter = returnType;
-    }
-    return returnType;
-  }
-
   @Nullable
   public Object resolveResult(InvocationResult result) throws Throwable {
     return returnValueResolver.resolve(this, result);
-  }
-
-  private MethodParameter[] initMethodParameters(Method method) {
-    int count = method.getParameterCount();
-    if (count == 0) {
-      return MethodParameter.EMPTY_ARRAY;
-    }
-
-    MethodParameter[] result = new MethodParameter[count];
-    for (int i = 0; i < count; i++) {
-      result[i] = new MethodParameter(method, i);
-    }
-    return result;
   }
 
   private ReturnValueResolver findReturnValueResolver(ArrayList<ReturnValueResolver> resolvers) {

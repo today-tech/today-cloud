@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import infra.lang.Nullable;
+
 /**
  * An Input lets an application read primitive data types and objects from a source of data.
  *
@@ -175,6 +177,9 @@ public interface Input {
    * @throws SerializationException if a serialization error occurs.
    */
   void read(Message message);
+
+  @Nullable
+  <V> V readNullable(Function<Input, V> valueMapper);
 
   /**
    * Reads a {@code array} value.

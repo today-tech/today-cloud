@@ -15,69 +15,44 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.remoting;
+package infra.cloud.provider;
 
 import org.reactivestreams.Publisher;
 
-import java.util.Objects;
-
+import infra.remoting.Channel;
+import infra.remoting.Payload;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Wrapper for a Channel. This is useful when we want to override a specific method.
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/21 22:58
  */
-public class ChannelWrapper implements Channel {
-
-  protected final Channel delegate;
-
-  public ChannelWrapper(Channel delegate) {
-    this.delegate = Objects.requireNonNull(delegate, "delegate is required");
-  }
-
-  @Override
-  public Mono<Void> fireAndForget(Payload payload) {
-    return delegate.fireAndForget(payload);
-  }
+public class ServiceChannelHandler implements Channel {
 
   @Override
   public Mono<Payload> requestResponse(Payload payload) {
-    return delegate.requestResponse(payload);
+    return Channel.super.requestResponse(payload);
   }
 
   @Override
   public Flux<Payload> requestStream(Payload payload) {
-    return delegate.requestStream(payload);
+    return Channel.super.requestStream(payload);
   }
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return delegate.requestChannel(payloads);
+    return Channel.super.requestChannel(payloads);
+  }
+
+  @Override
+  public Mono<Void> fireAndForget(Payload payload) {
+    return Channel.super.fireAndForget(payload);
   }
 
   @Override
   public Mono<Void> metadataPush(Payload payload) {
-    return delegate.metadataPush(payload);
-  }
-
-  @Override
-  public double availability() {
-    return delegate.availability();
-  }
-
-  @Override
-  public void dispose() {
-    delegate.dispose();
-  }
-
-  @Override
-  public boolean isDisposed() {
-    return delegate.isDisposed();
-  }
-
-  @Override
-  public Mono<Void> onClose() {
-    return delegate.onClose();
+    return Channel.super.metadataPush(payload);
   }
 
 }

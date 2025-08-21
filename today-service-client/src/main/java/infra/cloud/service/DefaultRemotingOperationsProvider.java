@@ -63,14 +63,14 @@ public class DefaultRemotingOperationsProvider implements RemotingOperationsProv
     return remotingClientMap.computeIfAbsent(serviceId, name -> RemotingClient.forLoadBalance(Flux.interval(discoveryPeriod)
                     .map(i -> discoveryClient.getInstances(name))
                     .map(this))
-            .roundRobinLoadBalanceStrategy()
+            .weightedLoadBalanceStrategy()
             .build());
   }
 
   @Override
-  public List<LoadBalanceTarget> apply(List<ServiceInstance> serviceInstances) {
-    var targets = new ArrayList<LoadBalanceTarget>(serviceInstances.size());
-    for (ServiceInstance instance : serviceInstances) {
+  public List<LoadBalanceTarget> apply(List<ServiceInstance> instances) {
+    var targets = new ArrayList<LoadBalanceTarget>(instances.size());
+    for (ServiceInstance instance : instances) {
       targets.add(LoadBalanceTarget.of(instance.getInstanceId(),
               TcpClientTransport.create(instance.getHost(), instance.getPort())));
     }

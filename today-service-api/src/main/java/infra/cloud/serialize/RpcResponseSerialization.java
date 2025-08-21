@@ -20,9 +20,8 @@ package infra.cloud.serialize;
 import java.io.IOException;
 import java.util.List;
 
-import infra.cloud.RpcMethod;
-import infra.cloud.RpcRequest;
 import infra.cloud.RpcResponse;
+import infra.cloud.service.ServiceMethod;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -42,46 +41,52 @@ public class RpcResponseSerialization {
   }
 
   public void serialize(RpcResponse response, ByteBuf payload) throws IOException {
+    MessagePackOutput output = new MessagePackOutput(payload);
+
     Throwable exception = response.getException();
+    output.writeNullable(exception, (out, throwable) -> {
+      
+    });
+
     if (exception != null) {
       // has error
       payload.writeBoolean(true);
       throwableSerialization.serialize(exception, payload);
     }
     else {
-      RpcMethod rpcMethod = response.getRpcMethod();
-      payload.writeBoolean(false);
+      ServiceMethod method = response.getMethod();
 
-      var serialization = findSerialization(rpcMethod);
+      payload.writeBoolean(false);
+      var serialization = findSerialization(method);
       Object result = response.getResult();
-      serialization.serialize(rpcMethod, result, payload, new DefaultByteBufOutput(payload));
+      serialization.serialize(method, result, output);
     }
   }
 
-  public RpcResponse deserialize(RpcRequest rpcRequest, ByteBuf body) throws SerializationException {
-    RpcMethod rpcMethod = rpcRequest.getRpcMethod();
+  public RpcResponse deserialize(ServiceMethod method, ByteBuf body) throws SerializationException {
+    MessagePackInput input = new MessagePackInput(body);
     RpcResponse response = new RpcResponse();
-    response.setRpcMethod(rpcMethod);
+    response.setMethod(method);
     boolean hasError = body.readBoolean();
     if (hasError) {
       Throwable deserialize = throwableSerialization.deserialize(body);
       response.setException(deserialize);
     }
     else {
-      var serialization = findSerialization(rpcMethod);
-      Object result = serialization.deserialize(rpcMethod, body, new DefaultByteBufInput(body));
+      var serialization = findSerialization(method);
+      Object result = serialization.deserialize(method, input);
       response.setResult(result);
     }
     return response;
   }
 
-  private ReturnValueSerialization findSerialization(RpcMethod rpcMethod) {
+  private ReturnValueSerialization findSerialization(ServiceMethod method) {
     for (ReturnValueSerialization serialization : serializations) {
-      if (serialization.supportsArgument(rpcMethod)) {
+      if (serialization.supportsReturnValue(method)) {
         return serialization;
       }
     }
-    throw new IllegalStateException("ReturnValueSerialization for method %s not found".formatted(rpcMethod));
+    throw new IllegalStateException("ReturnValueSerialization for method %s not found".formatted(method));
   }
 
 }

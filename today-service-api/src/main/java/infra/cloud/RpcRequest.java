@@ -25,6 +25,7 @@ import java.util.Objects;
 import infra.cloud.serialize.Input;
 import infra.cloud.serialize.Message;
 import infra.cloud.serialize.Output;
+import infra.cloud.service.ServiceMethod;
 
 /**
  * @author TODAY 2021/7/4 01:19
@@ -42,7 +43,7 @@ public class RpcRequest implements Serializable, Message {
 
   private String[] paramTypes;
 
-  private RpcMethod rpcMethod;
+  private ServiceMethod method;
 
   public void setArguments(Object[] arguments) {
     this.arguments = arguments;
@@ -68,12 +69,12 @@ public class RpcRequest implements Serializable, Message {
     return methodName;
   }
 
-  public void setRpcMethod(RpcMethod rpcMethod) {
-    this.rpcMethod = rpcMethod;
+  public void setMethod(ServiceMethod method) {
+    this.method = method;
   }
 
-  public RpcMethod getRpcMethod() {
-    return rpcMethod;
+  public ServiceMethod getMethod() {
+    return method;
   }
 
   public void setServiceClass(String serviceName) {

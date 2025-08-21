@@ -18,6 +18,7 @@
 package infra.remoting;
 
 import java.net.SocketAddress;
+import java.util.Objects;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -30,10 +31,10 @@ import reactor.core.publisher.Mono;
  */
 public class ConnectionWrapper implements Connection {
 
-  private final Connection delegate;
+  protected final Connection delegate;
 
   public ConnectionWrapper(Connection delegate) {
-    this.delegate = delegate;
+    this.delegate = Objects.requireNonNull(delegate, "delegate is required");
   }
 
   @Override

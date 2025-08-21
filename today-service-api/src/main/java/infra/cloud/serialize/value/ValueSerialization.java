@@ -17,14 +17,14 @@
 
 package infra.cloud.serialize.value;
 
-import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import infra.cloud.serialize.Input;
+import infra.cloud.serialize.Output;
 import infra.cloud.serialize.SerializationException;
 import infra.core.MethodParameter;
 import infra.lang.Assert;
-import io.netty.buffer.ByteBuf;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -32,11 +32,13 @@ import io.netty.buffer.ByteBuf;
  */
 public interface ValueSerialization<T> {
 
-  void serialize(MethodParameter parameter, T value, ByteBuf payload) throws IOException;
+  void serialize(MethodParameter parameter, T value, Output payload)
+          throws SerializationException;
 
-  T deserialize(MethodParameter parameter, ByteBuf payload) throws SerializationException;
+  T deserialize(MethodParameter parameter, Input payload)
+          throws SerializationException;
 
-  static <T> ValueSerialization<T> map(Function<ByteBuf, T> reader, BiConsumer<ByteBuf, T> writer) {
+  static <T> ValueSerialization<T> map(Function<Input, T> reader, BiConsumer<Output, T> writer) {
     Assert.notNull(reader, "reader Function is required");
     Assert.notNull(writer, "writer BiConsumer is required");
     return new FuncValueSerialization<>(reader, writer);

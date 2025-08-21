@@ -25,10 +25,11 @@ import infra.cloud.RpcRequest;
 import infra.cloud.serialize.MessagePackInput;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.SerializationException;
+import infra.cloud.service.ServiceInterfaceMetadata;
+import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.core.MethodParameter;
-import infra.lang.Nullable;
+import infra.lang.Assert;
 import infra.reflect.MethodInvoker;
-import infra.util.ClassUtils;
 import infra.util.MapCache;
 import io.netty.buffer.ByteBuf;
 
@@ -44,31 +45,36 @@ public class RpcRequestDeserializer {
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
 
-  public RpcRequestDeserializer(List<RpcArgumentSerialization> argumentSerializations) {
+  private final ServiceInterfaceMetadataProvider metadataProvider;
+
+  private final LocalServiceHolder localServiceHolder;
+
+  public RpcRequestDeserializer(List<RpcArgumentSerialization> argumentSerializations,
+          ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder) {
     this.argumentSerializations = argumentSerializations;
+    this.metadataProvider = metadataProvider;
+    this.localServiceHolder = localServiceHolder;
   }
 
   public RpcRequest deserialize(ByteBuf payload) throws SerializationException {
     MessagePackInput input = new MessagePackInput(payload);
-
     RpcRequest request = new RpcRequest();
     request.readFrom(input);
 
-    InvocableRpcMethod rpcMethod = methodMapCache.get(new MethodKey(request.getMethodName(), request.getParamTypes()), null);
+    String serviceClass = request.getServiceClass();
+    Class<?> serviceInterface = localServiceHolder.getServiceInterface(serviceClass);
+    Assert.state(serviceInterface != null, "service interface not found");
+    InvocableMethod method = methodMapCache.get(new MethodKey(serviceClass, request.getMethodName(), request.getParamTypes()), serviceInterface);
 
-    if (rpcMethod == null) {
-      throw new IllegalStateException("No method found for method: " + request.getMethodName());
-    }
+    request.setMethod(method);
 
-    request.setRpcMethod(rpcMethod);
-
-    MethodParameter[] parameters = rpcMethod.getParameters();
+    MethodParameter[] parameters = method.getParameters();
     Object[] args = new Object[parameters.length];
 
     int idx = 0;
     for (MethodParameter parameter : parameters) {
       var serialization = findArgumentSerialization(parameter);
-      args[idx++] = serialization.deserialize(parameter, payload, input);
+      args[idx++] = serialization.deserialize(parameter, input);
     }
 
     request.setArguments(args);
@@ -84,26 +90,25 @@ public class RpcRequestDeserializer {
     throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
   }
 
-  private static final class MethodMapCache extends MapCache<MethodKey, InvocableRpcMethod, Object> {
+  private final class MethodMapCache extends MapCache<MethodKey, InvocableMethod, Class<?>> {
 
-    @Nullable
     @Override
-    protected InvocableRpcMethod createValue(MethodKey key, @Nullable Object service) {
-      Method methodToUse = getMethod(key, service);
+    protected InvocableMethod createValue(MethodKey key, Class<?> serviceInterface) {
+      Method methodToUse = getMethod(key, serviceInterface);
       if (methodToUse == null) {
-        return null;
+        throw new IllegalStateException("No method found for method: " + key.method);
       }
       MethodInvoker methodInvoker = MethodInvoker.forMethod(methodToUse);
-      return new InvocableRpcMethod(methodToUse, methodInvoker);
+      ServiceInterfaceMetadata metadata = metadataProvider.getMetadata(serviceInterface);
+      return new InvocableMethod(metadata, serviceInterface, methodToUse, methodInvoker);
     }
 
-    private static Method getMethod(MethodKey key, Object service) {
+    private static Method getMethod(MethodKey key, Class<?> serviceInterface) {
       String method = key.method;
       String[] paramTypes = key.paramTypes;
       int parameterLength = paramTypes.length;
 
-      Class<Object> serviceImpl = ClassUtils.getUserClass(service);
-      for (Method serviceMethod : serviceImpl.getMethods()) {
+      for (Method serviceMethod : serviceInterface.getMethods()) {
         if (Objects.equals(serviceMethod.getName(), method)
                 && parameterLength == serviceMethod.getParameterCount()) {
           int current = 0;
@@ -124,7 +129,7 @@ public class RpcRequestDeserializer {
     }
   }
 
-  private record MethodKey(String method, String[] paramTypes) {
+  private record MethodKey(String serviceClass, String method, String[] paramTypes) {
 
   }
 

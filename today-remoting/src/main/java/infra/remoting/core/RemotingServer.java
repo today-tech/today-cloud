@@ -46,6 +46,7 @@ import infra.remoting.transport.Transport;
 import io.netty.buffer.ByteBuf;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 import static infra.remoting.core.FragmentationUtils.assertMtu;
 import static infra.remoting.core.PayloadValidationUtils.assertValidateSetup;
@@ -154,7 +155,7 @@ public final class RemotingServer {
    * <p>Use the {@link Resume} argument to customize the Resume session duration, storage, retry
    * logic, and others.
    *
-   * <p>By default this is not enabled.
+   * <p>By default, this is not enabled.
    *
    * @param resume configuration for the Resume capability
    * @return the same instance for method chaining
@@ -237,7 +238,7 @@ public final class RemotingServer {
    * When this is set, frames larger than the given maximum transmission unit (mtu) size value are
    * fragmented.
    *
-   * <p>By default this is not set in which case payloads are sent whole up to the maximum frame
+   * <p>By default, this is not set in which case payloads are sent whole up to the maximum frame
    * size of 16,777,215 bytes.
    *
    * @param mtu the threshold size for fragmentation, must be no less than 64
@@ -292,8 +293,8 @@ public final class RemotingServer {
         int maxFrameLength = transport.getMaxFrameLength();
         assertValidateSetup(maxFrameLength, maxInboundPayloadSize, mtu);
         return transport
-                .start(duplexConnection -> acceptor(serverSetup, duplexConnection, maxFrameLength))
-//                .publishOn(Schedulers.boundedElastic())
+                .start(connection -> acceptor(serverSetup, connection, maxFrameLength))
+                .publishOn(Schedulers.boundedElastic())
                 .doOnNext(c -> c.onClose().doFinally(v -> serverSetup.dispose()).subscribe());
       }
     });

@@ -17,13 +17,13 @@
 
 package infra.cloud.serialize.value;
 
-import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import infra.cloud.serialize.Input;
+import infra.cloud.serialize.Output;
 import infra.cloud.serialize.SerializationException;
 import infra.core.MethodParameter;
-import io.netty.buffer.ByteBuf;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -31,23 +31,23 @@ import io.netty.buffer.ByteBuf;
  */
 final class FuncValueSerialization<T> implements ValueSerialization<T> {
 
-  private final Function<ByteBuf, T> reader;
+  private final Function<Input, T> reader;
 
-  private final BiConsumer<ByteBuf, T> writer;
+  private final BiConsumer<Output, T> writer;
 
-  FuncValueSerialization(Function<ByteBuf, T> reader, BiConsumer<ByteBuf, T> writer) {
+  FuncValueSerialization(Function<Input, T> reader, BiConsumer<Output, T> writer) {
     this.reader = reader;
     this.writer = writer;
   }
 
   @Override
-  public void serialize(MethodParameter parameter, T value, ByteBuf payload) throws IOException {
+  public void serialize(MethodParameter parameter, T value, Output payload) {
     writer.accept(payload, value);
   }
 
   @Override
-  public T deserialize(MethodParameter parameter, ByteBuf payload) throws SerializationException {
-    return reader.apply(payload);
+  public T deserialize(MethodParameter parameter, Input input) throws SerializationException {
+    return reader.apply(input);
   }
 
 }

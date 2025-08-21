@@ -7,8 +7,7 @@ dependencies {
   api project(":today-service-api")
   api project(":today-service-registry")
 
-  api project(":today-remoting-transport-tcp")
-
+  optional project(":today-remoting-transport-tcp")
 
   testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 

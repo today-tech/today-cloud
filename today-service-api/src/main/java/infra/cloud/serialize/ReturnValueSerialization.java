@@ -17,27 +17,10 @@
 
 package infra.cloud.serialize;
 
-import infra.cloud.RpcMethod;
-import io.netty.buffer.ByteBuf;
-
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2024/12/20 21:42
  */
-public interface ReturnValueSerialization<T> {
-
-  /**
-   * Whether the given parameter is supported by this resolver.
-   * <p>
-   * static match
-   * </p>
-   */
-  boolean supportsArgument(RpcMethod method);
-
-  void serialize(RpcMethod method, T returnValue, ByteBuf payload, Output output)
-          throws SerializationException;
-  
-  T deserialize(RpcMethod method, ByteBuf payload, Input input)
-          throws SerializationException;
+public interface ReturnValueSerialization<T> extends ReturnValueSerializer<T>, ReturnValueDeserializer<T> {
 
 }

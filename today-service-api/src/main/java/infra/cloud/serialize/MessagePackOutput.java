@@ -272,21 +272,21 @@ public class MessagePackOutput implements Output {
   }
 
   @Override
-  public void write(@Nullable String s) {
-    if (s == null || s.isEmpty()) {
+  public void write(@Nullable String v) {
+    if (v == null || v.isEmpty()) {
       writeStringHeader(0);
     }
     else {
       // JVM performs various optimizations (memory allocation, reusing encoder etc.) when String.getBytes is used
-      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      byte[] bytes = v.getBytes(StandardCharsets.UTF_8);
       writeStringHeader(bytes.length);
       writeFully(bytes);
     }
   }
 
   @Override
-  public void write(Instant instant) {
-    writeTimestamp(instant.getEpochSecond(), instant.getNano());
+  public void write(Instant v) {
+    writeTimestamp(v.getEpochSecond(), v.getNano());
   }
 
   @Override
@@ -295,8 +295,18 @@ public class MessagePackOutput implements Output {
   }
 
   @Override
-  public void write(Message message) {
-    message.writeTo(this);
+  public void write(Message v) {
+    v.writeTo(this);
+  }
+
+  @Override
+  public <V> void writeNullable(@Nullable V v, BiConsumer<Output, V> valueMapper) {
+    if (v == null) {
+      writeNull();
+    }
+    else {
+      valueMapper.accept(this, v);
+    }
   }
 
   @Override
@@ -325,54 +335,54 @@ public class MessagePackOutput implements Output {
   }
 
   @Override
-  public <T> void write(T[] array, Consumer<T> mapper) {
-    writeArrayHeader(array.length);
-    for (T t : array) {
+  public <T> void write(T[] v, Consumer<T> mapper) {
+    writeArrayHeader(v.length);
+    for (T t : v) {
       mapper.accept(t);
     }
   }
 
   @Override
-  public <T> void write(T[] array, BiConsumer<Output, T> mapper) {
-    writeArrayHeader(array.length);
-    for (T t : array) {
+  public <T> void write(T[] v, BiConsumer<Output, T> mapper) {
+    writeArrayHeader(v.length);
+    for (T t : v) {
       mapper.accept(this, t);
     }
   }
 
   @Override
-  public <T> void write(List<T> list, Consumer<T> mapper) {
-    int size = list.size();
+  public <T> void write(List<T> v, Consumer<T> mapper) {
+    int size = v.size();
     writeArrayHeader(size);
-    for (T t : list) {
+    for (T t : v) {
       mapper.accept(t);
     }
   }
 
   @Override
-  public <T> void write(List<T> list, BiConsumer<Output, T> mapper) {
-    int size = list.size();
+  public <T> void write(List<T> v, BiConsumer<Output, T> mapper) {
+    int size = v.size();
     writeArrayHeader(size);
-    for (T t : list) {
+    for (T t : v) {
       mapper.accept(this, t);
     }
   }
 
   @Override
-  public <K, V> void write(Map<K, V> map, BiConsumer<Output, K> keyMapper, BiConsumer<Output, V> valueMapper) {
-    int size = map.size();
+  public <K, V> void write(Map<K, V> v, BiConsumer<Output, K> keyMapper, BiConsumer<Output, V> valueMapper) {
+    int size = v.size();
     writeMapHeader(size);
-    for (Map.Entry<K, V> entry : map.entrySet()) {
+    for (Map.Entry<K, V> entry : v.entrySet()) {
       keyMapper.accept(this, entry.getKey());
       valueMapper.accept(this, entry.getValue());
     }
   }
 
   @Override
-  public <K, V> void write(Map<K, V> map, Consumer<K> keyMapper, Consumer<V> valueMapper) {
-    int size = map.size();
+  public <K, V> void write(Map<K, V> v, Consumer<K> keyMapper, Consumer<V> valueMapper) {
+    int size = v.size();
     writeMapHeader(size);
-    for (Map.Entry<K, V> entry : map.entrySet()) {
+    for (Map.Entry<K, V> entry : v.entrySet()) {
       keyMapper.accept(entry.getKey());
       valueMapper.accept(entry.getValue());
     }

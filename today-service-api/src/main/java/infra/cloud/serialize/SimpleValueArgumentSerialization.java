@@ -17,7 +17,6 @@
 
 package infra.cloud.serialize;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,6 @@ import infra.beans.BeanUtils;
 import infra.cloud.serialize.value.ValueSerialization;
 import infra.core.MethodParameter;
 import infra.lang.Nullable;
-import io.netty.buffer.ByteBuf;
 
 import static infra.cloud.serialize.value.ValueSerialization.map;
 
@@ -38,15 +36,14 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
   private final Map<Class<?>, ValueSerialization<?>> serializationMap = new HashMap<>();
 
   public SimpleValueArgumentSerialization() {
-    serializationMap.put(int.class, map(ByteBuf::readInt, ByteBuf::writeInt));
-    serializationMap.put(Integer.class, map(ByteBuf::readInt, ByteBuf::writeInt));
+    serializationMap.put(int.class, map(Input::readInt, Output::write));
+    serializationMap.put(Integer.class, map(Input::readInt, Output::write));
 
-    serializationMap.put(long.class, map(ByteBuf::readLong, ByteBuf::writeLong));
-    serializationMap.put(Long.class, map(ByteBuf::readLong, ByteBuf::writeLong));
+    serializationMap.put(long.class, map(Input::readLong, Output::write));
+    serializationMap.put(Long.class, map(Input::readLong, Output::write));
 
-//    serializationMap.put(short.class, map(ByteBuf::readShort, ByteBuf::writeShort));
-//    serializationMap.put(Short.class, map(ByteBuf::readShort, ByteBuf::writeShort));
-
+    serializationMap.put(short.class, map(Input::readShort, Output::write));
+    serializationMap.put(Short.class, map(Input::readShort, Output::write));
   }
 
   @Override
@@ -56,24 +53,16 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
 
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public void serialize(MethodParameter parameter, @Nullable Object value, ByteBuf payload, Output output) throws IOException {
-    payload.writeBoolean(value != null);
-    if (value != null) {
-      ValueSerialization serialization = findSerialization(parameter.getParameterType());
-      serialization.serialize(parameter, value, payload);
-    }
+  public void serialize(MethodParameter parameter, @Nullable Object value, Output output) {
+    ValueSerialization serialization = findSerialization(parameter.getParameterType());
+    serialization.serialize(parameter, value, output);
   }
 
   @Nullable
   @Override
-  public Object deserialize(MethodParameter parameter, ByteBuf payload, Input input) throws SerializationException {
-    boolean isNull = payload.readBoolean();
-    if (isNull) {
-      return null;
-    }
-
+  public Object deserialize(MethodParameter parameter, Input input) {
     var serialization = findSerialization(parameter.getParameterType());
-    return serialization.deserialize(parameter, payload);
+    return serialization.deserialize(parameter, input);
   }
 
   @SuppressWarnings({ "rawtypes" })

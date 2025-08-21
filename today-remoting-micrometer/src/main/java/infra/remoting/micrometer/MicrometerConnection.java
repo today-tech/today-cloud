@@ -17,14 +17,13 @@
 
 package infra.remoting.micrometer;
 
-import java.net.SocketAddress;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Connection;
-import infra.remoting.ProtocolErrorException;
+import infra.remoting.ConnectionWrapper;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.plugins.ConnectionDecorator.Type;
@@ -34,7 +33,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -69,11 +67,9 @@ import static infra.remoting.frame.FrameType.SETUP;
  *
  * @see <a href="https://micrometer.io">Micrometer</a>
  */
-final class MicrometerConnection implements Connection {
+final class MicrometerConnection extends ConnectionWrapper {
 
   private final Counter close;
-
-  private final Connection delegate;
 
   private final Counter dispose;
 
@@ -90,8 +86,8 @@ final class MicrometerConnection implements Connection {
    * meterRegistry} is {@code null}
    */
   MicrometerConnection(Type connectionType, Connection delegate, MeterRegistry meterRegistry, Tag... tags) {
+    super(delegate);
     Objects.requireNonNull(connectionType, "connectionType is required");
-    this.delegate = Objects.requireNonNull(delegate, "delegate is required");
     Objects.requireNonNull(meterRegistry, "meterRegistry is required");
 
     this.close = meterRegistry.counter("infra.remoting.duplex.connection.close",
@@ -101,16 +97,6 @@ final class MicrometerConnection implements Connection {
             Tags.of(tags).and("connection.type", connectionType.name()));
 
     this.frameCounters = new FrameCounters(connectionType, meterRegistry, tags);
-  }
-
-  @Override
-  public ByteBufAllocator alloc() {
-    return delegate.alloc();
-  }
-
-  @Override
-  public SocketAddress remoteAddress() {
-    return delegate.remoteAddress();
   }
 
   @Override
@@ -133,11 +119,6 @@ final class MicrometerConnection implements Connection {
   public void sendFrame(int streamId, ByteBuf frame) {
     frameCounters.accept(frame);
     delegate.sendFrame(streamId, frame);
-  }
-
-  @Override
-  public void sendErrorAndClose(ProtocolErrorException e) {
-    delegate.sendErrorAndClose(e);
   }
 
   private static final class FrameCounters implements Consumer<ByteBuf> {

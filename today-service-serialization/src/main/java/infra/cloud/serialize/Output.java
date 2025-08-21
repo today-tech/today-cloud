@@ -119,18 +119,18 @@ public interface Output {
   /**
    * Writes a {@code String} value.
    *
-   * @param s the string value to be written.
+   * @param v the string value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  void write(@Nullable String s);
+  void write(@Nullable String v);
 
   /**
    * Writes a Timestamp value.
    *
-   * @param instant the timestamp to be written
+   * @param v the timestamp to be written
    * @throws SerializationException if a serialization error occurs.
    */
-  void write(Instant instant);
+  void write(Instant v);
 
   /**
    * Writes a Timestamp value.
@@ -152,57 +152,65 @@ public interface Output {
   /**
    * Writes a {@code Message} value.
    *
-   * @param message the Message value to be written.
+   * @param v the Message value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  void write(Message message);
+  void write(Message v);
+
+  /**
+   * Writes a nullable {@code V} value.
+   *
+   * @param v the value to be written.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <V> void writeNullable(@Nullable V v, BiConsumer<Output, V> valueMapper);
 
   /**
    * Writes a {@code array} value.
    *
-   * @param array the array value to be written.
+   * @param v the array value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> void write(T[] array, Consumer<T> mapper);
+  <T> void write(T[] v, Consumer<T> mapper);
 
   /**
    * Writes a {@code array} value.
    *
-   * @param array the array value to be written.
+   * @param v the array value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> void write(T[] array, BiConsumer<Output, T> mapper);
+  <T> void write(T[] v, BiConsumer<Output, T> mapper);
 
   /**
    * Writes a {@code List} value.
    *
-   * @param list the List value to be written.
+   * @param v the List value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> void write(List<T> list, Consumer<T> mapper);
+  <T> void write(List<T> v, Consumer<T> mapper);
 
   /**
    * Writes a {@code List} value.
    *
-   * @param list the List value to be written.
+   * @param v the List value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> void write(List<T> list, BiConsumer<Output, T> mapper);
+  <T> void write(List<T> v, BiConsumer<Output, T> mapper);
 
   /**
    * Writes a {@code Map} value.
    *
-   * @param map the Map value to be written.
+   * @param v the Map value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <K, V> void write(Map<K, V> map, Consumer<K> keyMapper, Consumer<V> valueMapper);
+  <K, V> void write(Map<K, V> v, Consumer<K> keyMapper, Consumer<V> valueMapper);
 
   /**
    * Writes a {@code Map} value.
    *
-   * @param map the Map value to be written.
+   * @param v the Map value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <K, V> void write(Map<K, V> map, BiConsumer<Output, K> keyMapper, BiConsumer<Output, V> valueMapper);
+  <K, V> void write(Map<K, V> v, BiConsumer<Output, K> keyMapper, BiConsumer<Output, V> valueMapper);
 
 }

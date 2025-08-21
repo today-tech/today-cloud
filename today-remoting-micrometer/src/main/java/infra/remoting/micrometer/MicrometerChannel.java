@@ -24,6 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import infra.remoting.Channel;
+import infra.remoting.ChannelWrapper;
 import infra.remoting.Payload;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
@@ -50,9 +51,7 @@ import static reactor.core.publisher.SignalType.ON_ERROR;
  *
  * @see <a href="https://micrometer.io">Micrometer</a>
  */
-final class MicrometerChannel implements Channel {
-
-  private final Channel delegate;
+final class MicrometerChannel extends ChannelWrapper {
 
   private final InteractionCounters metadataPush;
 
@@ -73,7 +72,7 @@ final class MicrometerChannel implements Channel {
    * @throws NullPointerException if {@code delegate} or {@code meterRegistry} is {@code null}
    */
   MicrometerChannel(Channel delegate, MeterRegistry meterRegistry, Tag... tags) {
-    this.delegate = Objects.requireNonNull(delegate, "delegate is required");
+    super(delegate);
     Objects.requireNonNull(meterRegistry, "meterRegistry is required");
 
     this.metadataPush = new InteractionCounters(meterRegistry, "metadata.push", tags);
@@ -84,11 +83,6 @@ final class MicrometerChannel implements Channel {
   }
 
   @Override
-  public void dispose() {
-    delegate.dispose();
-  }
-
-  @Override
   public Mono<Void> fireAndForget(Payload payload) {
     return delegate.fireAndForget(payload).doFinally(requestFireAndForget);
   }
@@ -96,11 +90,6 @@ final class MicrometerChannel implements Channel {
   @Override
   public Mono<Void> metadataPush(Payload payload) {
     return delegate.metadataPush(payload).doFinally(metadataPush);
-  }
-
-  @Override
-  public Mono<Void> onClose() {
-    return delegate.onClose();
   }
 
   @Override

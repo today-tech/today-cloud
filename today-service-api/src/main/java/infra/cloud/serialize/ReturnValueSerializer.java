@@ -17,27 +17,17 @@
 
 package infra.cloud.serialize;
 
-import infra.core.MethodParameter;
-import infra.lang.Nullable;
+import infra.cloud.service.ServiceMethod;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2024/12/20 16:29
+ * @since 1.0 2025/8/20 21:56
  */
-public interface RpcArgumentSerialization<T> {
+public interface ReturnValueSerializer<T> {
 
-  /**
-   * Whether the given parameter is supported by this resolver.
-   * <p>
-   * static match
-   * </p>
-   */
-  boolean supportsArgument(MethodParameter parameter);
+  boolean supportsReturnValue(ServiceMethod method);
 
-  void serialize(MethodParameter parameter, @Nullable T value, Output output)
+  void serialize(ServiceMethod method, T returnValue, Output output)
           throws SerializationException;
-
-  @Nullable
-  T deserialize(MethodParameter parameter, Input input) throws SerializationException;
 
 }

@@ -25,9 +25,6 @@ import infra.beans.factory.SmartInitializingSingleton;
 import infra.context.ApplicationContext;
 import infra.context.support.ApplicationObjectSupport;
 import infra.lang.Nullable;
-import infra.remoting.core.RemotingServer;
-import infra.remoting.frame.decoder.PayloadDecoder;
-import infra.remoting.transport.netty.server.TcpServerTransport;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
 
@@ -77,15 +74,6 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
       }
     }
 
-    startServer();
-  }
-
-  private void startServer() {
-    RemotingServer.create()
-            .payloadDecoder(PayloadDecoder.ZERO_COPY)
-            .bind(TcpServerTransport.create(1))
-            .subscribe()
-    ;
   }
 
 }

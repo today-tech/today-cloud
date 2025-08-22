@@ -17,13 +17,21 @@
 
 package infra.cloud.provider;
 
-import infra.context.properties.ConfigurationProperties;
+import infra.remoting.Closeable;
+import infra.remoting.transport.ServerTransport;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/9/4 16:56
+ * ServerTransport factory
+ *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @see ServerTransport
+ * @since 1.0 2025/8/22 22:18
  */
-@ConfigurationProperties("service.provider")
-public class ServiceProviderProperties {
+public interface ServerTransportFactory<T extends Closeable> {
+
+  /**
+   * Creates {@link ServerTransport}
+   */
+  ServerTransport<T> createTransport();
 
 }

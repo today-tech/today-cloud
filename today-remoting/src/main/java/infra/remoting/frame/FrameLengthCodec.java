@@ -25,10 +25,12 @@ import io.netty.buffer.ByteBufAllocator;
  * for transports that need to send length
  */
 public class FrameLengthCodec {
+
   public static final int FRAME_LENGTH_MASK = 0xFFFFFF;
   public static final int FRAME_LENGTH_SIZE = 3;
 
-  private FrameLengthCodec() { }
+  private FrameLengthCodec() {
+  }
 
   private static void encodeLength(final ByteBuf byteBuf, final int length) {
     if ((length & ~FRAME_LENGTH_MASK) != 0) {
@@ -51,7 +53,8 @@ public class FrameLengthCodec {
   public static ByteBuf encode(ByteBufAllocator allocator, int length, ByteBuf frame) {
     ByteBuf buffer = allocator.buffer();
     encodeLength(buffer, length);
-    return allocator.compositeBuffer(2).addComponents(true, buffer, frame);
+    return allocator.compositeBuffer(2)
+            .addComponents(true, buffer, frame);
   }
 
   public static int length(ByteBuf byteBuf) {

@@ -26,8 +26,6 @@ import infra.remoting.ConnectionSetupPayload;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.core.Resume;
 import infra.remoting.frame.decoder.PayloadDecoder;
-import infra.remoting.transport.ServerTransport;
-import infra.remoting.transport.netty.server.TcpServerTransport;
 import reactor.core.publisher.Mono;
 
 /**
@@ -36,33 +34,35 @@ import reactor.core.publisher.Mono;
  */
 public class ServiceProviderServer implements Lifecycle, ChannelAcceptor {
 
+  private final ServiceServerProperties properties;
+
   private final ServiceChannelHandler channelHandler;
 
-  private final Resume resume = new Resume();
+  private final ServerTransportFactory<? extends Closeable> serverTransportFactory;
 
-  private int maxFrameLength;
-
-  private String bindAddress;
-
-  private int port;
+  @Nullable
+  private final Resume resume;
 
   @Nullable
   private Closeable serverCloseable;
 
-  public ServiceProviderServer(ServiceChannelHandler channelHandler) {
+  public ServiceProviderServer(ServiceServerProperties properties, @Nullable Resume resume,
+          ServiceChannelHandler channelHandler, ServerTransportFactory<? extends Closeable> serverTransportFactory) {
+    this.properties = properties;
+    this.resume = resume;
     this.channelHandler = channelHandler;
+    this.serverTransportFactory = serverTransportFactory;
   }
 
   @Override
   public void start() {
     serverCloseable = RemotingServer.create(this)
-            .payloadDecoder(PayloadDecoder.ZERO_COPY)
             .resume(resume)
-            .bindNow(createServerTransport());
-  }
-
-  private ServerTransport<? extends Closeable> createServerTransport() {
-    return TcpServerTransport.create(bindAddress, port);
+            .payloadDecoder(PayloadDecoder.ZERO_COPY)
+            .fragment(properties.getMaxTransmissionUnit().toBytesInt())
+            .maxTimeToFirstFrame(properties.getMaxTimeToFirstFrame())
+            .maxInboundPayloadSize(properties.getMaxInboundPayloadSize().toBytesInt())
+            .bindNow(serverTransportFactory.createTransport());
   }
 
   @Override

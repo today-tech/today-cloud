@@ -127,15 +127,14 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf> implements Resum
 
   public InMemoryResumableFramesStore(String side, ByteBuf session, int cacheSizeBytes) {
     this.side = side;
-    this.session = session.toString(CharsetUtil.UTF_8);
     this.cacheLimit = cacheSizeBytes;
     this.cachedFrames = new ArrayDeque<>();
+    this.session = session.toString(CharsetUtil.UTF_8);
   }
 
   @Override
   public Mono<Void> saveFrames(Flux<ByteBuf> frames) {
-    return frames
-            .transform(Operators.<ByteBuf, Void>lift((__, actual) ->
+    return frames.transform(Operators.<ByteBuf, Void>lift((__, actual) ->
                     this.framesSubscriber = new FramesSubscriber(actual, this)))
             .then();
   }

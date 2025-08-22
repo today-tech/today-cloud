@@ -15,17 +15,28 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-/**
- * Contains {@link infra.remoting.core.ChannelConnector ChannelConnector} and {@link
- * infra.remoting.core.RemotingServer RemotingServer}, the main classes for connecting to or starting a
- * protocol server.
- *
- * <p>This package also contains a package private classes that implement support for the main
- * interactions.
- */
-@NonNullApi
-@NonNullFields
-package infra.remoting.core;
+package infra.remoting.resume;
 
-import infra.lang.NonNullApi;
-import infra.lang.NonNullFields;
+import java.util.UUID;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+/**
+ * Random UUID ResumeTokenGenerator
+ *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/23 00:26
+ */
+public class RandomUUIDResumeTokenGenerator implements ResumeTokenGenerator {
+
+  @Override
+  public ByteBuf generate() {
+    UUID uuid = UUID.randomUUID();
+    ByteBuf bb = Unpooled.buffer(16);
+    bb.writeLong(uuid.getMostSignificantBits());
+    bb.writeLong(uuid.getLeastSignificantBits());
+    return bb;
+  }
+
+}

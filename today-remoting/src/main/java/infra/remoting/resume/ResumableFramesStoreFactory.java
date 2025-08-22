@@ -15,17 +15,16 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-/**
- * Contains {@link infra.remoting.core.ChannelConnector ChannelConnector} and {@link
- * infra.remoting.core.RemotingServer RemotingServer}, the main classes for connecting to or starting a
- * protocol server.
- *
- * <p>This package also contains a package private classes that implement support for the main
- * interactions.
- */
-@NonNullApi
-@NonNullFields
-package infra.remoting.core;
+package infra.remoting.resume;
 
-import infra.lang.NonNullApi;
-import infra.lang.NonNullFields;
+import io.netty.buffer.ByteBuf;
+
+/**
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/22 22:37
+ */
+public interface ResumableFramesStoreFactory {
+
+  ResumableFramesStore create(ByteBuf resumeToken);
+
+}

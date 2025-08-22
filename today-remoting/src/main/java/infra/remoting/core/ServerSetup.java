@@ -20,7 +20,6 @@ package infra.remoting.core;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import infra.remoting.Connection;
 import infra.remoting.ProtocolErrorException;
@@ -30,7 +29,7 @@ import infra.remoting.frame.ResumeFrameCodec;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.keepalive.KeepAliveHandler;
 import infra.remoting.resume.ResumableConnection;
-import infra.remoting.resume.ResumableFramesStore;
+import infra.remoting.resume.ResumableFramesStoreFactory;
 import infra.remoting.resume.ServerChannelSession;
 import infra.remoting.resume.SessionManager;
 import io.netty.buffer.ByteBuf;
@@ -94,48 +93,40 @@ abstract class ServerSetup {
   }
 
   static class ResumableServerSetup extends ServerSetup {
-    private final SessionManager sessionManager;
-    private final Duration resumeSessionDuration;
     private final Duration resumeStreamTimeout;
-    private final Function<? super ByteBuf, ? extends ResumableFramesStore> resumeStoreFactory;
+
+    private final SessionManager sessionManager;
+
+    private final Duration resumeSessionDuration;
+
     private final boolean cleanupStoreOnKeepAlive;
+
+    private final ResumableFramesStoreFactory resumeStoreFactory;
 
     ResumableServerSetup(Duration timeout, SessionManager sessionManager,
             Duration resumeSessionDuration, Duration resumeStreamTimeout,
-            Function<? super ByteBuf, ? extends ResumableFramesStore> resumeStoreFactory, boolean cleanupStoreOnKeepAlive) {
+            ResumableFramesStoreFactory resumeStoreFactory, boolean cleanupStoreOnKeepAlive) {
       super(timeout);
       this.sessionManager = sessionManager;
-      this.resumeSessionDuration = resumeSessionDuration;
-      this.resumeStreamTimeout = resumeStreamTimeout;
       this.resumeStoreFactory = resumeStoreFactory;
+      this.resumeStreamTimeout = resumeStreamTimeout;
+      this.resumeSessionDuration = resumeSessionDuration;
       this.cleanupStoreOnKeepAlive = cleanupStoreOnKeepAlive;
     }
 
     @Override
-    public Mono<Void> acceptChannelSetup(ByteBuf frame, Connection connection,
-            BiFunction<KeepAliveHandler, Connection, Mono<Void>> then) {
-
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, Connection connection, BiFunction<KeepAliveHandler, Connection, Mono<Void>> then) {
       if (SetupFrameCodec.resumeEnabled(frame)) {
         ByteBuf resumeToken = SetupFrameCodec.resumeToken(frame);
 
-        final ResumableFramesStore resumableFramesStore = resumeStoreFactory.apply(resumeToken);
-        final ResumableConnection resumableConnection =
-                new ResumableConnection(
-                        "server", resumeToken, connection, resumableFramesStore);
-        final ServerChannelSession serverChannelSession =
-                new ServerChannelSession(
-                        resumeToken,
-                        resumableConnection,
-                        connection,
-                        resumableFramesStore,
-                        resumeSessionDuration,
-                        cleanupStoreOnKeepAlive);
+        var resumableFramesStore = resumeStoreFactory.create(resumeToken);
+        var resumableConnection = new ResumableConnection("server", resumeToken, connection, resumableFramesStore);
+        var serverChannelSession = new ServerChannelSession(resumeToken, resumableConnection, connection,
+                resumableFramesStore, resumeSessionDuration, cleanupStoreOnKeepAlive);
 
         sessionManager.save(serverChannelSession, resumeToken);
 
-        return then.apply(new ResumableKeepAliveHandler(
-                        resumableConnection, serverChannelSession, serverChannelSession),
-                resumableConnection);
+        return then.apply(new ResumableKeepAliveHandler(resumableConnection, serverChannelSession, serverChannelSession), resumableConnection);
       }
       else {
         return then.apply(new DefaultKeepAliveHandler(), connection);

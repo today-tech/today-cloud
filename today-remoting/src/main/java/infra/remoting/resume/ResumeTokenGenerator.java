@@ -15,17 +15,25 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-/**
- * Contains {@link infra.remoting.core.ChannelConnector ChannelConnector} and {@link
- * infra.remoting.core.RemotingServer RemotingServer}, the main classes for connecting to or starting a
- * protocol server.
- *
- * <p>This package also contains a package private classes that implement support for the main
- * interactions.
- */
-@NonNullApi
-@NonNullFields
-package infra.remoting.core;
+package infra.remoting.resume;
 
-import infra.lang.NonNullApi;
-import infra.lang.NonNullFields;
+import infra.remoting.core.ChannelConnector;
+import infra.remoting.core.Resume;
+import io.netty.buffer.ByteBuf;
+
+/**
+ * Generator for a resume identification token
+ *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @see ChannelConnector#resume(Resume)
+ * @since 1.0 2025/8/23 00:21
+ */
+public interface ResumeTokenGenerator {
+
+  /**
+   * Customize the generation of the resume identification token used to resume.
+   * This setting is for use with {@link ChannelConnector#resume(Resume)} on the client side only.
+   */
+  ByteBuf generate();
+
+}

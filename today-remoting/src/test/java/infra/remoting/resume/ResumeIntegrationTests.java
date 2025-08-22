@@ -180,8 +180,8 @@ public class ResumeIntegrationTests {
     return ChannelConnector.create()
             .resume(new Resume()
                     .sessionDuration(Duration.ofSeconds(sessionDurationSeconds))
-                    .storeFactory(t -> new InMemoryResumableFramesStore("client", t, 500_000))
-                    .cleanupStoreOnKeepAlive()
+                    .storeFactory(new InMemoryResumableFramesStoreFactory("client", 500_000))
+                    .cleanupStoreOnKeepAlive(true)
                     .retry(Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(1))))
             .keepAlive(Duration.ofSeconds(5), Duration.ofMinutes(5))
             .connect(clientTransport);
@@ -193,11 +193,9 @@ public class ResumeIntegrationTests {
 
   private static Mono<CloseableChannel> newServerChannel(int sessionDurationSeconds) {
     return RemotingServer.create(ChannelAcceptor.with(new TestResponderChannel()))
-            .resume(
-                    new Resume()
-                            .sessionDuration(Duration.ofSeconds(sessionDurationSeconds))
-                            .cleanupStoreOnKeepAlive()
-                            .storeFactory(t -> new InMemoryResumableFramesStore("server", t, 500_000)))
+            .resume(new Resume().cleanupStoreOnKeepAlive()
+                    .sessionDuration(Duration.ofSeconds(sessionDurationSeconds))
+                    .storeFactory(new InMemoryResumableFramesStoreFactory("server", 500_000)))
             .bind(serverTransport(SERVER_HOST, SERVER_PORT));
   }
 

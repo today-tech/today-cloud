@@ -40,7 +40,6 @@ import infra.remoting.plugins.InterceptorRegistry;
 import infra.remoting.plugins.RateLimitDecorator;
 import infra.remoting.resume.ClientChannelSession;
 import infra.remoting.resume.ResumableConnection;
-import infra.remoting.resume.ResumableFramesStore;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.Transport;
 import infra.remoting.util.ByteBufPayload;
@@ -102,8 +101,10 @@ public class ChannelConnector {
 
   private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
 
+  @Nullable
   private Retry retrySpec;
 
+  @Nullable
   private Resume resume;
 
   @Nullable
@@ -534,7 +535,7 @@ public class ChannelConnector {
                 ByteBuf resumeToken;
 
                 if (resumeEnabled) {
-                  resumeToken = resume.getTokenSupplier().get();
+                  resumeToken = resume.tokenGenerator.generate();
                 }
                 else {
                   resumeToken = Unpooled.EMPTY_BUFFER;
@@ -552,11 +553,11 @@ public class ChannelConnector {
                   final KeepAliveHandler keepAliveHandler;
 
                   if (resumeEnabled) {
-                    final ResumableClientSetup resumableClientSetup = new ResumableClientSetup();
-                    final ResumableFramesStore resumableFramesStore = resume.getStoreFactory(CLIENT_TAG).apply(resumeToken);
-                    final ResumableConnection resumableConnection = new ResumableConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
-                    final ClientChannelSession session = new ClientChannelSession(resumeToken, resumableConnection, connectionMono, resumableClientSetup::init,
-                            resumableFramesStore, resume.getSessionDuration(), resume.getRetry(), resume.isCleanupStoreOnKeepAlive());
+                    final var resumableClientSetup = new ResumableClientSetup();
+                    final var resumableFramesStore = resume.getStoreFactory(CLIENT_TAG).create(resumeToken);
+                    final var resumableConnection = new ResumableConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
+                    final var session = new ClientChannelSession(resumeToken, resumableConnection, connectionMono, resumableClientSetup::init,
+                            resumableFramesStore, resume.sessionDuration, resume.retry, resume.cleanupStoreOnKeepAlive);
 
                     keepAliveHandler = new KeepAliveHandler.ResumableKeepAliveHandler(resumableConnection, session, session);
                     wrappedConnection = resumableConnection;

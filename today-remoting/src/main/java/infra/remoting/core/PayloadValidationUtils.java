@@ -27,11 +27,11 @@ import static infra.remoting.core.FragmentationUtils.FRAME_OFFSET_WITH_METADATA_
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 final class PayloadValidationUtils {
+
   static final String INVALID_PAYLOAD_ERROR_MESSAGE =
           "The payload is too big to be send as a single frame with a max frame length %s. Consider enabling fragmentation.";
 
   static boolean isValid(int mtu, int maxFrameLength, Payload payload, boolean hasInitialRequestN) {
-
     if (mtu > 0) {
       return true;
     }
@@ -42,18 +42,12 @@ final class PayloadValidationUtils {
     int unitSize;
     if (hasMetadata) {
       final ByteBuf metadata = payload.metadata();
-      unitSize =
-              (hasInitialRequestN
-                      ? FRAME_OFFSET_WITH_METADATA_AND_INITIAL_REQUEST_N
-                      : FRAME_OFFSET_WITH_METADATA)
-                      + metadata.readableBytes()
-                      + // metadata payload bytes
-                      data.readableBytes(); // data payload bytes
+      unitSize = (hasInitialRequestN ? FRAME_OFFSET_WITH_METADATA_AND_INITIAL_REQUEST_N : FRAME_OFFSET_WITH_METADATA)
+              + metadata.readableBytes()// metadata payload bytes
+              + data.readableBytes(); // data payload bytes
     }
     else {
-      unitSize =
-              (hasInitialRequestN ? FRAME_OFFSET_WITH_INITIAL_REQUEST_N : FRAME_OFFSET)
-                      + data.readableBytes(); // data payload bytes
+      unitSize = (hasInitialRequestN ? FRAME_OFFSET_WITH_INITIAL_REQUEST_N : FRAME_OFFSET) + data.readableBytes(); // data payload bytes
     }
 
     return unitSize <= maxFrameLength;

@@ -22,15 +22,28 @@ import infra.cloud.net.InetProperties;
 import infra.cloud.net.InetService;
 import infra.cloud.provider.DefaultServiceInterfaceMetadataProvider;
 import infra.cloud.provider.LocalServiceHolder;
+import infra.cloud.provider.ServerTransportFactory;
 import infra.cloud.provider.ServiceChannelHandler;
+import infra.cloud.provider.ServiceProviderServer;
+import infra.cloud.provider.ServiceServerProperties;
+import infra.cloud.provider.TcpServerTransportFactory;
 import infra.cloud.registry.annotation.config.AutoServiceRegistrationAutoConfiguration;
 import infra.cloud.service.PackageInfoServiceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceMetadataProvider;
 import infra.cloud.service.ServiceMethod;
+import infra.cloud.service.config.ResumeProperties;
 import infra.context.annotation.config.DisableDIAutoConfiguration;
+import infra.context.condition.ConditionalOnBooleanProperty;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
+import infra.lang.Nullable;
+import infra.remoting.Closeable;
+import infra.remoting.core.Resume;
+import infra.remoting.resume.InMemoryResumableFramesStoreFactory;
+import infra.remoting.resume.RandomUUIDResumeTokenGenerator;
+import infra.remoting.resume.ResumableFramesStoreFactory;
+import infra.remoting.resume.ResumeTokenGenerator;
 import infra.stereotype.Component;
 
 /**
@@ -38,7 +51,7 @@ import infra.stereotype.Component;
  * @since 1.0 2025/8/10 22:31
  */
 @ConditionalOnDiscoveryEnabled
-@EnableConfigurationProperties(InetProperties.class)
+@EnableConfigurationProperties({ InetProperties.class, ServiceServerProperties.class })
 @DisableDIAutoConfiguration(before = AutoServiceRegistrationAutoConfiguration.class)
 public class ServiceProviderAutoConfiguration {
 
@@ -67,6 +80,41 @@ public class ServiceProviderAutoConfiguration {
   @Component
   public static ServiceChannelHandler serviceChannelHandler() {
     return new ServiceChannelHandler();
+  }
+
+  @Component
+  @ConditionalOnMissingBean
+  public static ResumeTokenGenerator resumeTokenGenerator() {
+    return new RandomUUIDResumeTokenGenerator();
+  }
+
+  @Component
+  @ConditionalOnMissingBean
+  @ConditionalOnBooleanProperty(name = "service.server.resume.enabled", matchIfMissing = true)
+  public static Resume remotingResume(@Nullable ResumableFramesStoreFactory storeFactory,
+          ResumeTokenGenerator resumeTokenGenerator, ServiceServerProperties properties) {
+    ResumeProperties resume = properties.resume;
+    if (storeFactory == null) {
+      storeFactory = new InMemoryResumableFramesStoreFactory("server", resume.getMemoryCacheLimit().toBytesInt());
+    }
+    return new Resume()
+            .storeFactory(storeFactory)
+            .token(resumeTokenGenerator)
+            .streamTimeout(resume.getStreamTimeout())
+            .sessionDuration(resume.getSessionDuration())
+            .cleanupStoreOnKeepAlive(resume.isCleanupStoreOnKeepAlive());
+  }
+
+  @Component
+  @ConditionalOnMissingBean
+  public static ServerTransportFactory<? extends Closeable> serverTransportFactory(ServiceServerProperties properties) {
+    return new TcpServerTransportFactory(properties);
+  }
+
+  @Component
+  public static ServiceProviderServer serviceProviderServer(@Nullable Resume resume, ServiceServerProperties properties,
+          ServiceChannelHandler serviceChannelHandler, ServerTransportFactory<? extends Closeable> serverTransportFactory) {
+    return new ServiceProviderServer(properties, resume, serviceChannelHandler, serverTransportFactory);
   }
 
 }

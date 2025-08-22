@@ -25,23 +25,23 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
-import io.netty.util.ResourceLeakDetector;
+import infra.remoting.Channel;
 import infra.remoting.Closeable;
 import infra.remoting.Connection;
-import infra.remoting.Channel;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.core.Resume;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.ConnectionDecorator;
-import infra.remoting.resume.InMemoryResumableFramesStore;
+import infra.remoting.resume.InMemoryResumableFramesStoreFactory;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
+import io.netty.util.ResourceLeakDetector;
 import reactor.core.CoreSubscriber;
 import reactor.core.Disposable;
 import reactor.core.Disposables;
@@ -144,7 +144,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
     if (withResumability) {
       remotingServer.resume(new Resume()
-              .storeFactory(token -> new InMemoryResumableFramesStore("server", token, Integer.MAX_VALUE)));
+              .storeFactory(new InMemoryResumableFramesStoreFactory("server", Integer.MAX_VALUE)));
     }
 
     if (withRandomFragmentation) {
@@ -181,20 +181,18 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
                     });
 
     if (withResumability) {
-      channelConnector.resume(
-              new Resume().storeFactory(
-                      token -> new InMemoryResumableFramesStore("client", token, Integer.MAX_VALUE)));
+      channelConnector.resume(new Resume()
+              .storeFactory(new InMemoryResumableFramesStoreFactory("client", Integer.MAX_VALUE)));
     }
 
     if (withRandomFragmentation) {
       channelConnector.fragment(ThreadLocalRandom.current().nextInt(256, 512));
     }
 
-    client =
-            channelConnector
-                    .connect(clientTransportSupplier.apply(address, server, allocatorToSupply1))
-                    .doOnError(Throwable::printStackTrace)
-                    .block();
+    client = channelConnector
+            .connect(clientTransportSupplier.apply(address, server, allocatorToSupply1))
+            .doOnError(Throwable::printStackTrace)
+            .block();
   }
 
   @Override

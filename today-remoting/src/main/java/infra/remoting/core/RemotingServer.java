@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;
@@ -73,8 +74,10 @@ public final class RemotingServer {
 
   private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
 
+  @Nullable
   private Resume resume;
 
+  @Nullable
   private Consumer<LeaseSpec> leaseConfigurer = null;
 
   private int mtu = 0;
@@ -163,7 +166,7 @@ public final class RemotingServer {
    * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming
    * Operation</a>
    */
-  public RemotingServer resume(Resume resume) {
+  public RemotingServer resume(@Nullable Resume resume) {
     this.resume = resume;
     return this;
   }
@@ -192,7 +195,7 @@ public final class RemotingServer {
    * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#lease-semantics">Lease
    * Semantics</a>
    */
-  public RemotingServer lease(Consumer<LeaseSpec> leaseConfigurer) {
+  public RemotingServer lease(@Nullable Consumer<LeaseSpec> leaseConfigurer) {
     this.leaseConfigurer = leaseConfigurer;
     return this;
   }
@@ -221,7 +224,7 @@ public final class RemotingServer {
    * Specify the max time to wait for the first frame (e.g. {@code SETUP}) on an accepted
    * connection.
    *
-   * <p>By default this is set to 1 minute.
+   * <p>By default, this is set to 1 minute.
    *
    * @param timeout duration
    * @return the same instance for method chaining
@@ -286,7 +289,7 @@ public final class RemotingServer {
    */
   public <T extends Closeable> Mono<T> bind(ServerTransport<T> transport) {
     return Mono.defer(new Supplier<Mono<T>>() {
-      private final ServerSetup serverSetup = serverSetup(timeout);
+      private final ServerSetup serverSetup = createSetup(timeout);
 
       @Override
       public Mono<T> get() {
@@ -323,7 +326,7 @@ public final class RemotingServer {
   public ConnectionAcceptor asConnectionAcceptor(int maxFrameLength) {
     assertValidateSetup(maxFrameLength, maxInboundPayloadSize, mtu);
     return new ConnectionAcceptor() {
-      private final ServerSetup serverSetup = serverSetup(timeout);
+      private final ServerSetup serverSetup = createSetup(timeout);
 
       @Override
       public Mono<Void> accept(Connection connection) {
@@ -422,13 +425,12 @@ public final class RemotingServer {
     });
   }
 
-  private ServerSetup serverSetup(Duration timeout) {
-    return resume != null ? createSetup(timeout) : new ServerSetup.DefaultServerSetup(timeout);
-  }
-
-  ServerSetup createSetup(Duration timeout) {
-    return new ServerSetup.ResumableServerSetup(timeout, new SessionManager(), resume.getSessionDuration(),
-            resume.getStreamTimeout(), resume.getStoreFactory(SERVER_TAG), resume.isCleanupStoreOnKeepAlive());
+  private ServerSetup createSetup(Duration timeout) {
+    if (resume == null) {
+      return new ServerSetup.DefaultServerSetup(timeout);
+    }
+    return new ServerSetup.ResumableServerSetup(timeout, new SessionManager(), resume.sessionDuration,
+            resume.streamTimeout, resume.getStoreFactory(SERVER_TAG), resume.cleanupStoreOnKeepAlive);
   }
 
   private ProtocolErrorException rejectedSetupError(Throwable err) {

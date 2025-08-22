@@ -17,20 +17,14 @@
 
 package infra.remoting.frame;
 
-import java.util.UUID;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 
 public class ResumeFrameCodec {
   static final int CURRENT_VERSION = SetupFrameCodec.CURRENT_VERSION;
 
-  public static ByteBuf encode(
-          ByteBufAllocator allocator,
-          ByteBuf token,
-          long lastReceivedServerPos,
-          long firstAvailableClientPos) {
+  public static ByteBuf encode(ByteBufAllocator allocator, ByteBuf token,
+          long lastReceivedServerPos, long firstAvailableClientPos) {
 
     ByteBuf byteBuf = FrameHeaderCodec.encodeStreamZero(allocator, FrameType.RESUME, 0);
     byteBuf.writeInt(CURRENT_VERSION);
@@ -104,11 +98,4 @@ public class ResumeFrameCodec {
     return firstAvailableClientPos;
   }
 
-  public static ByteBuf generateResumeToken() {
-    UUID uuid = UUID.randomUUID();
-    ByteBuf bb = Unpooled.buffer(16);
-    bb.writeLong(uuid.getMostSignificantBits());
-    bb.writeLong(uuid.getLeastSignificantBits());
-    return bb;
-  }
 }

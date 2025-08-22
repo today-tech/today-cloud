@@ -23,10 +23,10 @@ import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import infra.remoting.Closeable;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.FrameHeaderCodec;
-import infra.remoting.plugins.ConnectionInterceptor.Type;
+import infra.remoting.plugins.ConnectionDecorator.Type;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -36,7 +36,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 
 /**
- * {@link DuplexConnection#receive()} is a single stream on which the following type of frames
+ * {@link Connection#receive()} is a single stream on which the following type of frames
  * arrive:
  *
  * <ul>
@@ -50,11 +50,11 @@ import reactor.core.publisher.Operators;
  */
 class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable {
 
-  private final InternalDuplexConnection serverReceiver;
-  private final InternalDuplexConnection clientReceiver;
-  private final DuplexConnection serverConnection;
-  private final DuplexConnection clientConnection;
-  private final DuplexConnection source;
+  private final InternalConnection serverReceiver;
+  private final InternalConnection clientReceiver;
+  private final Connection serverConnection;
+  private final Connection clientConnection;
+  private final Connection source;
   private final boolean isClient;
 
   private Subscription s;
@@ -65,22 +65,21 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
   private static final AtomicIntegerFieldUpdater<ClientServerInputMultiplexer> STATE =
           AtomicIntegerFieldUpdater.newUpdater(ClientServerInputMultiplexer.class, "state");
 
-  public ClientServerInputMultiplexer(
-          DuplexConnection source, InitializingInterceptorRegistry registry, boolean isClient) {
+  public ClientServerInputMultiplexer(Connection source, InitializingInterceptorRegistry registry, boolean isClient) {
     this.source = source;
     this.isClient = isClient;
 
-    this.serverReceiver = new InternalDuplexConnection(Type.SERVER, this, source);
-    this.clientReceiver = new InternalDuplexConnection(Type.CLIENT, this, source);
+    this.serverReceiver = new InternalConnection(Type.SERVER, this, source);
+    this.clientReceiver = new InternalConnection(Type.CLIENT, this, source);
     this.serverConnection = registry.initConnection(Type.SERVER, serverReceiver);
     this.clientConnection = registry.initConnection(Type.CLIENT, clientReceiver);
   }
 
-  DuplexConnection asServerConnection() {
+  Connection asServerConnection() {
     return serverConnection;
   }
 
-  DuplexConnection asClientConnection() {
+  Connection asClientConnection() {
     return clientConnection;
   }
 
@@ -224,22 +223,19 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
             + '}';
   }
 
-  private static class InternalDuplexConnection extends Flux<ByteBuf>
-          implements Subscription, DuplexConnection {
+  private static class InternalConnection extends Flux<ByteBuf> implements Subscription, Connection {
+
     private final Type type;
+    private final Connection source;
     private final ClientServerInputMultiplexer clientServerInputMultiplexer;
-    private final DuplexConnection source;
 
     private volatile int state;
-    static final AtomicIntegerFieldUpdater<InternalDuplexConnection> STATE =
-            AtomicIntegerFieldUpdater.newUpdater(InternalDuplexConnection.class, "state");
+    static final AtomicIntegerFieldUpdater<InternalConnection> STATE =
+            AtomicIntegerFieldUpdater.newUpdater(InternalConnection.class, "state");
 
     CoreSubscriber<? super ByteBuf> actual;
 
-    public InternalDuplexConnection(
-            Type type,
-            ClientServerInputMultiplexer clientServerInputMultiplexer,
-            DuplexConnection source) {
+    public InternalConnection(Type type, ClientServerInputMultiplexer clientServerInputMultiplexer, Connection source) {
       this.type = type;
       this.clientServerInputMultiplexer = clientServerInputMultiplexer;
       this.source = source;
@@ -252,9 +248,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
         actual.onSubscribe(this);
       }
       else {
-        Operators.error(
-                actual,
-                new IllegalStateException("InternalDuplexConnection allows only single subscription"));
+        Operators.error(actual, new IllegalStateException("InternalConnection allows only single subscription"));
       }
     }
 
@@ -342,14 +336,7 @@ class ClientServerInputMultiplexer implements CoreSubscriber<ByteBuf>, Closeable
 
     @Override
     public String toString() {
-      return "InternalDuplexConnection{"
-              + "type="
-              + type
-              + ", source="
-              + source
-              + ", state="
-              + state
-              + '}';
+      return "InternalConnection{type=%s, source=%s, state=%d}".formatted(type, source, state);
     }
   }
 }

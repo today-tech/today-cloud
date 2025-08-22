@@ -37,45 +37,15 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 import reactor.core.publisher.Sinks;
 
-import static infra.remoting.resume.ResumableDuplexConnection.isResumableFrame;
+import static infra.remoting.resume.ResumableConnection.isResumableFrame;
 
 /**
  * writes - n (where n is frequent, primary operation) reads - m (where m == KeepAliveFrequency)
  * skip - k -> 0 (where k is the rare operation which happens after disconnection
  */
-public class InMemoryResumableFramesStore extends Flux<ByteBuf>
-        implements ResumableFramesStore, Subscription {
+public class InMemoryResumableFramesStore extends Flux<ByteBuf> implements ResumableFramesStore, Subscription {
 
-  private FramesSubscriber framesSubscriber;
   private static final Logger logger = LoggerFactory.getLogger(InMemoryResumableFramesStore.class);
-
-  final Sinks.Empty<Void> disposed = Sinks.empty();
-  final Queue<ByteBuf> cachedFrames;
-  final String side;
-  final String session;
-  final int cacheLimit;
-
-  volatile long impliedPosition;
-  static final AtomicLongFieldUpdater<InMemoryResumableFramesStore> IMPLIED_POSITION =
-          AtomicLongFieldUpdater.newUpdater(InMemoryResumableFramesStore.class, "impliedPosition");
-
-  volatile long firstAvailableFramePosition;
-  static final AtomicLongFieldUpdater<InMemoryResumableFramesStore> FIRST_AVAILABLE_FRAME_POSITION =
-          AtomicLongFieldUpdater.newUpdater(
-                  InMemoryResumableFramesStore.class, "firstAvailableFramePosition");
-
-  long remoteImpliedPosition;
-
-  int cacheSize;
-
-  Throwable terminal;
-
-  CoreSubscriber<? super ByteBuf> actual;
-  CoreSubscriber<? super ByteBuf> pendingActual;
-
-  volatile long state;
-  static final AtomicLongFieldUpdater<InMemoryResumableFramesStore> STATE =
-          AtomicLongFieldUpdater.newUpdater(InMemoryResumableFramesStore.class, "state");
 
   /**
    * Flag which indicates that {@link InMemoryResumableFramesStore} is finalized and all related
@@ -124,18 +94,48 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
   static final long MAX_WORK_IN_PROGRESS =
           0b0000_0000_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111L;
 
+  final Sinks.Empty<Void> disposed = Sinks.empty();
+  final Queue<ByteBuf> cachedFrames;
+  final String side;
+  final String session;
+  final int cacheLimit;
+
+  volatile long impliedPosition;
+  static final AtomicLongFieldUpdater<InMemoryResumableFramesStore> IMPLIED_POSITION =
+          AtomicLongFieldUpdater.newUpdater(InMemoryResumableFramesStore.class, "impliedPosition");
+
+  volatile long firstAvailableFramePosition;
+  static final AtomicLongFieldUpdater<InMemoryResumableFramesStore> FIRST_AVAILABLE_FRAME_POSITION =
+          AtomicLongFieldUpdater.newUpdater(
+                  InMemoryResumableFramesStore.class, "firstAvailableFramePosition");
+
+  int cacheSize;
+
+  private Throwable terminal;
+
+  private long remoteImpliedPosition;
+
+  private CoreSubscriber<? super ByteBuf> actual;
+
+  private CoreSubscriber<? super ByteBuf> pendingActual;
+
+  private FramesSubscriber framesSubscriber;
+
+  volatile long state;
+  static final AtomicLongFieldUpdater<InMemoryResumableFramesStore> STATE =
+          AtomicLongFieldUpdater.newUpdater(InMemoryResumableFramesStore.class, "state");
+
   public InMemoryResumableFramesStore(String side, ByteBuf session, int cacheSizeBytes) {
     this.side = side;
-    this.session = session.toString(CharsetUtil.UTF_8);
     this.cacheLimit = cacheSizeBytes;
     this.cachedFrames = new ArrayDeque<>();
+    this.session = session.toString(CharsetUtil.UTF_8);
   }
 
+  @Override
   public Mono<Void> saveFrames(Flux<ByteBuf> frames) {
-    return frames
-            .transform(
-                    Operators.<ByteBuf, Void>lift(
-                            (__, actual) -> this.framesSubscriber = new FramesSubscriber(actual, this)))
+    return frames.transform(Operators.<ByteBuf, Void>lift((__, actual) ->
+                    this.framesSubscriber = new FramesSubscriber(actual, this)))
             .then();
   }
 
@@ -157,7 +157,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     drain((previousState + 1) | REMOTE_IMPLIED_POSITION_CHANGED_FLAG);
   }
 
-  void drain(long expectedState) {
+  private void drain(long expectedState) {
     final Fuseable.QueueSubscription<ByteBuf> qs = this.framesSubscriber.qs;
     final Queue<ByteBuf> cachedFrames = this.cachedFrames;
 
@@ -198,7 +198,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  long handlePendingRemoteImpliedPositionChanges(long expectedState, Queue<ByteBuf> cachedFrames) {
+  private long handlePendingRemoteImpliedPositionChanges(long expectedState, Queue<ByteBuf> cachedFrames) {
     final long remoteImpliedPosition = this.remoteImpliedPosition;
     final long firstAvailableFramePosition = this.firstAvailableFramePosition;
     final long toDropFromCache = Math.max(0, remoteImpliedPosition - firstAvailableFramePosition);
@@ -207,33 +207,23 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
       final int droppedFromCache = dropFramesFromCache(toDropFromCache, cachedFrames);
 
       if (toDropFromCache > droppedFromCache) {
-        this.terminal =
-                new IllegalStateException(
-                        String.format(
-                                "Local and remote state disagreement: "
-                                        + "need to remove additional %d bytes, but cache is empty",
-                                toDropFromCache));
+        this.terminal = new IllegalStateException(
+                "Local and remote state disagreement: need to remove additional %d bytes, but cache is empty".formatted(toDropFromCache));
         expectedState = markTerminated(this) | TERMINATED_FLAG;
       }
 
       if (toDropFromCache < droppedFromCache) {
-        this.terminal =
-                new IllegalStateException(
-                        "Local and remote state disagreement: local and remote frame sizes are not equal");
+        this.terminal = new IllegalStateException(
+                "Local and remote state disagreement: local and remote frame sizes are not equal");
         expectedState = markTerminated(this) | TERMINATED_FLAG;
       }
 
       FIRST_AVAILABLE_FRAME_POSITION.lazySet(this, firstAvailableFramePosition + droppedFromCache);
       if (this.cacheLimit != Integer.MAX_VALUE) {
         this.cacheSize -= droppedFromCache;
-
         if (logger.isDebugEnabled()) {
-          logger.debug(
-                  "Side[{}]|Session[{}]. Removed frames from cache to position[{}]. CacheSize[{}]",
-                  this.side,
-                  this.session,
-                  this.remoteImpliedPosition,
-                  this.cacheSize);
+          logger.debug("Side[{}]|Session[{}]. Removed frames from cache to position[{}]. CacheSize[{}]",
+                  this.side, this.session, this.remoteImpliedPosition, this.cacheSize);
         }
       }
     }
@@ -241,7 +231,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     return expectedState;
   }
 
-  void handlePendingFrames(Fuseable.QueueSubscription<ByteBuf> qs) {
+  private void handlePendingFrames(Fuseable.QueueSubscription<ByteBuf> qs) {
     for (; ; ) {
       final ByteBuf frame = qs.poll();
       final boolean empty = frame == null;
@@ -258,7 +248,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  long handlePendingConnection(long expectedState, Queue<ByteBuf> cachedFrames) {
+  private long handlePendingConnection(long expectedState, Queue<ByteBuf> cachedFrames) {
     CoreSubscriber<? super ByteBuf> lastActual = null;
     for (; ; ) {
       final CoreSubscriber<? super ByteBuf> nextActual = this.pendingActual;
@@ -272,12 +262,8 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
       expectedState = markConnected(this, expectedState);
       if (isConnected(expectedState)) {
         if (logger.isDebugEnabled()) {
-          logger.debug(
-                  "Side[{}]|Session[{}]. Connected at Position[{}] and ImpliedPosition[{}]",
-                  side,
-                  session,
-                  firstAvailableFramePosition,
-                  impliedPosition);
+          logger.debug("Side[{}]|Session[{}]. Connected at Position[{}] and ImpliedPosition[{}]",
+                  side, session, firstAvailableFramePosition, impliedPosition);
         }
 
         this.actual = nextActual;
@@ -293,9 +279,9 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     return expectedState;
   }
 
-  static int dropFramesFromCache(long toRemoveBytes, Queue<ByteBuf> cache) {
+  private static int dropFramesFromCache(long toRemoveBytes, Queue<ByteBuf> cache) {
     int removedBytes = 0;
-    while (toRemoveBytes > removedBytes && cache.size() > 0) {
+    while (toRemoveBytes > removedBytes && !cache.isEmpty()) {
       final ByteBuf cachedFrame = cache.poll();
       final int frameSize = cachedFrame.readableBytes();
 
@@ -338,29 +324,24 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  void pauseImplied() {
+  private void pauseImplied() {
     for (; ; ) {
       final long impliedPosition = this.impliedPosition;
 
       if (IMPLIED_POSITION.compareAndSet(this, impliedPosition, impliedPosition | Long.MIN_VALUE)) {
-        logger.debug(
-                "Side[{}]|Session[{}]. Paused at position[{}]", side, session, impliedPosition);
+        logger.debug("Side[{}]|Session[{}]. Paused at position[{}]", side, session, impliedPosition);
         return;
       }
     }
   }
 
-  void resumeImplied() {
+  private void resumeImplied() {
     for (; ; ) {
       final long impliedPosition = this.impliedPosition;
 
       final long restoredImpliedPosition = impliedPosition & Long.MAX_VALUE;
       if (IMPLIED_POSITION.compareAndSet(this, impliedPosition, restoredImpliedPosition)) {
-        logger.debug(
-                "Side[{}]|Session[{}]. Resumed at position[{}]",
-                side,
-                session,
-                restoredImpliedPosition);
+        logger.debug("Side[{}]|Session[{}]. Resumed at position[{}]", side, session, restoredImpliedPosition);
         return;
       }
     }
@@ -383,9 +364,9 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     drain((previousState + 1) | DISPOSED_FLAG);
   }
 
-  void clearCache() {
-    final Queue<ByteBuf> frames = this.cachedFrames;
+  private void clearCache() {
     this.cacheSize = 0;
+    final Queue<ByteBuf> frames = this.cachedFrames;
 
     ByteBuf frame;
     while ((frame = frames.poll()) != null) {
@@ -482,19 +463,16 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
   }
 
   @Override
-  public void request(long n) { }
+  public void request(long n) {
+  }
 
   @Override
   public void cancel() {
     pauseImplied();
     markDisconnected(this);
     if (logger.isDebugEnabled()) {
-      logger.debug(
-              "Side[{}]|Session[{}]. Disconnected at Position[{}] and ImpliedPosition[{}]",
-              side,
-              session,
-              firstAvailableFramePosition,
-              frameImpliedPosition());
+      logger.debug("Side[{}]|Session[{}]. Disconnected at Position[{}] and ImpliedPosition[{}]",
+              side, session, firstAvailableFramePosition, frameImpliedPosition());
     }
   }
 
@@ -522,15 +500,14 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     drain((previousState + 1) | PENDING_CONNECTION_FLAG);
   }
 
-  static class FramesSubscriber
-          implements CoreSubscriber<ByteBuf>, Fuseable.QueueSubscription<Void> {
+  private static class FramesSubscriber implements CoreSubscriber<ByteBuf>, Fuseable.QueueSubscription<Void> {
 
     final CoreSubscriber<? super Void> actual;
     final InMemoryResumableFramesStore parent;
 
-    Fuseable.QueueSubscription<ByteBuf> qs;
-
     boolean done;
+
+    public Fuseable.QueueSubscription<ByteBuf> qs;
 
     FramesSubscriber(CoreSubscriber<? super Void> actual, InMemoryResumableFramesStore parent) {
       this.actual = actual;
@@ -670,7 +647,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     public void clear() { }
   }
 
-  static long markFrameAdded(InMemoryResumableFramesStore store) {
+  private static long markFrameAdded(InMemoryResumableFramesStore store) {
     for (; ; ) {
       final long state = store.state;
 
@@ -690,7 +667,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markPendingConnection(InMemoryResumableFramesStore store) {
+  private static long markPendingConnection(InMemoryResumableFramesStore store) {
     for (; ; ) {
       final long state = store.state;
 
@@ -710,7 +687,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markRemoteImpliedPositionChanged(InMemoryResumableFramesStore store) {
+  private static long markRemoteImpliedPositionChanged(InMemoryResumableFramesStore store) {
     for (; ; ) {
       final long state = store.state;
 
@@ -726,7 +703,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markDisconnected(InMemoryResumableFramesStore store) {
+  private static long markDisconnected(InMemoryResumableFramesStore store) {
     for (; ; ) {
       final long state = store.state;
 
@@ -740,7 +717,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markWorkDone(InMemoryResumableFramesStore store, long expectedState) {
+  private static long markWorkDone(InMemoryResumableFramesStore store, long expectedState) {
     for (; ; ) {
       final long state = store.state;
 
@@ -759,7 +736,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markConnected(InMemoryResumableFramesStore store, long expectedState) {
+  private static long markConnected(InMemoryResumableFramesStore store, long expectedState) {
     for (; ; ) {
       final long state = store.state;
 
@@ -778,7 +755,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markTerminated(InMemoryResumableFramesStore store) {
+  private static long markTerminated(InMemoryResumableFramesStore store) {
     for (; ; ) {
       final long state = store.state;
 
@@ -794,7 +771,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static long markDisposed(InMemoryResumableFramesStore store) {
+  private static long markDisposed(InMemoryResumableFramesStore store) {
     for (; ; ) {
       final long state = store.state;
 
@@ -810,7 +787,7 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static void clearAndFinalize(InMemoryResumableFramesStore store) {
+  private static void clearAndFinalize(InMemoryResumableFramesStore store) {
     final Fuseable.QueueSubscription<ByteBuf> qs = store.framesSubscriber.qs;
     for (; ; ) {
       final long state = store.state;
@@ -830,31 +807,31 @@ public class InMemoryResumableFramesStore extends Flux<ByteBuf>
     }
   }
 
-  static boolean isConnected(long state) {
+  private static boolean isConnected(long state) {
     return (state & CONNECTED_FLAG) == CONNECTED_FLAG;
   }
 
-  static boolean hasRemoteImpliedPositionChanged(long state) {
+  private static boolean hasRemoteImpliedPositionChanged(long state) {
     return (state & REMOTE_IMPLIED_POSITION_CHANGED_FLAG) == REMOTE_IMPLIED_POSITION_CHANGED_FLAG;
   }
 
-  static boolean hasPendingConnection(long state) {
+  private static boolean hasPendingConnection(long state) {
     return (state & PENDING_CONNECTION_FLAG) == PENDING_CONNECTION_FLAG;
   }
 
-  static boolean hasFrames(long state) {
+  private static boolean hasFrames(long state) {
     return (state & HAS_FRAME_FLAG) == HAS_FRAME_FLAG;
   }
 
-  static boolean isTerminated(long state) {
+  private static boolean isTerminated(long state) {
     return (state & TERMINATED_FLAG) == TERMINATED_FLAG;
   }
 
-  static boolean isDisposed(long state) {
+  private static boolean isDisposed(long state) {
     return (state & DISPOSED_FLAG) == DISPOSED_FLAG;
   }
 
-  static boolean isFinalized(long state) {
+  private static boolean isFinalized(long state) {
     return (state & FINALIZED_FLAG) == FINALIZED_FLAG;
   }
 

@@ -24,9 +24,9 @@ import java.util.Queue;
 import java.util.function.Consumer;
 
 import infra.lang.Nullable;
-import io.netty.buffer.ByteBuf;
 import infra.remoting.frame.FrameType;
 import infra.remoting.internal.jctools.queues.MpscUnboundedArrayQueue;
+import io.netty.buffer.ByteBuf;
 
 public class TestRequestInterceptor implements RequestInterceptor {
 
@@ -42,9 +42,8 @@ public class TestRequestInterceptor implements RequestInterceptor {
 
   @Override
   public void onTerminate(int streamId, FrameType requestType, @Nullable Throwable t) {
-    events.add(
-            new Event(
-                    t == null ? EventType.ON_COMPLETE : EventType.ON_ERROR, streamId, requestType, t));
+    events.add(new Event(
+            t == null ? EventType.ON_COMPLETE : EventType.ON_ERROR, streamId, requestType, t));
   }
 
   @Override

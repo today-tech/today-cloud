@@ -17,15 +17,15 @@
 
 package infra.remoting.transport;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import reactor.core.publisher.Mono;
 
-/** A client contract for writing transports of RSocket. */
+/** A client contract for writing transports of protocol. */
 public interface ClientTransport extends Transport {
 
   /**
    * Return a {@code Mono} that connects for each subscriber.
    */
-  Mono<DuplexConnection> connect();
+  Mono<Connection> connect();
 
 }

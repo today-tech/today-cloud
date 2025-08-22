@@ -48,16 +48,16 @@ public class ServerChannelSessionTests {
 
       transport.connect().subscribe();
 
-      final ResumableDuplexConnection resumableDuplexConnection =
-              new ResumableDuplexConnection(
+      final ResumableConnection resumableConnection =
+              new ResumableConnection(
                       "test", Unpooled.EMPTY_BUFFER, transport.testConnection(), framesStore);
 
-      resumableDuplexConnection.receive().subscribe();
+      resumableConnection.receive().subscribe();
 
       final ServerChannelSession session =
               new ServerChannelSession(
                       Unpooled.EMPTY_BUFFER,
-                      resumableDuplexConnection,
+                      resumableConnection,
                       transport.testConnection(),
                       framesStore,
                       Duration.ofMinutes(1),
@@ -142,7 +142,7 @@ public class ServerChannelSessionTests {
               .typeOf(FrameType.ERROR)
               .matches(ReferenceCounted::release);
 
-      resumableDuplexConnection.onClose().as(StepVerifier::create).expectComplete().verify();
+      resumableConnection.onClose().as(StepVerifier::create).expectComplete().verify();
       transport.alloc().assertHasNoLeaks();
     }
     finally {
@@ -160,16 +160,16 @@ public class ServerChannelSessionTests {
 
       transport.connect().subscribe();
 
-      final ResumableDuplexConnection resumableDuplexConnection =
-              new ResumableDuplexConnection(
+      final ResumableConnection resumableConnection =
+              new ResumableConnection(
                       "test", Unpooled.EMPTY_BUFFER, transport.testConnection(), framesStore);
 
-      resumableDuplexConnection.receive().subscribe();
+      resumableConnection.receive().subscribe();
 
       final ServerChannelSession session =
               new ServerChannelSession(
                       Unpooled.EMPTY_BUFFER,
-                      resumableDuplexConnection,
+                      resumableConnection,
                       transport.testConnection(),
                       framesStore,
                       Duration.ofMinutes(1),
@@ -200,7 +200,7 @@ public class ServerChannelSessionTests {
               .typeOf(FrameType.ERROR)
               .matches(ReferenceCounted::release);
 
-      resumableDuplexConnection.onClose().as(StepVerifier::create).expectError().verify();
+      resumableConnection.onClose().as(StepVerifier::create).expectError().verify();
       keepAliveSupport.dispose();
       transport.alloc().assertHasNoLeaks();
     }

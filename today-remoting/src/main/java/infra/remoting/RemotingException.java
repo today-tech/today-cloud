@@ -30,13 +30,6 @@ public class RemotingException extends RuntimeException {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  public RemotingException() {
-  }
-
-  public RemotingException(@Nullable String message) {
-    super(message);
-  }
-
   public RemotingException(@Nullable String message, @Nullable Throwable cause) {
     super(message, cause);
   }

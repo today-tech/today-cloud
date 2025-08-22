@@ -25,23 +25,23 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
-import io.netty.util.ResourceLeakDetector;
-import infra.remoting.Closeable;
-import infra.remoting.DuplexConnection;
 import infra.remoting.Channel;
+import infra.remoting.Closeable;
+import infra.remoting.Connection;
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
 import infra.remoting.core.Resume;
 import infra.remoting.frame.decoder.PayloadDecoder;
-import infra.remoting.plugins.ConnectionInterceptor;
-import infra.remoting.resume.InMemoryResumableFramesStore;
+import infra.remoting.plugins.ConnectionDecorator;
+import infra.remoting.resume.InMemoryResumableFramesStoreFactory;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.ServerTransport;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
+import io.netty.util.ResourceLeakDetector;
 import reactor.core.CoreSubscriber;
 import reactor.core.Disposable;
 import reactor.core.Disposables;
@@ -121,20 +121,20 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
       allocatorToSupply2 = ByteBufAllocator.DEFAULT;
     }
     responder = new TestChannel(TransportPair.data, metadata);
-    final RemotingServer remotingServer = RemotingServer.create((setup, sendingSocket) -> Mono.just(responder))
+    final RemotingServer remotingServer = RemotingServer.create((setup, channel) -> Mono.just(responder))
             .payloadDecoder(PayloadDecoder.ZERO_COPY)
             .interceptors(registry -> {
               if (runServerWithAsyncInterceptors && !withResumability) {
                 logger.info("Perform Integration Test with Async Interceptors Enabled For Server");
-                registry.forConnection((type, duplexConnection) -> new AsyncDuplexConnection(duplexConnection, "server"))
-                        .forChannelAcceptor(delegate -> (connectionSetupPayload, sendingSocket) -> delegate.accept(connectionSetupPayload, sendingSocket)
+                registry.forConnection((type, duplexConnection) -> new AsyncConnection(duplexConnection, "server"))
+                        .forChannelAcceptor(delegate -> (connectionSetupPayload, channel) -> delegate.accept(connectionSetupPayload, channel)
                                 .subscribeOn(Schedulers.parallel()));
               }
 
               if (withResumability) {
                 registry.forConnection((type, duplexConnection) ->
-                        type == ConnectionInterceptor.Type.SOURCE
-                                ? new DisconnectingDuplexConnection(
+                        type == ConnectionDecorator.Type.SOURCE
+                                ? new DisconnectingConnection(
                                 "Server",
                                 duplexConnection,
                                 Duration.ofMillis(ThreadLocalRandom.current().nextInt(100, 1000)))
@@ -144,7 +144,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
     if (withResumability) {
       remotingServer.resume(new Resume()
-              .storeFactory(token -> new InMemoryResumableFramesStore("server", token, Integer.MAX_VALUE)));
+              .storeFactory(new InMemoryResumableFramesStoreFactory("server", Integer.MAX_VALUE)));
     }
 
     if (withRandomFragmentation) {
@@ -162,16 +162,16 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
                       if (runClientWithAsyncInterceptors && !withResumability) {
                         logger.info("Perform Integration Test with Async Interceptors Enabled For Client");
                         registry.forConnection((type, duplexConnection) ->
-                                        new AsyncDuplexConnection(duplexConnection, "client"))
-                                .forChannelAcceptor(delegate -> (connectionSetupPayload, sendingSocket) ->
-                                        delegate.accept(connectionSetupPayload, sendingSocket)
+                                        new AsyncConnection(duplexConnection, "client"))
+                                .forChannelAcceptor(delegate -> (connectionSetupPayload, channel) ->
+                                        delegate.accept(connectionSetupPayload, channel)
                                                 .subscribeOn(Schedulers.parallel()));
                       }
 
                       if (withResumability) {
                         registry.forConnection((type, duplexConnection) ->
-                                type == ConnectionInterceptor.Type.SOURCE
-                                        ? new DisconnectingDuplexConnection(
+                                type == ConnectionDecorator.Type.SOURCE
+                                        ? new DisconnectingConnection(
                                         "Client",
                                         duplexConnection,
                                         Duration.ofMillis(
@@ -181,20 +181,18 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
                     });
 
     if (withResumability) {
-      channelConnector.resume(
-              new Resume().storeFactory(
-                      token -> new InMemoryResumableFramesStore("client", token, Integer.MAX_VALUE)));
+      channelConnector.resume(new Resume()
+              .storeFactory(new InMemoryResumableFramesStoreFactory("client", Integer.MAX_VALUE)));
     }
 
     if (withRandomFragmentation) {
       channelConnector.fragment(ThreadLocalRandom.current().nextInt(256, 512));
     }
 
-    client =
-            channelConnector
-                    .connect(clientTransportSupplier.apply(address, server, allocatorToSupply1))
-                    .doOnError(Throwable::printStackTrace)
-                    .block();
+    client = channelConnector
+            .connect(clientTransportSupplier.apply(address, server, allocatorToSupply1))
+            .doOnError(Throwable::printStackTrace)
+            .block();
   }
 
   @Override
@@ -243,31 +241,31 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
     logger.info("TransportPair has been terminated");
   }
 
-  private static class AsyncDuplexConnection implements DuplexConnection {
+  private static class AsyncConnection implements Connection {
 
-    private final DuplexConnection duplexConnection;
+    private final Connection connection;
     private String tag;
     private final ByteBufReleaserOperator bufReleaserOperator;
 
-    public AsyncDuplexConnection(DuplexConnection duplexConnection, String tag) {
-      this.duplexConnection = duplexConnection;
+    public AsyncConnection(Connection connection, String tag) {
+      this.connection = connection;
       this.tag = tag;
       this.bufReleaserOperator = new ByteBufReleaserOperator();
     }
 
     @Override
     public void sendFrame(int streamId, ByteBuf frame) {
-      duplexConnection.sendFrame(streamId, frame);
+      connection.sendFrame(streamId, frame);
     }
 
     @Override
     public void sendErrorAndClose(ProtocolErrorException e) {
-      duplexConnection.sendErrorAndClose(e);
+      connection.sendErrorAndClose(e);
     }
 
     @Override
     public Flux<ByteBuf> receive() {
-      return duplexConnection
+      return connection
               .receive()
               .doOnTerminate(() -> logger.info("[" + this + "] Receive is done before PO"))
               .subscribeOn(Schedulers.boundedElastic())
@@ -283,17 +281,17 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
     @Override
     public ByteBufAllocator alloc() {
-      return duplexConnection.alloc();
+      return connection.alloc();
     }
 
     @Override
     public SocketAddress remoteAddress() {
-      return duplexConnection.remoteAddress();
+      return connection.remoteAddress();
     }
 
     @Override
     public Mono<Void> onClose() {
-      return Mono.whenDelayError(duplexConnection.onClose()
+      return Mono.whenDelayError(connection.onClose()
                       .doOnTerminate(() -> logger.info("[" + this + "] Source Connection is done")),
               bufReleaserOperator
                       .onClose()
@@ -302,14 +300,14 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
     @Override
     public void dispose() {
-      duplexConnection.dispose();
+      connection.dispose();
     }
 
     @Override
     public String toString() {
-      return "AsyncDuplexConnection{"
+      return "AsyncConnection{"
               + "duplexConnection="
-              + duplexConnection
+              + connection
               + ", tag='"
               + tag
               + '\''
@@ -319,14 +317,14 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
     }
   }
 
-  private static class DisconnectingDuplexConnection implements DuplexConnection {
+  private static class DisconnectingConnection implements Connection {
 
     private final String tag;
-    final DuplexConnection source;
+    final Connection source;
     final Duration delay;
     final Swap disposables = Disposables.swap();
 
-    DisconnectingDuplexConnection(String tag, DuplexConnection source, Duration delay) {
+    DisconnectingConnection(String tag, Connection source, Duration delay) {
       this.tag = tag;
       this.source = source;
       this.delay = delay;
@@ -388,7 +386,7 @@ public class TransportPair<T, S extends Closeable> implements Disposable {
 
     @Override
     public String toString() {
-      return "DisconnectingDuplexConnection{"
+      return "DisconnectingConnection{"
               + "tag='"
               + tag
               + '\''

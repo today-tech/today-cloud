@@ -22,23 +22,24 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;
+import infra.remoting.Connection;
 import infra.remoting.ConnectionSetupPayload;
-import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
 import infra.remoting.ProtocolErrorException;
-import infra.remoting.exceptions.InvalidSetupException;
-import infra.remoting.exceptions.RejectedSetupException;
+import infra.remoting.error.InvalidSetupException;
+import infra.remoting.error.RejectedSetupException;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.lease.TrackingLeaseSender;
-import infra.remoting.plugins.ConnectionInterceptor;
+import infra.remoting.plugins.ConnectionDecorator;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.plugins.InterceptorRegistry;
-import infra.remoting.plugins.RateLimitInterceptor;
+import infra.remoting.plugins.RateLimitDecorator;
 import infra.remoting.resume.SessionManager;
 import infra.remoting.transport.ConnectionAcceptor;
 import infra.remoting.transport.ServerTransport;
@@ -46,6 +47,7 @@ import infra.remoting.transport.Transport;
 import io.netty.buffer.ByteBuf;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 import static infra.remoting.core.FragmentationUtils.assertMtu;
 import static infra.remoting.core.PayloadValidationUtils.assertValidateSetup;
@@ -53,13 +55,13 @@ import static infra.remoting.core.ReassemblyUtils.assertInboundPayloadSize;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 /**
- * The main class for starting an RSocket server.
+ * The main class for starting a server.
  *
  * <p>For example:
  *
  * <pre>{@code
  * CloseableChannel closeable =
- *         RemotingServer.create(SocketAcceptor.with(new RSocket() {...}))
+ *         RemotingServer.create(ChannelAcceptor.with(new Channel() {...}))
  *                 .bind(TcpServerTransport.create("localhost", 7000))
  *                 .block();
  * }</pre>
@@ -72,8 +74,10 @@ public final class RemotingServer {
 
   private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
 
+  @Nullable
   private Resume resume;
 
+  @Nullable
   private Consumer<LeaseSpec> leaseConfigurer = null;
 
   private int mtu = 0;
@@ -87,43 +91,22 @@ public final class RemotingServer {
   private RemotingServer() {
   }
 
-  /** Static factory method to create an {@code RemotingServer}. */
-  public static RemotingServer create() {
-    return new RemotingServer();
-  }
-
-  /**
-   * Static factory method to create an {@code RemotingServer} instance with the given {@code
-   * SocketAcceptor}. Effectively a shortcut for:
-   *
-   * <pre class="code">
-   * RemotingServer.create().acceptor(...);
-   * </pre>
-   *
-   * @param acceptor the acceptor to handle connections with
-   * @return the same instance for method chaining
-   * @see #acceptor(ChannelAcceptor)
-   */
-  public static RemotingServer create(ChannelAcceptor acceptor) {
-    return RemotingServer.create().acceptor(acceptor);
-  }
-
   /**
    * Set the acceptor to handle incoming connections and handle requests.
    *
-   * <p>An example with access to the {@code SETUP} frame and sending RSocket for performing
+   * <p>An example with access to the {@code SETUP} frame and sending Channel for performing
    * requests back to the client if needed:
    *
    * <pre>{@code
-   * RemotingServer.create((setup, sendingRSocket) -> Mono.just(new RSocket() {...}))
+   * RemotingServer.create((setup, sending) -> Mono.just(new Channel() {...}))
    *         .bind(TcpServerTransport.create("localhost", 7000))
    *         .subscribe();
    * }</pre>
    *
-   * <p>A shortcut to provide the handling RSocket only:
+   * <p>A shortcut to provide the handling Channel only:
    *
    * <pre>{@code
-   * RemotingServer.create(SocketAcceptor.with(new RSocket() {...}))
+   * RemotingServer.create(ChannelAcceptor.with(new Channel() {...}))
    *         .bind(TcpServerTransport.create("localhost", 7000))
    *         .subscribe();
    * }</pre>
@@ -131,12 +114,12 @@ public final class RemotingServer {
    * <p>A shortcut to handle request-response interactions only:
    *
    * <pre>{@code
-   * RemotingServer.create(SocketAcceptor.forRequestResponse(payload -> ...))
+   * RemotingServer.create(ChannelAcceptor.forRequestResponse(payload -> ...))
    *         .bind(TcpServerTransport.create("localhost", 7000))
    *         .subscribe();
    * }</pre>
    *
-   * <p>By default, {@code new RSocket(){}} is used for handling which rejects requests from the
+   * <p>By default, {@code new Channel(){}} is used for handling which rejects requests from the
    * client with {@link UnsupportedOperationException}.
    *
    * @param acceptor the acceptor to handle incoming connections and requests with
@@ -160,7 +143,7 @@ public final class RemotingServer {
    *
    * @param configurer a configurer to customize interception with.
    * @return the same instance for method chaining
-   * @see RateLimitInterceptor
+   * @see RateLimitDecorator
    */
   public RemotingServer interceptors(Consumer<InterceptorRegistry> configurer) {
     configurer.accept(this.interceptors);
@@ -168,14 +151,14 @@ public final class RemotingServer {
   }
 
   /**
-   * Enables the Resume capability of the RSocket protocol where if the client gets disconnected,
+   * Enables the Resume capability of the protocol where if the client gets disconnected,
    * the connection is re-acquired and any interrupted streams are transparently resumed. For this
    * to work clients must also support and request to enable this when connecting.
    *
    * <p>Use the {@link Resume} argument to customize the Resume session duration, storage, retry
    * logic, and others.
    *
-   * <p>By default this is not enabled.
+   * <p>By default, this is not enabled.
    *
    * @param resume configuration for the Resume capability
    * @return the same instance for method chaining
@@ -183,20 +166,20 @@ public final class RemotingServer {
    * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming
    * Operation</a>
    */
-  public RemotingServer resume(Resume resume) {
+  public RemotingServer resume(@Nullable Resume resume) {
     this.resume = resume;
     return this;
   }
 
   /**
-   * Enables the Lease feature of the RSocket protocol where the number of requests that can be
+   * Enables the Lease feature of the protocol where the number of requests that can be
    * performed from either side are rationed via {@code LEASE} frames from the responder side. For
    * this to work clients must also support and request to enable this when connecting.
    *
    * <p>Example usage:
    *
    * <pre>{@code
-   * RemotingServer.create(SocketAcceptor.with(new RSocket() {...}))
+   * RemotingServer.create(ChannelAcceptor.with(new Channel() {...}))
    *         .lease(spec ->
    *            spec.sender(() -> Flux.interval(ofSeconds(1))
    *                                  .map(__ -> Lease.create(ofSeconds(1), 1)))
@@ -212,7 +195,7 @@ public final class RemotingServer {
    * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#lease-semantics">Lease
    * Semantics</a>
    */
-  public RemotingServer lease(Consumer<LeaseSpec> leaseConfigurer) {
+  public RemotingServer lease(@Nullable Consumer<LeaseSpec> leaseConfigurer) {
     this.leaseConfigurer = leaseConfigurer;
     return this;
   }
@@ -241,7 +224,7 @@ public final class RemotingServer {
    * Specify the max time to wait for the first frame (e.g. {@code SETUP}) on an accepted
    * connection.
    *
-   * <p>By default this is set to 1 minute.
+   * <p>By default, this is set to 1 minute.
    *
    * @param timeout duration
    * @return the same instance for method chaining
@@ -258,7 +241,7 @@ public final class RemotingServer {
    * When this is set, frames larger than the given maximum transmission unit (mtu) size value are
    * fragmented.
    *
-   * <p>By default this is not set in which case payloads are sent whole up to the maximum frame
+   * <p>By default, this is not set in which case payloads are sent whole up to the maximum frame
    * size of 16,777,215 bytes.
    *
    * @param mtu the threshold size for fragmentation, must be no less than 64
@@ -306,15 +289,15 @@ public final class RemotingServer {
    */
   public <T extends Closeable> Mono<T> bind(ServerTransport<T> transport) {
     return Mono.defer(new Supplier<Mono<T>>() {
-      private final ServerSetup serverSetup = serverSetup(timeout);
+      private final ServerSetup serverSetup = createSetup(timeout);
 
       @Override
       public Mono<T> get() {
         int maxFrameLength = transport.getMaxFrameLength();
         assertValidateSetup(maxFrameLength, maxInboundPayloadSize, mtu);
         return transport
-                .start(duplexConnection -> acceptor(serverSetup, duplexConnection, maxFrameLength))
-//                .publishOn(Schedulers.boundedElastic())
+                .start(connection -> acceptor(serverSetup, connection, maxFrameLength))
+                .publishOn(Schedulers.boundedElastic())
                 .doOnNext(c -> c.onClose().doFinally(v -> serverSetup.dispose()).subscribe());
       }
     });
@@ -329,7 +312,7 @@ public final class RemotingServer {
   }
 
   /**
-   * An alternative to {@link #bind(ServerTransport)} that is useful for installing RSocket on a
+   * An alternative to {@link #bind(ServerTransport)} that is useful for installing Channel on a
    * server that is started independently.
    */
   public ConnectionAcceptor asConnectionAcceptor() {
@@ -337,38 +320,38 @@ public final class RemotingServer {
   }
 
   /**
-   * An alternative to {@link #bind(ServerTransport)} that is useful for installing RSocket on a
+   * An alternative to {@link #bind(ServerTransport)} that is useful for installing Channel on a
    * server that is started independently.
    */
   public ConnectionAcceptor asConnectionAcceptor(int maxFrameLength) {
     assertValidateSetup(maxFrameLength, maxInboundPayloadSize, mtu);
     return new ConnectionAcceptor() {
-      private final ServerSetup serverSetup = serverSetup(timeout);
+      private final ServerSetup serverSetup = createSetup(timeout);
 
       @Override
-      public Mono<Void> accept(DuplexConnection connection) {
+      public Mono<Void> accept(Connection connection) {
         return acceptor(serverSetup, connection, maxFrameLength);
       }
     };
   }
 
-  private Mono<Void> acceptor(ServerSetup serverSetup, DuplexConnection sourceConnection, int maxFrameLength) {
-    final DuplexConnection interceptedConnection = interceptors.initConnection(ConnectionInterceptor.Type.SOURCE, sourceConnection);
+  private Mono<Void> acceptor(ServerSetup serverSetup, Connection sourceConnection, int maxFrameLength) {
+    final Connection interceptedConnection = interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection);
     return serverSetup
-            .init(LoggingDuplexConnection.wrapIfEnabled(interceptedConnection))
+            .init(LoggingConnection.wrapIfEnabled(interceptedConnection))
             .flatMap(tuple2 -> {
               final ByteBuf startFrame = tuple2.getT1();
-              final DuplexConnection clientServerConnection = tuple2.getT2();
+              final Connection clientServerConnection = tuple2.getT2();
 
               return accept(serverSetup, startFrame, clientServerConnection, maxFrameLength);
             });
   }
 
-  private Mono<Void> acceptResume(ServerSetup serverSetup, ByteBuf resumeFrame, DuplexConnection clientServerConnection) {
-    return serverSetup.acceptRSocketResume(resumeFrame, clientServerConnection);
+  private Mono<Void> acceptResume(ServerSetup serverSetup, ByteBuf resumeFrame, Connection clientServerConnection) {
+    return serverSetup.acceptChannelResume(resumeFrame, clientServerConnection);
   }
 
-  private Mono<Void> accept(ServerSetup serverSetup, ByteBuf startFrame, DuplexConnection clientServerConnection, int maxFrameLength) {
+  private Mono<Void> accept(ServerSetup serverSetup, ByteBuf startFrame, Connection clientServerConnection, int maxFrameLength) {
     return switch (FrameHeaderCodec.frameType(startFrame)) {
       case SETUP -> acceptSetup(serverSetup, startFrame, clientServerConnection, maxFrameLength);
       case RESUME -> acceptResume(serverSetup, startFrame, clientServerConnection);
@@ -379,7 +362,7 @@ public final class RemotingServer {
     };
   }
 
-  private Mono<Void> acceptSetup(ServerSetup serverSetup, ByteBuf setupFrame, DuplexConnection clientServerConnection, int maxFrameLength) {
+  private Mono<Void> acceptSetup(ServerSetup serverSetup, ByteBuf setupFrame, Connection clientServerConnection, int maxFrameLength) {
     if (!SetupFrameCodec.isSupportedVersion(setupFrame)) {
       serverSetup.sendError(clientServerConnection, new InvalidSetupException(
               "Unsupported version: " + SetupFrameCodec.humanReadableVersion(setupFrame)));
@@ -392,10 +375,10 @@ public final class RemotingServer {
       return clientServerConnection.onClose();
     }
 
-    return serverSetup.acceptRSocketSetup(setupFrame, clientServerConnection, (keepAliveHandler, wrappedDuplexConnection) -> {
+    return serverSetup.acceptChannelSetup(setupFrame, clientServerConnection, (keepAliveHandler, wrappedConnection) -> {
       final InitializingInterceptorRegistry interceptors = this.interceptors;
       final ConnectionSetupPayload setupPayload = new DefaultConnectionSetupPayload(setupFrame.retain());
-      final ClientServerInputMultiplexer multiplexer = new ClientServerInputMultiplexer(wrappedDuplexConnection, interceptors, false);
+      final ClientServerInputMultiplexer multiplexer = new ClientServerInputMultiplexer(wrappedConnection, interceptors, false);
       final LeaseSpec leases;
       final RequesterLeaseTracker requesterLeaseTracker;
       if (leaseEnabled) {
@@ -411,51 +394,75 @@ public final class RemotingServer {
       final Sinks.Empty<Void> requesterOnAllClosedSink = Sinks.unsafe().empty();
       final Sinks.Empty<Void> responderOnAllClosedSink = Sinks.unsafe().empty();
 
-      Channel channelRequester = new ChannelRequester(multiplexer.asServerConnection(), payloadDecoder, StreamIdProvider.forServer(),
+      Channel requesterChannel = new RequesterChannel(multiplexer.asServerConnection(), payloadDecoder, StreamIdProvider.forServer(),
               mtu, maxFrameLength, maxInboundPayloadSize, setupPayload.keepAliveInterval(), setupPayload.keepAliveMaxLifetime(),
               keepAliveHandler, interceptors::initRequesterRequestInterceptor, requesterLeaseTracker, requesterOnAllClosedSink,
               Mono.whenDelayError(responderOnAllClosedSink.asMono(), requesterOnAllClosedSink.asMono()));
 
-      Channel wrappedChannelRequester = interceptors.decorateRequester(channelRequester);
+      Channel wrappedChannelRequester = interceptors.decorateRequester(requesterChannel);
 
       return interceptors
               .decorateAcceptor(acceptor)
               .accept(setupPayload, wrappedChannelRequester)
-              .onErrorResume(err -> Mono.fromRunnable(() -> serverSetup.sendError(
-                              wrappedDuplexConnection, rejectedSetupError(err)))
-                      .then(wrappedDuplexConnection.onClose())
+              .onErrorResume(err -> Mono.fromRunnable(() -> serverSetup.sendError(wrappedConnection, rejectedSetupError(err)))
+                      .then(wrappedConnection.onClose())
                       .then(Mono.error(err)))
-              .doOnNext(rSocketHandler -> {
-                Channel wrappedChannelHandler = interceptors.decorateResponder(rSocketHandler);
-                DuplexConnection clientConnection = multiplexer.asClientConnection();
+              .doOnNext(channelHandler -> {
+                Channel wrappedChannelHandler = interceptors.decorateResponder(channelHandler);
+                Connection clientConnection = multiplexer.asClientConnection();
 
                 ResponderLeaseTracker responderLeaseTracker = leaseEnabled
                         ? new ResponderLeaseTracker(SERVER_TAG, clientConnection, leases.sender)
                         : null;
 
-                Channel channelResponder = new ChannelResponder(clientConnection, wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
-                        mtu, maxFrameLength, maxInboundPayloadSize,
-                        leaseEnabled && leases.sender instanceof TrackingLeaseSender
-                                ? rSocket -> interceptors.initResponderRequestInterceptor(rSocket, (TrackingLeaseSender) leases.sender)
-                                : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
+                new ResponderChannel(clientConnection, wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
+                        mtu, maxFrameLength, maxInboundPayloadSize, leaseEnabled && leases.sender instanceof TrackingLeaseSender
+                        ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)
+                        : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
               })
               .doFinally(signalType -> setupPayload.release())
               .then();
     });
   }
 
-  private ServerSetup serverSetup(Duration timeout) {
-    return resume != null ? createSetup(timeout) : new ServerSetup.DefaultServerSetup(timeout);
-  }
-
-  ServerSetup createSetup(Duration timeout) {
-    return new ServerSetup.ResumableServerSetup(timeout, new SessionManager(), resume.getSessionDuration(),
-            resume.getStreamTimeout(), resume.getStoreFactory(SERVER_TAG), resume.isCleanupStoreOnKeepAlive());
+  private ServerSetup createSetup(Duration timeout) {
+    if (resume == null) {
+      return new ServerSetup.DefaultServerSetup(timeout);
+    }
+    return new ServerSetup.ResumableServerSetup(timeout, new SessionManager(), resume.sessionDuration,
+            resume.streamTimeout, resume.getStoreFactory(SERVER_TAG), resume.cleanupStoreOnKeepAlive);
   }
 
   private ProtocolErrorException rejectedSetupError(Throwable err) {
     String msg = err.getMessage();
     return new RejectedSetupException(msg == null ? "rejected by server acceptor" : msg);
+  }
+
+  //---------------------------------------------------------------------
+  // Static Factory Methods
+  //---------------------------------------------------------------------
+
+  /**
+   * Static factory method to create an {@code RemotingServer}.
+   */
+  public static RemotingServer create() {
+    return new RemotingServer();
+  }
+
+  /**
+   * Static factory method to create an {@code RemotingServer} instance with the given {@code
+   * ChannelAcceptor}. Effectively a shortcut for:
+   *
+   * <pre>{@code
+   * RemotingServer.create().acceptor(...);
+   * }</pre>
+   *
+   * @param acceptor the acceptor to handle connections with
+   * @return the same instance for method chaining
+   * @see #acceptor(ChannelAcceptor)
+   */
+  public static RemotingServer create(ChannelAcceptor acceptor) {
+    return RemotingServer.create().acceptor(acceptor);
   }
 
 }

@@ -42,7 +42,7 @@ public class PingHandler implements ChannelAcceptor {
   }
 
   @Override
-  public Mono<Channel> accept(ConnectionSetupPayload setup, Channel sendingSocket) {
+  public Mono<Channel> accept(ConnectionSetupPayload setup, Channel channel) {
     return Mono.just(
             new Channel() {
               @Override

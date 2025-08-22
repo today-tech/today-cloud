@@ -20,7 +20,9 @@ package infra.remoting.protocol;
 import java.util.concurrent.Flow;
 
 import infra.lang.Nullable;
+import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
+import infra.remoting.frame.decoder.PayloadDecoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
@@ -58,10 +60,7 @@ public class ProtocolFrame {
 
   public final FrameType frameType;
 
-  public final Metadata metadata;
-
-  @Nullable
-  public final ByteBuf data;
+  public final Payload payload;
 
   private final int flags;
 
@@ -70,23 +69,20 @@ public class ProtocolFrame {
   @Nullable
   private FrameType syntheticFrameType;
 
-  public ProtocolFrame(int streamId, FrameType frameType, int flags, Metadata metadata, ByteBuf data) {
+  public ProtocolFrame(int streamId, FrameType frameType, int flags, Payload payload) {
     this.streamId = streamId;
     this.frameType = frameType;
     this.flags = flags;
-    this.metadata = metadata;
-    this.data = data;
+    this.payload = payload;
     this.typeAndFlags = 0;
   }
 
-  public ProtocolFrame(int streamId, FrameType frameType, int flags,
-          int typeAndFlags, Metadata metadata, ByteBuf data) {
+  public ProtocolFrame(int streamId, FrameType frameType, int flags, int typeAndFlags, Payload payload) {
     this.streamId = streamId;
     this.frameType = frameType;
     this.flags = flags;
     this.typeAndFlags = typeAndFlags;
-    this.metadata = metadata;
-    this.data = data;
+    this.payload = payload;
   }
 
   public int getStreamId() {
@@ -98,8 +94,8 @@ public class ProtocolFrame {
     if (result == null) {
       result = frameType;
       if (result == FrameType.PAYLOAD) {
-        boolean next = (flags & FLAGS_N) == FLAGS_N;
-        boolean complete = (flags & FLAGS_C) == FLAGS_C;
+        boolean next = hasFlag(FLAGS_N);
+        boolean complete = hasFlag(FLAGS_C);
         if (next && complete) {
           result = FrameType.NEXT_COMPLETE;
         }
@@ -119,7 +115,7 @@ public class ProtocolFrame {
   }
 
   public boolean hasMetadata() {
-    return metadata != Metadata.EMPTY;
+    return payload.hasMetadata();
   }
 
   public boolean hasFollows() {
@@ -130,25 +126,22 @@ public class ProtocolFrame {
     return hasFlag(flags, FLAGS_C);
   }
 
-  public Metadata getMetadata() {
-    return metadata;
+  public boolean hasFlag(int flag) {
+    return (flags & flag) == flag;
   }
 
   public int getLength() {
-    if (data != null) {
-      return HEADER_SIZE + data.readableBytes();
-    }
-    return HEADER_SIZE;
+    return HEADER_SIZE + payload.length();
   }
 
   public void release() {
-    if (data != null) {
-      data.release();
+    if (payload != null) {
+      payload.release();
     }
   }
 
   public ByteBuf serialize(ByteBufAllocator allocator) {
-    if (!frameType.canHaveMetadata() && ((flags & FLAGS_M) == FLAGS_M)) {
+    if (!frameType.canHaveMetadata() && hasFlag(FLAGS_M)) {
       throw new IllegalStateException("bad value for metadata flag");
     }
 
@@ -168,9 +161,14 @@ public class ProtocolFrame {
             .append(" Length: ")
             .append(getLength());
 
+    if (hasMetadata()) {
+      builder.append("\nMetadata:\n");
+      ByteBufUtil.appendPrettyHexDump(builder, payload.metadata());
+    }
+
     builder.append("\nData:\n");
-    if (data != null) {
-      ByteBufUtil.appendPrettyHexDump(builder, data);
+    if (payload != null) {
+      ByteBufUtil.appendPrettyHexDump(builder, payload.data());
     }
     else {
       ByteBufUtil.appendPrettyHexDump(builder, Unpooled.EMPTY_BUFFER);
@@ -188,24 +186,14 @@ public class ProtocolFrame {
    * @param frame frame buffer
    * @throws ProtocolParsingException protocol parsing errors
    */
-  public static ProtocolFrame parse(ByteBuf frame) throws ProtocolParsingException {
-    int streamId = frame.readUnsignedShort();
+  public static ProtocolFrame parse(ByteBuf frame, PayloadDecoder decoder) throws ProtocolParsingException {
+    int streamId = frame.readInt();
     int typeAndFlags = frame.readShort() & 0xFFFF;
     FrameType nativeFrameType = FrameType.forEncodedType(typeAndFlags >> FRAME_TYPE_SHIFT);
     final int flags = typeAndFlags & FRAME_FLAGS_MASK;
 
-    boolean hasMetadata = hasFlag(flags, FLAGS_M);
-    if (hasMetadata) {
-      int length = decodeLength(frame);
-      ByteBuf metadataBuf = frame.readSlice(length);
-
-    }
-    ByteBuf data = frame.readableBytes() > 0 ? frame.readSlice(frame.readableBytes()) : Unpooled.EMPTY_BUFFER;
-    return new ProtocolFrame(streamId, nativeFrameType, flags, typeAndFlags, Metadata.EMPTY, data);
-  }
-
-  private static int decodeLength(ByteBuf byteBuf) {
-    return byteBuf.readUnsignedMedium();
+    Payload payload = decoder.decode(frame);
+    return new ProtocolFrame(streamId, nativeFrameType, flags, typeAndFlags, payload);
   }
 
 }

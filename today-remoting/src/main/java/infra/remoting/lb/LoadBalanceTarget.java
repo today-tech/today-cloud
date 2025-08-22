@@ -19,6 +19,7 @@ package infra.remoting.lb;
 import org.reactivestreams.Publisher;
 
 import infra.remoting.core.ChannelConnector;
+import infra.remoting.core.RemotingClient;
 import infra.remoting.transport.ClientTransport;
 
 /**
@@ -27,7 +28,8 @@ import infra.remoting.transport.ClientTransport;
  * #getKey()} is used to identify a target uniquely while the {@link #getTransport() transport} is
  * used to connect to the target server.
  *
- * @see LoadBalanceRemotingClient#create(ChannelConnector, Publisher)
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @see RemotingClient#forLoadBalance(ChannelConnector, Publisher)
  */
 public class LoadBalanceTarget {
 

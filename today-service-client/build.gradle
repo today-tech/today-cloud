@@ -1,42 +1,14 @@
-/*
- * Copyright 2021 - 2024 the original author or authors.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
- */
-
 description = "TODAY Service Client"
 
 
 dependencies {
   api project(":today-remoting")
-
   api project(":today-cloud-core")
+  api project(":today-service-api")
   api project(":today-service-registry")
 
-  optional 'io.netty:netty-transport'
-  optional 'io.netty:netty-codec'
-  optional 'io.netty:netty-handler'
+  optional project(":today-remoting-transport-tcp")
 
-  implementation 'cn.taketoday:today-web'
-  implementation 'cn.taketoday:today-framework'
-  implementation 'io.projectreactor:reactor-core' // :3.6.1
-
-  implementation 'org.apache.commons:commons-pool2:2.12.0'
-
-  implementation 'io.protostuff:protostuff-core:1.7.4'
-  implementation 'io.protostuff:protostuff-runtime:1.7.4'
-
-  optional "com.google.protobuf:protobuf-java"
+  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
 }

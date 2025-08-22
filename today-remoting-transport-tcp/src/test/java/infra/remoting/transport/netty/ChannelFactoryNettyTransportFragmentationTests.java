@@ -32,14 +32,15 @@ import infra.remoting.transport.ServerTransport;
 import infra.remoting.transport.netty.client.TcpClientTransport;
 import infra.remoting.transport.netty.server.CloseableChannel;
 import infra.remoting.transport.netty.server.TcpServerTransport;
-import infra.remoting.transport.netty.server.WebsocketServerTransport;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 class ChannelFactoryNettyTransportFragmentationTests {
 
   static Stream<? extends ServerTransport<CloseableChannel>> arguments() {
-    return Stream.of(TcpServerTransport.create(0), WebsocketServerTransport.create(0));
+    return Stream.of(TcpServerTransport.create(0)
+//            , WebsocketServerTransport.create(0)
+    );
   }
 
   @ParameterizedTest
@@ -71,12 +72,12 @@ class ChannelFactoryNettyTransportFragmentationTests {
     CloseableChannel server =
             RemotingServer.create(mockAcceptor()).fragment(100).bind(serverTransport).block();
 
-    Mono<Channel> rSocket =
+    Mono<Channel> channel =
             ChannelConnector.create()
                     .fragment(100)
                     .connect(TcpClientTransport.create(server.address()))
                     .doFinally(s -> server.dispose());
-    StepVerifier.create(rSocket).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
+    StepVerifier.create(channel).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
   }
 
   @ParameterizedTest
@@ -84,10 +85,10 @@ class ChannelFactoryNettyTransportFragmentationTests {
   void clientSucceedsWithDisabledFragmentation(ServerTransport<CloseableChannel> serverTransport) {
     CloseableChannel server = RemotingServer.create(mockAcceptor()).bind(serverTransport).block();
 
-    Mono<Channel> rSocket =
+    Mono<Channel> channel =
             ChannelConnector.connectWith(TcpClientTransport.create(server.address()))
                     .doFinally(s -> server.dispose());
-    StepVerifier.create(rSocket).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
+    StepVerifier.create(channel).expectNextCount(1).expectComplete().verify(Duration.ofSeconds(5));
   }
 
   private ChannelAcceptor mockAcceptor() {

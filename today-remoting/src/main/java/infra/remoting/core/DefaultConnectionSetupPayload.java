@@ -25,7 +25,7 @@ import io.netty.buffer.Unpooled;
 
 /**
  * Default implementation of {@link ConnectionSetupPayload}. Primarily for internal use within
- * RSocket Java but may be created in an application, e.g. for testing purposes.
+ * Java but may be created in an application, e.g. for testing purposes.
  */
 public class DefaultConnectionSetupPayload extends ConnectionSetupPayload {
 

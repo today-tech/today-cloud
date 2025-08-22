@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 import infra.remoting.keepalive.KeepAliveSupport.KeepAlive;
 import infra.remoting.resume.ChannelSession;
-import infra.remoting.resume.ResumableDuplexConnection;
+import infra.remoting.resume.ResumableConnection;
 import infra.remoting.resume.ResumeStateHolder;
 import io.netty.buffer.ByteBuf;
 
@@ -44,15 +44,15 @@ public interface KeepAliveHandler {
 
   class ResumableKeepAliveHandler implements KeepAliveHandler {
 
-    private final ResumableDuplexConnection resumableDuplexConnection;
+    private final ResumableConnection resumableConnection;
 
     private final ChannelSession channelSession;
 
     private final ResumeStateHolder resumeStateHolder;
 
-    public ResumableKeepAliveHandler(ResumableDuplexConnection resumableDuplexConnection,
+    public ResumableKeepAliveHandler(ResumableConnection resumableConnection,
             ChannelSession channelSession, ResumeStateHolder resumeStateHolder) {
-      this.resumableDuplexConnection = resumableDuplexConnection;
+      this.resumableConnection = resumableConnection;
       this.channelSession = channelSession;
       this.resumeStateHolder = resumeStateHolder;
     }
@@ -65,7 +65,7 @@ public interface KeepAliveHandler {
       return keepAliveSupport
               .resumeState(resumeStateHolder)
               .onSendKeepAliveFrame(onSendKeepAliveFrame)
-              .onTimeout(keepAlive -> resumableDuplexConnection.disconnect())
+              .onTimeout(keepAlive -> resumableConnection.disconnect())
               .start();
     }
   }

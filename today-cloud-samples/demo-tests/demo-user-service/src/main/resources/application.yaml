@@ -1,12 +1,6 @@
 server:
   port: 9000
 
-registry:
-  http-url: 'http://localhost:5000/services'
-
-  services:
-    uri: '/services'
-
 web:
   resources:
     add-default-mappings: false
@@ -14,6 +8,11 @@ web:
 infra:
   profiles:
     active: dev
+  cloud:
+    service-registry:
+      auto-registration:
+        port: 9000
+        fail-fast: true
 
 logging:
   level:

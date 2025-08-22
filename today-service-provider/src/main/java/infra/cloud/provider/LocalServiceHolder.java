@@ -17,20 +17,16 @@
 
 package infra.cloud.provider;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import infra.beans.factory.SmartInitializingSingleton;
-import infra.cloud.registry.ServiceDefinition;
 import infra.context.ApplicationContext;
 import infra.context.support.ApplicationObjectSupport;
 import infra.lang.Nullable;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
-import infra.util.ExceptionUtils;
-import infra.util.ObjectUtils;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -38,68 +34,44 @@ import infra.util.ObjectUtils;
  */
 public class LocalServiceHolder extends ApplicationObjectSupport implements SmartInitializingSingleton {
 
-  private final InetAddress localHost = ExceptionUtils.sneakyThrow(InetAddress::getLocalHost);
+  private final HashMap<Class<?>, Object> localServices = new HashMap<>();
 
-  private String localHostName;
+  private final HashMap<String, Class<?>> classNameMap = new HashMap<>();
 
-  private final int port;
-
-  private final HashMap<String, Object> localServices = new HashMap<>();
-
-  private final ArrayList<ServiceDefinition> definitions = new ArrayList<>();
-
-  public LocalServiceHolder(int port) {
-    this.port = port;
-  }
-
-  public void setLocalHostName(String localHostName) {
-    this.localHostName = localHostName;
-  }
-
-  public ArrayList<ServiceDefinition> getServices() {
-    return definitions;
-  }
-
-  public int getPort() {
-    return port;
+  @Nullable
+  @SuppressWarnings("unchecked")
+  public <T> T getService(Class<T> serviceInterface) {
+    return (T) localServices.get(serviceInterface);
   }
 
   @Nullable
-  public Object getService(String serviceName) {
-    return localServices.get(serviceName);
+  public Class<?> getServiceInterface(String serviceClass) {
+    return classNameMap.get(serviceClass);
   }
 
   @Override
   public void afterSingletonsInstantiated() {
     ApplicationContext context = obtainApplicationContext();
     List<Object> services = context.getAnnotatedBeans(Service.class);
+
     for (Object service : services) {
       Class<Object> serviceImpl = ClassUtils.getUserClass(service);
-      Class<?>[] interfaces = serviceImpl.getInterfaces();
-      if (ObjectUtils.isEmpty(interfaces)) {
+      Set<Class<?>> interfaces = ClassUtils.getAllInterfacesForClassAsSet(serviceImpl);
+      if (interfaces.isEmpty()) {
         continue;
       }
 
-      Class<?> interfaceToUse = interfaces[0];
-      if (interfaces.length > 1) {
-        for (final Class<?> anInterface : interfaces) {
-          if (anInterface.isAnnotationPresent(Service.class)) {
-            interfaceToUse = anInterface;
-            break;
+      for (final Class<?> anInterface : interfaces) {
+        if (anInterface.isAnnotationPresent(Service.class)) {
+          Object object = localServices.put(anInterface, service);
+          String interfaceName = anInterface.getName();
+          if (object != null) {
+            throw new IllegalStateException("Service '%s' is already registered: [%s]".formatted(interfaceName, object));
           }
+          classNameMap.put(interfaceName, anInterface);
+          logger.info("add service: [{}] to interface: [{}]", service, interfaceName);
         }
       }
-
-      ServiceDefinition definition = new ServiceDefinition();
-
-      definition.setHost(localHostName == null ? localHost.getHostAddress() : localHostName);
-
-      definition.setPort(port);
-      definition.setName(interfaceToUse.getName());
-
-      logger.info("add service: [{}] to interface: [{}]", service, definition.getName());
-      definitions.add(definition);
-      localServices.put(interfaceToUse.getName(), service); // register object
     }
 
   }

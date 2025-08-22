@@ -24,11 +24,11 @@ import reactor.core.publisher.Mono;
 
 /**
  * A contract providing different interaction models for <a
- * href="https://github.com/RSocket/reactivesocket/blob/master/Protocol.md">RSocket protocol</a>.
+ * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md">protocol</a>.
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */
-public interface Channel extends Availability, Closeable, RemotingOperations {
+public interface Channel extends Availability, Closeable {
 
   /**
    * Fire and Forget interaction model of protocol.
@@ -89,11 +89,7 @@ public interface Channel extends Availability, Closeable, RemotingOperations {
   }
 
   @Override
-  default void dispose() { }
-
-  @Override
-  default boolean isDisposed() {
-    return false;
+  default void dispose() {
   }
 
   @Override

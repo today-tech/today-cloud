@@ -38,7 +38,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import infra.lang.NonNull;
 import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.Scannable;
@@ -1082,7 +1081,6 @@ public class AssertSubscriber<T> implements CoreSubscriber<T>, Subscription, Sca
   }
 
   @Override
-  @NonNull
   public Context currentContext() {
     return context;
   }

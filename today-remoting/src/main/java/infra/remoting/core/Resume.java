@@ -18,39 +18,40 @@ package infra.remoting.core;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
+import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
-import infra.remoting.frame.ResumeFrameCodec;
 import infra.remoting.resume.InMemoryResumableFramesStore;
-import infra.remoting.resume.ResumableFramesStore;
-import io.netty.buffer.ByteBuf;
+import infra.remoting.resume.InMemoryResumableFramesStoreFactory;
+import infra.remoting.resume.RandomUUIDResumeTokenGenerator;
+import infra.remoting.resume.ResumableFramesStoreFactory;
+import infra.remoting.resume.ResumeTokenGenerator;
 import reactor.util.retry.Retry;
 
 /**
- * Simple holder of configuration settings for the RSocket Resume capability. This can be used to
+ * Simple holder of configuration settings for the protocol Resume capability. This can be used to
  * configure an {@link ChannelConnector} or an {@link RemotingServer} except for {@link
- * #retry(Retry)} and {@link #token(Supplier)} which apply only to the client side.
+ * #retry(Retry)} and {@link #token(ResumeTokenGenerator)} which apply only to the client side.
  */
 public class Resume {
 
   private static final Logger logger = LoggerFactory.getLogger(Resume.class);
 
-  private Duration sessionDuration = Duration.ofMinutes(2);
+  Duration sessionDuration = Duration.ofMinutes(2);
+
+  @Nullable
+  private ResumableFramesStoreFactory storeFactory;
 
   /* Storage */
-  private boolean cleanupStoreOnKeepAlive;
+  boolean cleanupStoreOnKeepAlive;
 
-  private Function<? super ByteBuf, ? extends ResumableFramesStore> storeFactory;
-
-  private Duration streamTimeout = Duration.ofSeconds(10);
+  Duration streamTimeout = Duration.ofSeconds(10);
 
   /* Client only */
-  private Supplier<ByteBuf> tokenSupplier = ResumeFrameCodec::generateResumeToken;
+  ResumeTokenGenerator tokenGenerator = new RandomUUIDResumeTokenGenerator();
 
-  private Retry retry = Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))
+  Retry retry = Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))
           .maxBackoff(Duration.ofSeconds(16))
           .jitter(1.0)
           .doBeforeRetry(signal -> logger.debug("Connection error", signal.failure()));
@@ -75,15 +76,30 @@ public class Resume {
   /**
    * When this property is enabled, hints from {@code KEEPALIVE} frames about how much data has been
    * received by the other side, is used to proactively clean frames from the {@link
-   * #storeFactory(Function) store}.
+   * Resume#storeFactory(ResumableFramesStoreFactory) store}.
    *
-   * <p>By default this is set to {@code false} in which case information from {@code KEEPALIVE} is
+   * <p>By default, this is set to {@code false} in which case information from {@code KEEPALIVE} is
    * ignored and old frames from the store are removed only when the store runs out of space.
    *
    * @return the same instance for method chaining
    */
   public Resume cleanupStoreOnKeepAlive() {
     this.cleanupStoreOnKeepAlive = true;
+    return this;
+  }
+
+  /**
+   * When this property is enabled, hints from {@code KEEPALIVE} frames about how much data has been
+   * received by the other side, is used to proactively clean frames from the {@link
+   * Resume#storeFactory(ResumableFramesStoreFactory) store}.
+   *
+   * <p>By default, this is set to {@code false} in which case information from {@code KEEPALIVE} is
+   * ignored and old frames from the store are removed only when the store runs out of space.
+   *
+   * @return the same instance for method chaining
+   */
+  public Resume cleanupStoreOnKeepAlive(boolean cleanupStoreOnKeepAlive) {
+    this.cleanupStoreOnKeepAlive = cleanupStoreOnKeepAlive;
     return this;
   }
 
@@ -98,17 +114,17 @@ public class Resume {
    * @param storeFactory the factory to use to create the store
    * @return the same instance for method chaining
    */
-  public Resume storeFactory(Function<? super ByteBuf, ? extends ResumableFramesStore> storeFactory) {
+  public Resume storeFactory(@Nullable ResumableFramesStoreFactory storeFactory) {
     this.storeFactory = storeFactory;
     return this;
   }
 
   /**
    * A {@link reactor.core.publisher.Flux#timeout(Duration) timeout} value to apply to the resumed
-   * session stream obtained from the {@link #storeFactory(Function) store} after a reconnect. The
+   * session stream obtained from the {@link #storeFactory(ResumableFramesStoreFactory) store} after a reconnect. The
    * resume stream must not take longer than the specified time to emit each frame.
    *
-   * <p>By default this is set to 10 seconds.
+   * <p>By default, this is set to 10 seconds.
    *
    * @param streamTimeout the timeout value for resuming a session stream
    * @return the same instance for method chaining
@@ -142,41 +158,22 @@ public class Resume {
    * Customize the generation of the resume identification token used to resume. This setting is for
    * use with {@link ChannelConnector#resume(Resume)} on the client side only.
    *
-   * <p>By default this is {@code ResumeFrameFlyweight::generateResumeToken}.
+   * <p>By default, this is {@code ResumeFrameFlyweight::generateResumeToken}.
    *
-   * @param supplier a custom generator for a resume identification token
+   * @param generator a custom generator for a resume identification token
    * @return the same instance for method chaining
    */
-  public Resume token(Supplier<ByteBuf> supplier) {
-    this.tokenSupplier = supplier;
+  public Resume token(ResumeTokenGenerator generator) {
+    this.tokenGenerator = generator;
     return this;
   }
 
   // Package private accessors
 
-  Duration getSessionDuration() {
-    return sessionDuration;
-  }
-
-  boolean isCleanupStoreOnKeepAlive() {
-    return cleanupStoreOnKeepAlive;
-  }
-
-  Function<? super ByteBuf, ? extends ResumableFramesStore> getStoreFactory(String tag) {
+  ResumableFramesStoreFactory getStoreFactory(String tag) {
     return storeFactory != null
             ? storeFactory
-            : token -> new InMemoryResumableFramesStore(tag, token, 100_000);
+            : new InMemoryResumableFramesStoreFactory(tag, 100_000);
   }
 
-  Duration getStreamTimeout() {
-    return streamTimeout;
-  }
-
-  Retry getRetry() {
-    return retry;
-  }
-
-  Supplier<ByteBuf> getTokenSupplier() {
-    return tokenSupplier;
-  }
 }

@@ -29,46 +29,33 @@ import reactor.core.publisher.Mono;
 public interface RemotingOperations {
 
   /**
-   * Fire and Forget interaction model of protocol.
-   *
-   * @param payload Request payload.
-   * @return {@code Publisher} that completes when the passed {@code payload} is successfully
-   * handled, otherwise errors.
+   * Perform a Fire-and-Forget interaction via {@link Channel#fireAndForget(Payload)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
-  Mono<Void> fireAndForget(Payload payload);
+  Mono<Void> fireAndForget(Mono<Payload> payloadMono);
 
   /**
-   * Request-Response interaction model of protocol.
-   *
-   * @param payload Request payload.
-   * @return {@code Publisher} containing at most a single {@code Payload} representing the
-   * response.
+   * Perform a Request-Response interaction via {@link Channel#requestResponse(Payload)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
-  Mono<Payload> requestResponse(Payload payload);
+  Mono<Payload> requestResponse(Mono<Payload> payloadMono);
 
   /**
-   * Request-Stream interaction model of protocol.
-   *
-   * @param payload Request payload.
-   * @return {@code Publisher} containing the stream of {@code Payload}s representing the response.
+   * Perform a Request-Stream interaction via {@link Channel#requestStream(Payload)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
-  Flux<Payload> requestStream(Payload payload);
+  Flux<Payload> requestStream(Mono<Payload> payloadMono);
 
   /**
-   * Request-Channel interaction model of protocol.
-   *
-   * @param payloads Stream of request payloads.
-   * @return Stream of response payloads.
+   * Perform a Request-Channel interaction via {@link Channel#requestChannel(Publisher)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
   Flux<Payload> requestChannel(Publisher<Payload> payloads);
 
   /**
-   * Metadata-Push interaction model of protocol.
-   *
-   * @param payload Request payloads.
-   * @return {@code Publisher} that completes when the passed {@code payload} is successfully
-   * handled, otherwise errors.
+   * Perform a Metadata Push via {@link Channel#metadataPush(Payload)}. Allows multiple
+   * subscriptions and performs a request per subscriber.
    */
-  Mono<Void> metadataPush(Payload payload);
+  Mono<Void> metadataPush(Mono<Payload> payloadMono);
 
 }

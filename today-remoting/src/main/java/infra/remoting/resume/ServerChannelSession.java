@@ -26,9 +26,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
-import infra.remoting.DuplexConnection;
-import infra.remoting.exceptions.ConnectionErrorException;
-import infra.remoting.exceptions.RejectedResumeException;
+import infra.remoting.Connection;
+import infra.remoting.error.ConnectionErrorException;
+import infra.remoting.error.RejectedResumeException;
 import infra.remoting.frame.ResumeFrameCodec;
 import infra.remoting.frame.ResumeOkFrameCodec;
 import infra.remoting.keepalive.KeepAliveSupport;
@@ -44,19 +44,24 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
 
   private static final Logger logger = LoggerFactory.getLogger(ServerChannelSession.class);
 
-  final ResumableDuplexConnection resumableConnection;
-  final Duration resumeSessionDuration;
-  final ResumableFramesStore resumableFramesStore;
-  final String session;
-  final ByteBufAllocator allocator;
-  final boolean cleanupStoreOnKeepAlive;
+  private final String session;
+
+  private final ByteBufAllocator allocator;
+
+  private final Duration resumeSessionDuration;
+
+  private final boolean cleanupStoreOnKeepAlive;
+
+  private final ResumableFramesStore resumableFramesStore;
 
   /**
    * All incoming connections with the Resume intent are enqueued in this queue. Such an approach
    * ensure that the new connection will affect the resumption state anyhow until the previous
    * (active) connection is finally closed
    */
-  final Queue<Runnable> connectionsQueue;
+  private final Queue<Runnable> connectionsQueue;
+
+  final ResumableConnection resumableConnection;
 
   volatile int wip;
   static final AtomicIntegerFieldUpdater<ServerChannelSession> WIP =
@@ -66,29 +71,25 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
   static final AtomicReferenceFieldUpdater<ServerChannelSession, Subscription> S =
           AtomicReferenceFieldUpdater.newUpdater(ServerChannelSession.class, Subscription.class, "s");
 
-  KeepAliveSupport keepAliveSupport;
+  private KeepAliveSupport keepAliveSupport;
 
-  public ServerChannelSession(ByteBuf session,
-          ResumableDuplexConnection resumableDuplexConnection,
-          DuplexConnection initialDuplexConnection,
-          ResumableFramesStore resumableFramesStore,
-          Duration resumeSessionDuration,
-          boolean cleanupStoreOnKeepAlive) {
+  public ServerChannelSession(ByteBuf session, ResumableConnection resumableConnection, Connection initialConnection,
+          ResumableFramesStore resumableFramesStore, Duration resumeSessionDuration, boolean cleanupStoreOnKeepAlive) {
     this.session = session.toString(CharsetUtil.UTF_8);
-    this.allocator = initialDuplexConnection.alloc();
-    this.resumeSessionDuration = resumeSessionDuration;
+    this.allocator = initialConnection.alloc();
+    this.resumableConnection = resumableConnection;
     this.resumableFramesStore = resumableFramesStore;
+    this.resumeSessionDuration = resumeSessionDuration;
     this.cleanupStoreOnKeepAlive = cleanupStoreOnKeepAlive;
-    this.resumableConnection = resumableDuplexConnection;
     this.connectionsQueue = Queues.<Runnable>unboundedMultiproducer().get();
 
     WIP.lazySet(this, 1);
 
-    resumableDuplexConnection.onClose().doFinally(__ -> dispose()).subscribe();
-    resumableDuplexConnection.onActiveConnectionClosed().subscribe(__ -> tryTimeoutSession());
+    resumableConnection.onClose().doFinally(__ -> dispose()).subscribe();
+    resumableConnection.onActiveConnectionClosed().subscribe(__ -> tryTimeoutSession());
   }
 
-  void tryTimeoutSession() {
+  private void tryTimeoutSession() {
     keepAliveSupport.stop();
 
     if (logger.isDebugEnabled()) {
@@ -109,16 +110,16 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
     }
   }
 
-  public void resumeWith(ByteBuf resumeFrame, DuplexConnection nextDuplexConnection) {
+  public void resumeWith(ByteBuf resumeFrame, Connection nextConnection) {
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Side[server]|Session[{}]. New DuplexConnection received.", session);
+      logger.debug("Side[server]|Session[{}]. New Connection received.", session);
     }
 
     long remotePos = ResumeFrameCodec.firstAvailableClientPos(resumeFrame);
     long remoteImpliedPos = ResumeFrameCodec.lastReceivedServerPos(resumeFrame);
 
-    connectionsQueue.offer(() -> doResume(remotePos, remoteImpliedPos, nextDuplexConnection));
+    connectionsQueue.offer(() -> doResume(remotePos, remoteImpliedPos, nextConnection));
 
     if (WIP.getAndIncrement(this) != 0) {
       return;
@@ -130,17 +131,14 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
     }
   }
 
-  void doResume(long remotePos, long remoteImpliedPos, DuplexConnection nextDuplexConnection) {
+  private void doResume(long remotePos, long remoteImpliedPos, Connection nextConnection) {
     if (!tryCancelSessionTimeout()) {
       if (logger.isDebugEnabled()) {
-        logger.debug(
-                "Side[server]|Session[{}]. Session has already been expired. Terminating received connection",
-                session);
+        logger.debug("Side[server]|Session[{}]. Session has already been expired. Terminating received connection", session);
       }
-      final RejectedResumeException rejectedResumeException =
-              new RejectedResumeException("resume_internal_error: Session Expired");
-      nextDuplexConnection.sendErrorAndClose(rejectedResumeException);
-      nextDuplexConnection.receive().subscribe();
+      final RejectedResumeException rejectedResumeException = new RejectedResumeException("resume_internal_error: Session Expired");
+      nextConnection.sendErrorAndClose(rejectedResumeException);
+      nextConnection.receive().subscribe();
       return;
     }
 
@@ -148,13 +146,8 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
     long position = resumableFramesStore.framePosition();
 
     if (logger.isDebugEnabled()) {
-      logger.debug(
-              "Side[server]|Session[{}]. Resume FRAME received. ServerResumeState[impliedPosition[{}], position[{}]]. ClientResumeState[remoteImpliedPosition[{}], remotePosition[{}]]",
-              session,
-              impliedPosition,
-              position,
-              remoteImpliedPos,
-              remotePos);
+      logger.debug("Side[server]|Session[{}]. Resume FRAME received. ServerResumeState[impliedPosition[{}], position[{}]]. ClientResumeState[remoteImpliedPosition[{}], remotePosition[{}]]",
+              session, impliedPosition, position, remoteImpliedPos, remotePos);
     }
 
     if (remotePos <= impliedPosition && position <= remoteImpliedPos) {
@@ -162,28 +155,22 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
         if (position != remoteImpliedPos) {
           resumableFramesStore.releaseFrames(remoteImpliedPos);
         }
-        nextDuplexConnection.sendFrame(0, ResumeOkFrameCodec.encode(allocator, impliedPosition));
+        nextConnection.sendFrame(0, ResumeOkFrameCodec.encode(allocator, impliedPosition));
         if (logger.isDebugEnabled()) {
-          logger.debug(
-                  "Side[server]|Session[{}]. ResumeOKFrame[impliedPosition[{}]] has been sent",
-                  session,
-                  impliedPosition);
+          logger.debug("Side[server]|Session[{}]. ResumeOKFrame[impliedPosition[{}]] has been sent", session, impliedPosition);
         }
       }
       catch (Throwable t) {
         if (logger.isDebugEnabled()) {
-          logger.debug(
-                  "Side[server]|Session[{}]. Exception occurred while releasing frames in the frameStore",
-                  session,
-                  t);
+          logger.debug("Side[server]|Session[{}]. Exception occurred while releasing frames in the frameStore",
+                  session, t);
         }
 
         dispose();
 
-        final RejectedResumeException rejectedResumeException =
-                new RejectedResumeException(t.getMessage(), t);
-        nextDuplexConnection.sendErrorAndClose(rejectedResumeException);
-        nextDuplexConnection.receive().subscribe();
+        final RejectedResumeException rejectedResumeException = new RejectedResumeException(t.getMessage(), t);
+        nextConnection.sendErrorAndClose(rejectedResumeException);
+        nextConnection.receive().subscribe();
 
         return;
       }
@@ -194,16 +181,14 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
         logger.debug("Side[server]|Session[{}]. Session has been resumed successfully", session);
       }
 
-      if (!resumableConnection.connect(nextDuplexConnection)) {
+      if (!resumableConnection.connect(nextConnection)) {
         if (logger.isDebugEnabled()) {
-          logger.debug(
-                  "Side[server]|Session[{}]. Session has already been expired. Terminating received connection",
-                  session);
+          logger.debug("Side[server]|Session[{}]. Session has already been expired. Terminating received connection", session);
         }
         final RejectedResumeException rejectedResumeException =
                 new RejectedResumeException("resume_internal_error: Session Expired");
-        nextDuplexConnection.sendErrorAndClose(rejectedResumeException);
-        nextDuplexConnection.receive().subscribe();
+        nextConnection.sendErrorAndClose(rejectedResumeException);
+        nextConnection.receive().subscribe();
 
         // resumableConnection is likely to be disposed at this stage. Thus we have
         // nothing to do
@@ -213,26 +198,20 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
       if (logger.isDebugEnabled()) {
         logger.debug(
                 "Side[server]|Session[{}]. Mismatching remote and local state. Expected RemoteImpliedPosition[{}] to be greater or equal to the LocalPosition[{}] and RemotePosition[{}] to be less or equal to LocalImpliedPosition[{}]. Terminating received connection",
-                session,
-                remoteImpliedPos,
-                position,
-                remotePos,
-                impliedPosition);
+                session, remoteImpliedPos, position, remotePos, impliedPosition);
       }
 
       dispose();
 
       final RejectedResumeException rejectedResumeException =
-              new RejectedResumeException(
-                      String.format(
-                              "resumption_pos=[ remote: { pos: %d, impliedPos: %d }, local: { pos: %d, impliedPos: %d }]",
-                              remotePos, remoteImpliedPos, position, impliedPosition));
-      nextDuplexConnection.sendErrorAndClose(rejectedResumeException);
-      nextDuplexConnection.receive().subscribe();
+              new RejectedResumeException(String.format("resumption_pos=[ remote: { pos: %d, impliedPos: %d }, local: { pos: %d, impliedPos: %d }]",
+                      remotePos, remoteImpliedPos, position, impliedPosition));
+      nextConnection.sendErrorAndClose(rejectedResumeException);
+      nextConnection.receive().subscribe();
     }
   }
 
-  boolean tryCancelSessionTimeout() {
+  private boolean tryCancelSessionTimeout() {
     for (; ; ) {
       final Subscription subscription = this.s;
 
@@ -281,10 +260,12 @@ public class ServerChannelSession implements ChannelSession, ResumeStateHolder, 
   }
 
   @Override
-  public void onComplete() { }
+  public void onComplete() {
+  }
 
   @Override
-  public void onError(Throwable t) { }
+  public void onError(Throwable t) {
+  }
 
   public void setKeepAliveSupport(KeepAliveSupport keepAliveSupport) {
     this.keepAliveSupport = keepAliveSupport;

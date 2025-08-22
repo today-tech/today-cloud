@@ -26,8 +26,8 @@ import reactor.core.Disposable;
 import reactor.util.context.Context;
 
 /**
- * Class used to track the RSocket requests lifecycles. The main difference and advantage of this
- * interceptor compares to {@link ChannelInterceptor} is that it allows intercepting the initial and
+ * Class used to track the protocol requests lifecycles. The main difference and advantage of this
+ * interceptor compares to {@link ChannelDecorator} is that it allows intercepting the initial and
  * terminal phases on every individual request.
  *
  * <p><b>Note</b>, if any of the invocations will rise a runtime exception, this exception will be

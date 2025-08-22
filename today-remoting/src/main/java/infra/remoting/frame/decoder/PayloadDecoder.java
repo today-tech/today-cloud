@@ -17,12 +17,15 @@
 
 package infra.remoting.frame.decoder;
 
-import java.util.function.Function;
-
 import infra.remoting.Payload;
 import io.netty.buffer.ByteBuf;
 
-public interface PayloadDecoder extends Function<ByteBuf, Payload> {
+public interface PayloadDecoder {
+
   PayloadDecoder DEFAULT = new DefaultPayloadDecoder();
+
   PayloadDecoder ZERO_COPY = new ZeroCopyPayloadDecoder();
+
+  Payload decode(ByteBuf byteBuf);
+
 }

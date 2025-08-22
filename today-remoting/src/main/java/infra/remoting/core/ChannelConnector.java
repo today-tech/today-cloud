@@ -26,20 +26,20 @@ import java.util.function.Supplier;
 import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
+import infra.remoting.Closeable;
+import infra.remoting.Connection;
 import infra.remoting.ConnectionSetupPayload;
-import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.keepalive.KeepAliveHandler;
 import infra.remoting.lease.TrackingLeaseSender;
-import infra.remoting.plugins.ConnectionInterceptor;
+import infra.remoting.plugins.ConnectionDecorator;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.plugins.InterceptorRegistry;
-import infra.remoting.plugins.RateLimitInterceptor;
+import infra.remoting.plugins.RateLimitDecorator;
 import infra.remoting.resume.ClientChannelSession;
-import infra.remoting.resume.ResumableDuplexConnection;
-import infra.remoting.resume.ResumableFramesStore;
+import infra.remoting.resume.ResumableConnection;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.transport.Transport;
 import infra.remoting.util.ByteBufPayload;
@@ -47,7 +47,6 @@ import infra.remoting.util.DefaultPayload;
 import infra.remoting.util.EmptyPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.util.function.Tuples;
@@ -58,27 +57,24 @@ import static infra.remoting.core.PayloadValidationUtils.assertValidateSetup;
 import static infra.remoting.core.ReassemblyUtils.assertInboundPayloadSize;
 
 /**
- * The main class to use to establish a connection to an RSocket server.
+ * The main class to use to establish a connection to a server.
  *
  * <p>For using TCP using default settings:
  *
  * <pre>{@code
- * import io.rsocket.transport.netty.client.TcpClientTransport;
+ * import infra.remoting.transport.netty.client.TcpClientTransport;
  *
- * Mono<RSocket> source =
+ * Mono<Channel> source =
  *         ChannelConnector.connectWith(TcpClientTransport.create("localhost", 7000));
- * RSocketClient client = RSocketClient.from(source);
+ * RemotingClient client = RemotingClient.from(source);
  * }</pre>
  *
  * <p>To customize connection settings before connecting:
  *
  * <pre>{@code
- * Mono<RSocket> source =
- *         ChannelConnector.create()
- *                 .metadataMimeType("message/x.rsocket.composite-metadata.v0")
- *                 .dataMimeType("application/cbor")
- *                 .connect(TcpClientTransport.create("localhost", 7000));
- * RSocketClient client = RSocketClient.from(source);
+ * Mono<Channel> source = ChannelConnector.create()
+ *      .connect(TcpClientTransport.create("localhost", 7000));
+ * RemotingClient client = RemotingClient.from(source);
  * }</pre>
  */
 public class ChannelConnector {
@@ -90,8 +86,10 @@ public class ChannelConnector {
 
   private Mono<Payload> setupPayloadMono = Mono.empty();
 
+  @Deprecated
   private String metadataMimeType = "application/binary";
 
+  @Deprecated
   private String dataMimeType = "application/binary";
 
   private Duration keepAliveInterval = Duration.ofSeconds(20);
@@ -103,8 +101,10 @@ public class ChannelConnector {
 
   private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
 
+  @Nullable
   private Retry retrySpec;
 
+  @Nullable
   private Resume resume;
 
   @Nullable
@@ -117,28 +117,6 @@ public class ChannelConnector {
   private PayloadDecoder payloadDecoder = PayloadDecoder.DEFAULT;
 
   private ChannelConnector() {
-  }
-
-  /**
-   * Static factory method to create an {@code ChannelConnector} instance and customize default
-   * settings before connecting. To connect only, use {@link #connectWith(ClientTransport)}.
-   */
-  public static ChannelConnector create() {
-    return new ChannelConnector();
-  }
-
-  /**
-   * Static factory method to connect with default settings, effectively a shortcut for:
-   *
-   * <pre class="code">
-   * ChannelConnector.create().connect(transport);
-   * </pre>
-   *
-   * @param transport the transport of choice to connect with
-   * @return a {@code Mono} with the connected RSocket
-   */
-  public static Mono<Channel> connectWith(ClientTransport transport) {
-    return ChannelConnector.create().connect(() -> transport);
   }
 
   /**
@@ -199,14 +177,6 @@ public class ChannelConnector {
    * Set the MIME type to use for formatting payload metadata on the established connection. This is
    * set in the initial {@code SETUP} frame sent to the server.
    *
-   * <p>For metadata encoding, consider using one of the following encoders:
-   *
-   * <ul>
-   *   <li>{@link io.rsocket.metadata.CompositeMetadataCodec Composite Metadata}
-   *   <li>{@link io.rsocket.metadata.TaggingMetadataCodec Routing}
-   *   <li>{@link io.rsocket.metadata.AuthMetadataCodec Authentication}
-   * </ul>
-   *
    * @param metadataMimeType the MIME type to be used for payload metadata
    * @return the same instance for method chaining
    * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#frame-setup">SETUP
@@ -265,7 +235,7 @@ public class ChannelConnector {
    *
    * @param configurer a configurer to customize interception with.
    * @return the same instance for method chaining
-   * @see RateLimitInterceptor
+   * @see RateLimitDecorator
    */
   public ChannelConnector interceptors(Consumer<InterceptorRegistry> configurer) {
     configurer.accept(this.interceptors);
@@ -275,77 +245,77 @@ public class ChannelConnector {
   /**
    * Configure a client-side {@link ChannelAcceptor} for responding to requests from the server.
    *
-   * <p>A full-form example with access to the {@code SETUP} frame and the "sending" RSocket (the
+   * <p>A full-form example with access to the {@code SETUP} frame and the "sending" Channel (the
    * same as the one returned from {@link #connect(ClientTransport)}):
    *
    * <pre>{@code
-   * Mono<RSocket> rsocketMono =
+   * Mono<Channel> channelMono =
    *     ChannelConnector.create()
-   *             .acceptor((setup, sendingRSocket) -> Mono.just(new RSocket() {...}))
+   *             .acceptor((setup, sending) -> Mono.just(new Channel() {...}))
    *             .connect(transport);
    * }</pre>
    *
-   * <p>A shortcut example with just the handling RSocket:
+   * <p>A shortcut example with just the handling Channel:
    *
    * <pre>{@code
-   * Mono<RSocket> rsocketMono =
+   * Mono<Channel> channelMono =
    *     ChannelConnector.create()
-   *             .acceptor(SocketAcceptor.with(new RSocket() {...})))
+   *             .acceptor(ChannelAcceptor.with(new Channel() {...})))
    *             .connect(transport);
    * }</pre>
    *
    * <p>A shortcut example handling only request-response:
    *
    * <pre>{@code
-   * Mono<RSocket> rsocketMono =
+   * Mono<Channel> channelMono =
    *     ChannelConnector.create()
-   *             .acceptor(SocketAcceptor.forRequestResponse(payload -> ...))
+   *             .acceptor(ChannelAcceptor.forRequestResponse(payload -> ...))
    *             .connect(transport);
    * }</pre>
    *
-   * <p>By default, {@code new RSocket(){}} is used which rejects all requests from the server with
+   * <p>By default, {@code new Channel(){}} is used which rejects all requests from the server with
    * {@link UnsupportedOperationException}.
    *
    * @param acceptor the acceptor to use for responding to server requests
    * @return the same instance for method chaining
    */
-  public ChannelConnector acceptor(ChannelAcceptor acceptor) {
+  public ChannelConnector acceptor(@Nullable ChannelAcceptor acceptor) {
     this.acceptor = acceptor;
     return this;
   }
 
   /**
-   * When this is enabled, the connect methods of this class return a special {@code Mono<RSocket>}
-   * that maintains a single, shared {@code RSocket} for all subscribers:
+   * When this is enabled, the connect methods of this class return a special {@code Mono<Channel>}
+   * that maintains a single, shared {@code Channel} for all subscribers:
    *
    * <pre>{@code
-   * Mono<RSocket> rsocketMono =
+   * Mono<Channel> channelMono =
    *   ChannelConnector.create()
    *           .reconnect(Retry.fixedDelay(3, Duration.ofSeconds(1)))
    *           .connect(transport);
    *
-   *  RSocket r1 = rsocketMono.block();
-   *  RSocket r2 = rsocketMono.block();
+   *  Channel r1 = channelMono.block();
+   *  Channel r2 = channelMono.block();
    *
    *  assert r1 == r2;
    * }</pre>
    *
-   * <p>The {@code RSocket} remains cached until the connection is lost and after that, new attempts
-   * to subscribe or re-subscribe trigger a reconnect and result in a new shared {@code RSocket}:
+   * <p>The {@code Channel} remains cached until the connection is lost and after that, new attempts
+   * to subscribe or re-subscribe trigger a reconnect and result in a new shared {@code Channel}:
    *
    * <pre>{@code
-   * Mono<RSocket> rsocketMono =
+   * Mono<Channel> channelMono =
    *   ChannelConnector.create()
    *           .reconnect(Retry.fixedDelay(3, Duration.ofSeconds(1)))
    *           .connect(transport);
    *
-   *  RSocket r1 = rsocketMono.block();
-   *  RSocket r2 = rsocketMono.block();
+   *  Channel r1 = channelMono.block();
+   *  Channel r2 = channelMono.block();
    *
    *  r1.dispose();
    *
-   *  RSocket r3 = rsocketMono.block();
-   *  RSocket r4 = rsocketMono.block();
+   *  Channel r3 = channelMono.block();
+   *  Channel r4 = channelMono.block();
    *
    *  assert r1 == r2;
    *  assert r3 == r4;
@@ -357,12 +327,12 @@ public class ChannelConnector {
    * if or when failed requests should be retried which in turn triggers the shared reconnect:
    *
    * <pre>{@code
-   * Mono<RSocket> rocketMono =
+   * Mono<Channel> rocketMono =
    *   ChannelConnector.create()
    *           .reconnect(Retry.fixedDelay(3, Duration.ofSeconds(1)))
    *           .connect(transport);
    *
-   *  rsocketMono.flatMap(rsocket -> rsocket.requestResponse(...))
+   *  channelMono.flatMap(channel -> channel.requestResponse(...))
    *           .retryWhen(Retry.fixedDelay(1, Duration.ofSeconds(5)))
    *           .subscribe()
    * }</pre>
@@ -383,7 +353,7 @@ public class ChannelConnector {
   }
 
   /**
-   * Enables the Resume capability of the RSocket protocol where if the client gets disconnected,
+   * Enables the Resume capability of the protocol where if the client gets disconnected,
    * the connection is re-acquired and any interrupted streams are resumed automatically. For this
    * to work the server must also support and have the Resume capability enabled.
    *
@@ -408,13 +378,13 @@ public class ChannelConnector {
   }
 
   /**
-   * Enables the Lease feature of the RSocket protocol where the number of requests that can be
+   * Enables the Lease feature of the protocol where the number of requests that can be
    * performed from either side are rationed via {@code LEASE} frames from the responder side.
    *
    * <p>Example usage:
    *
    * <pre>{@code
-   * Mono<RSocket> rocketMono =
+   * Mono<Channel> rocketMono =
    *         ChannelConnector.create()
    *                         .lease()
    *                         .connect(transport);
@@ -431,13 +401,13 @@ public class ChannelConnector {
   }
 
   /**
-   * Enables the Lease feature of the RSocket protocol where the number of requests that can be
+   * Enables the Lease feature of the protocol where the number of requests that can be
    * performed from either side are rationed via {@code LEASE} frames from the responder side.
    *
    * <p>Example usage:
    *
    * <pre>{@code
-   * Mono<RSocket> rocketMono =
+   * Mono<Channel> rocketMono =
    *         ChannelConnector.create()
    *                         .lease(spec -> spec.maxPendingRequests(128))
    *                         .connect(transport);
@@ -523,7 +493,7 @@ public class ChannelConnector {
    * #reconnect(Retry) reconnect} nor {@link #resume(Resume)} are enabled.
    *
    * @param transport the transport of choice to connect with
-   * @return a {@code Mono} with the connected RSocket
+   * @return a {@code Mono} with the connected Channel
    */
   public Mono<Channel> connect(ClientTransport transport) {
     return connect(() -> transport);
@@ -536,18 +506,18 @@ public class ChannelConnector {
    * <p>
    *
    * @param transportSupplier supplier for the transport to connect with
-   * @return a {@code Mono} with the connected RSocket
+   * @return a {@code Mono} with the connected Channel
    */
   public Mono<Channel> connect(Supplier<ClientTransport> transportSupplier) {
     return Mono.fromSupplier(transportSupplier).flatMap(ct -> {
       int maxFrameLength = ct.getMaxFrameLength();
-      Mono<DuplexConnection> connectionMono = Mono.fromCallable(() -> {
+      Mono<Connection> connectionMono = Mono.fromCallable(() -> {
                 assertValidateSetup(maxFrameLength, maxInboundPayloadSize, mtu);
                 return ct;
               })
               .flatMap(transport -> transport.connect())
-              .map(sourceConnection -> interceptors.initConnection(ConnectionInterceptor.Type.SOURCE, sourceConnection))
-              .map(con -> LoggingDuplexConnection.wrapIfEnabled(con));
+              .map(sourceConnection -> interceptors.initConnection(ConnectionDecorator.Type.SOURCE, sourceConnection))
+              .map(con -> LoggingConnection.wrapIfEnabled(con));
 
       return connectionMono
               .flatMap(connection -> setupPayloadMono
@@ -556,7 +526,7 @@ public class ChannelConnector {
                       .doOnError(ex -> connection.dispose())
                       .doOnCancel(connection::dispose))
               .flatMap(tuple2 -> {
-                DuplexConnection sourceConnection = tuple2.getT1();
+                Connection sourceConnection = tuple2.getT1();
                 Payload setupPayload = tuple2.getT2();
                 boolean leaseEnabled = leaseConfigurer != null;
                 boolean resumeEnabled = resume != null;
@@ -565,44 +535,39 @@ public class ChannelConnector {
                 ByteBuf resumeToken;
 
                 if (resumeEnabled) {
-                  resumeToken = resume.getTokenSupplier().get();
+                  resumeToken = resume.tokenGenerator.generate();
                 }
                 else {
                   resumeToken = Unpooled.EMPTY_BUFFER;
                 }
 
-                ByteBuf setupFrame = SetupFrameCodec.encode(sourceConnection.alloc(),
-                        leaseEnabled,
-                        (int) keepAliveInterval.toMillis(),
-                        (int) keepAliveMaxLifeTime.toMillis(),
-                        resumeToken,
-                        metadataMimeType,
-                        dataMimeType,
-                        setupPayload);
+                ByteBuf setupFrame = SetupFrameCodec.encode(sourceConnection.alloc(), leaseEnabled,
+                        (int) keepAliveInterval.toMillis(), (int) keepAliveMaxLifeTime.toMillis(),
+                        resumeToken, metadataMimeType, dataMimeType, setupPayload);
 
                 sourceConnection.sendFrame(0, setupFrame.retainedSlice());
 
                 return clientSetup.init(sourceConnection).flatMap(tuple -> {
-                  final DuplexConnection clientServerConnection = tuple.getT2();
+                  final Connection clientServerConnection = tuple.getT2();
+                  final Connection wrappedConnection;
                   final KeepAliveHandler keepAliveHandler;
-                  final DuplexConnection wrappedConnection;
-                  final InitializingInterceptorRegistry interceptors = this.interceptors;
 
                   if (resumeEnabled) {
-                    final ResumableClientSetup resumableClientSetup = new ResumableClientSetup();
-                    final ResumableFramesStore resumableFramesStore = resume.getStoreFactory(CLIENT_TAG).apply(resumeToken);
-                    final ResumableDuplexConnection resumableDuplexConnection = new ResumableDuplexConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
-                    final ClientChannelSession session = new ClientChannelSession(resumeToken, resumableDuplexConnection, connectionMono, resumableClientSetup::init,
-                            resumableFramesStore, resume.getSessionDuration(), resume.getRetry(), resume.isCleanupStoreOnKeepAlive());
+                    final var resumableClientSetup = new ResumableClientSetup();
+                    final var resumableFramesStore = resume.getStoreFactory(CLIENT_TAG).create(resumeToken);
+                    final var resumableConnection = new ResumableConnection(CLIENT_TAG, resumeToken, clientServerConnection, resumableFramesStore);
+                    final var session = new ClientChannelSession(resumeToken, resumableConnection, connectionMono, resumableClientSetup::init,
+                            resumableFramesStore, resume.sessionDuration, resume.retry, resume.cleanupStoreOnKeepAlive);
 
-                    keepAliveHandler = new KeepAliveHandler.ResumableKeepAliveHandler(resumableDuplexConnection, session, session);
-                    wrappedConnection = resumableDuplexConnection;
+                    keepAliveHandler = new KeepAliveHandler.ResumableKeepAliveHandler(resumableConnection, session, session);
+                    wrappedConnection = resumableConnection;
                   }
                   else {
                     keepAliveHandler = new KeepAliveHandler.DefaultKeepAliveHandler();
                     wrappedConnection = clientServerConnection;
                   }
 
+                  final InitializingInterceptorRegistry interceptors = this.interceptors;
                   var multiplexer = new ClientServerInputMultiplexer(wrappedConnection, interceptors, true);
 
                   final LeaseSpec leases;
@@ -620,7 +585,7 @@ public class ChannelConnector {
                   final Sinks.Empty<Void> requesterOnAllClosedSink = Sinks.unsafe().empty();
                   final Sinks.Empty<Void> responderOnAllClosedSink = Sinks.unsafe().empty();
 
-                  Channel channelRequester = new ChannelRequester(multiplexer.asClientConnection(), payloadDecoder,
+                  Channel channelRequester = new RequesterChannel(multiplexer.asClientConnection(), payloadDecoder,
                           StreamIdProvider.forClient(), mtu, maxFrameLength, maxInboundPayloadSize,
                           (int) keepAliveInterval.toMillis(), (int) keepAliveMaxLifeTime.toMillis(), keepAliveHandler,
                           interceptors::initRequesterRequestInterceptor, requesterLeaseTracker, requesterOnAllClosedSink,
@@ -633,18 +598,17 @@ public class ChannelConnector {
 
                   return interceptors.decorateAcceptor(acceptor)
                           .accept(setup, wrappedChannelRequester)
-                          .map(rSocketHandler -> {
-                            Channel wrappedChannelHandler = interceptors.decorateResponder(rSocketHandler);
+                          .map(channelHandler -> {
+                            Channel wrappedChannelHandler = interceptors.decorateResponder(channelHandler);
 
                             ResponderLeaseTracker responderLeaseTracker = leaseEnabled
                                     ? new ResponderLeaseTracker(CLIENT_TAG, wrappedConnection, leases.sender)
                                     : null;
 
-                            Channel channelResponder = new ChannelResponder(multiplexer.asServerConnection(), wrappedChannelHandler,
-                                    payloadDecoder, responderLeaseTracker, mtu, maxFrameLength, maxInboundPayloadSize,
-                                    leaseEnabled && leases.sender instanceof TrackingLeaseSender
-                                            ? rSocket -> interceptors.initResponderRequestInterceptor(rSocket, (TrackingLeaseSender) leases.sender)
-                                            : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
+                            new ResponderChannel(multiplexer.asServerConnection(), wrappedChannelHandler, payloadDecoder, responderLeaseTracker,
+                                    mtu, maxFrameLength, maxInboundPayloadSize, leaseEnabled && leases.sender instanceof TrackingLeaseSender
+                                    ? channel -> interceptors.initResponderRequestInterceptor(channel, (TrackingLeaseSender) leases.sender)
+                                    : interceptors::initResponderRequestInterceptor, responderOnAllClosedSink);
 
                             return wrappedChannelRequester;
                           })
@@ -654,11 +618,34 @@ public class ChannelConnector {
     }).as(source -> {
       if (retrySpec != null) {
         return new ReconnectMono<>(
-                source.retryWhen(retrySpec), Disposable::dispose, INVALIDATE_FUNCTION);
+                source.retryWhen(retrySpec), Closeable::dispose, INVALIDATE_FUNCTION);
       }
       else {
         return source;
       }
     });
   }
+
+  /**
+   * Static factory method to create an {@code ChannelConnector} instance and customize default
+   * settings before connecting. To connect only, use {@link #connectWith(ClientTransport)}.
+   */
+  public static ChannelConnector create() {
+    return new ChannelConnector();
+  }
+
+  /**
+   * Static factory method to connect with default settings, effectively a shortcut for:
+   *
+   * <pre>{@code
+   * ChannelConnector.create().connect(transport);
+   * }</pre>
+   *
+   * @param transport the transport of choice to connect with
+   * @return a {@code Mono} with the connected Channel
+   */
+  public static Mono<Channel> connectWith(ClientTransport transport) {
+    return ChannelConnector.create().connect(() -> transport);
+  }
+
 }

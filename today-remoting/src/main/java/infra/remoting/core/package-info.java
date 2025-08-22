@@ -16,14 +16,16 @@
  */
 
 /**
- * Contains {@link infra.remoting.core.ChannelConnector RSocketConnector} and {@link
- * infra.remoting.core.RemotingServer RemotingServer}, the main classes for connecting to or starting an
- * RSocket server.
+ * Contains {@link infra.remoting.core.ChannelConnector ChannelConnector} and {@link
+ * infra.remoting.core.RemotingServer RemotingServer}, the main classes for connecting to or starting a
+ * protocol server.
  *
  * <p>This package also contains a package private classes that implement support for the main
- * RSocket interactions.
+ * interactions.
  */
 @NonNullApi
+@NonNullFields
 package infra.remoting.core;
 
 import infra.lang.NonNullApi;
+import infra.lang.NonNullFields;

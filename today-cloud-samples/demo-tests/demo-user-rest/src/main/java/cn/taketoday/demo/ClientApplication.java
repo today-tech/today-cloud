@@ -17,7 +17,6 @@
 
 package cn.taketoday.demo;
 
-import infra.cloud.http.EnableHttpServiceClient;
 import infra.app.ApplicationType;
 import infra.app.InfraApplication;
 import infra.app.builder.ApplicationBuilder;
@@ -27,7 +26,6 @@ import infra.app.builder.ApplicationBuilder;
  * @since 1.0 2022/10/18 00:06
  */
 @InfraApplication
-@EnableHttpServiceClient
 public class ClientApplication {
 
   public static void main(String[] args) {

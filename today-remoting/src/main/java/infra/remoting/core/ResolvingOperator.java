@@ -33,8 +33,6 @@ import reactor.core.Scannable;
 import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 
-// A copy of this class exists in io.rsocket.loadbalance
-
 class ResolvingOperator<T> implements Disposable {
 
   static final CancellationException ON_DISPOSE = new CancellationException("Disposed");
@@ -78,7 +76,7 @@ class ResolvingOperator<T> implements Disposable {
 
   @Override
   public final void dispose() {
-    this.terminate(ON_DISPOSE);
+    terminate(ON_DISPOSE);
   }
 
   @Override
@@ -94,10 +92,7 @@ class ResolvingOperator<T> implements Disposable {
   @Nullable
   public final T valueIfResolved() {
     if (this.subscribers == READY) {
-      T value = this.value;
-      if (value != null) {
-        return value;
-      }
+      return this.value;
     }
 
     return null;
@@ -105,7 +100,7 @@ class ResolvingOperator<T> implements Disposable {
 
   final void observe(BiConsumer<T, Throwable> actual) {
     for (; ; ) {
-      final int state = this.add(actual);
+      final int state = add(actual);
 
       T value = this.value;
 
@@ -165,7 +160,7 @@ class ResolvingOperator<T> implements Disposable {
       // connect once
       if (subscribers == EMPTY_UNSUBSCRIBED
               && SUBSCRIBERS.compareAndSet(this, EMPTY_UNSUBSCRIBED, EMPTY_SUBSCRIBED)) {
-        this.doSubscribe();
+        doSubscribe();
       }
 
       long delay;
@@ -201,7 +196,7 @@ class ResolvingOperator<T> implements Disposable {
         // connect again since invalidate() has happened in between
         if (subscribers == EMPTY_UNSUBSCRIBED
                 && SUBSCRIBERS.compareAndSet(this, EMPTY_UNSUBSCRIBED, EMPTY_SUBSCRIBED)) {
-          this.doSubscribe();
+          doSubscribe();
         }
 
         Thread.sleep(1);
@@ -230,9 +225,9 @@ class ResolvingOperator<T> implements Disposable {
       return;
     }
 
-    this.doOnDispose();
+    doOnDispose();
 
-    this.doFinally();
+    doFinally();
 
     for (BiConsumer<T, Throwable> consumer : subscribers) {
       consumer.accept(null, t);
@@ -242,7 +237,7 @@ class ResolvingOperator<T> implements Disposable {
   final void complete(T value) {
     BiConsumer<T, Throwable>[] subscribers = this.subscribers;
     if (subscribers == TERMINATED) {
-      this.doOnValueExpired(value);
+      doOnValueExpired(value);
       return;
     }
 
@@ -257,12 +252,12 @@ class ResolvingOperator<T> implements Disposable {
       subscribers = this.subscribers;
 
       if (subscribers == TERMINATED) {
-        this.doFinally();
+        doFinally();
         return;
       }
     }
 
-    this.doOnValueResolved(value);
+    doOnValueResolved(value);
 
     for (BiConsumer<T, Throwable> consumer : subscribers) {
       consumer.accept(value, null);
@@ -285,7 +280,7 @@ class ResolvingOperator<T> implements Disposable {
       value = this.value;
       if (value != null && isDisposed()) {
         this.value = null;
-        this.doOnValueExpired(value);
+        doOnValueExpired(value);
         return;
       }
 
@@ -312,7 +307,7 @@ class ResolvingOperator<T> implements Disposable {
       final T value = this.value;
       if (value != null) {
         this.value = null;
-        this.doOnValueExpired(value);
+        doOnValueExpired(value);
       }
 
       int m = 1;
@@ -357,7 +352,7 @@ class ResolvingOperator<T> implements Disposable {
       }
 
       if (SUBSCRIBERS.compareAndSet(this, a, EMPTY_SUBSCRIBED)) {
-        this.doSubscribe();
+        doSubscribe();
         return true;
       }
     }
@@ -383,7 +378,7 @@ class ResolvingOperator<T> implements Disposable {
 
       if (SUBSCRIBERS.compareAndSet(this, a, b)) {
         if (a == EMPTY_UNSUBSCRIBED) {
-          this.doSubscribe();
+          doSubscribe();
         }
         return ADDED_STATE;
       }
@@ -649,6 +644,7 @@ class ResolvingOperator<T> implements Disposable {
       }
     }
 
+    @Nullable
     @Override
     public Object scanUnsafe(Attr key) {
       if (key == Attr.PARENT)

@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono;
 @PerfTest
 class TcpPingTests {
   private static final int INTERACTIONS_COUNT = 1_000_000_000;
-  private static final int port = Integer.valueOf(System.getProperty("RSOCKET_TEST_PORT", "7878"));
+  private static final int port = Integer.valueOf(System.getProperty("REMOTING_TEST_PORT", "7878"));
 
   @BeforeEach
   void setUp() {
@@ -89,12 +89,12 @@ class TcpPingTests {
     if (isResumable) {
       connector.resume(new Resume());
     }
-    Mono<Channel> rSocket =
+    Mono<Channel> channel =
             connector
                     .payloadDecoder(PayloadDecoder.ZERO_COPY)
                     .keepAlive(Duration.ofMinutes(1), Duration.ofMinutes(30))
                     .connect(TcpClientTransport.create(port));
 
-    return new PingClient(rSocket);
+    return new PingClient(channel);
   }
 }

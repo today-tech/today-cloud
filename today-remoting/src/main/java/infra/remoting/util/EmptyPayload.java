@@ -24,7 +24,13 @@ import io.netty.buffer.Unpooled;
 public class EmptyPayload implements Payload {
   public static final EmptyPayload INSTANCE = new EmptyPayload();
 
-  private EmptyPayload() { }
+  private EmptyPayload() {
+  }
+
+  @Override
+  public int length() {
+    return 0;
+  }
 
   @Override
   public boolean hasMetadata() {

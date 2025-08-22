@@ -38,7 +38,7 @@ public final class ProtocolFrameLengthCodec extends LengthFieldBasedFrameDecoder
   }
 
   /**
-   * Creates a new instance of the decoder, specifying the RSocket frame length header size.
+   * Creates a new instance of the decoder, specifying the Protocol frame length header size.
    *
    * @param maxFrameLength maximum allowed frame length for incoming protocol frames
    */

@@ -27,9 +27,9 @@ import infra.remoting.Channel;
 import infra.remoting.core.ChannelConnector;
 
 /**
- * {@link LoadBalanceStrategy} that assigns a weight to each {@code RSocket} based on {@link
+ * {@link LoadBalanceStrategy} that assigns a weight to each {@code Channel} based on {@link
  * Channel#availability() availability} and usage statistics. The weight is used to decide which
- * {@code RSocket} to select.
+ * {@code Channel} to select.
  *
  * <p>Use {@link #create()} or a {@link #builder() Builder} to create an instance.
  *
@@ -184,7 +184,7 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
     }
 
     /**
-     * How many times to try to randomly select a pair of RSocket connections with non-zero
+     * How many times to try to randomly select a pair of Channel connections with non-zero
      * availability. This is applicable when there are more than two connections in the pool. If the
      * number of attempts is exceeded, the last selected pair is used.
      *
@@ -199,7 +199,7 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
 
     /**
      * Configure how the created {@link WeightedLoadBalanceStrategy} should find the stats for a
-     * given RSocket.
+     * given Channel.
      *
      * <p>By default this resolver is not set.
      *
@@ -209,7 +209,7 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
      * ClientLoadBalanceStrategy} callback. If this strategy is used in any other context however, a
      * resolver here must be provided.
      *
-     * @param resolver to find the stats for an RSocket with
+     * @param resolver to find the stats for an Channel with
      */
     public Builder weightedStatsResolver(Function<Channel, WeightedStats> resolver) {
       this.weightedStatsResolver = resolver;
@@ -233,14 +233,14 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
     }
 
     void init(ChannelConnector connector) {
-      connector.interceptors(registry -> registry.forRequestsInRequester(rSocket -> {
+      connector.interceptors(registry -> registry.forRequestsInRequester(channel -> {
         final WeightedStatsRequestInterceptor interceptor = new WeightedStatsRequestInterceptor() {
           @Override
           public void dispose() {
-            statsMap.remove(rSocket);
+            statsMap.remove(channel);
           }
         };
-        statsMap.put(rSocket, interceptor);
+        statsMap.put(channel, interceptor);
         return interceptor;
       }));
     }

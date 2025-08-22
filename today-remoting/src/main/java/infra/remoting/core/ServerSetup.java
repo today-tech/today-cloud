@@ -20,17 +20,16 @@ package infra.remoting.core;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.ProtocolErrorException;
-import infra.remoting.exceptions.RejectedResumeException;
-import infra.remoting.exceptions.UnsupportedSetupException;
+import infra.remoting.error.RejectedResumeException;
+import infra.remoting.error.UnsupportedSetupException;
 import infra.remoting.frame.ResumeFrameCodec;
 import infra.remoting.frame.SetupFrameCodec;
 import infra.remoting.keepalive.KeepAliveHandler;
-import infra.remoting.resume.ResumableDuplexConnection;
-import infra.remoting.resume.ResumableFramesStore;
+import infra.remoting.resume.ResumableConnection;
+import infra.remoting.resume.ResumableFramesStoreFactory;
 import infra.remoting.resume.ServerChannelSession;
 import infra.remoting.resume.SessionManager;
 import io.netty.buffer.ByteBuf;
@@ -48,23 +47,23 @@ abstract class ServerSetup {
     this.timeout = timeout;
   }
 
-  Mono<Tuple2<ByteBuf, DuplexConnection>> init(DuplexConnection connection) {
-    return Mono.<Tuple2<ByteBuf, DuplexConnection>>create(sink -> sink.onRequest(__ -> new SetupHandlingDuplexConnection(connection, sink)))
+  Mono<Tuple2<ByteBuf, Connection>> init(Connection connection) {
+    return Mono.<Tuple2<ByteBuf, Connection>>create(sink -> sink.onRequest(__ -> new SetupHandlingConnection(connection, sink)))
             .timeout(this.timeout)
             .or(connection.onClose().then(Mono.error(ClosedChannelException::new)));
   }
 
-  abstract Mono<Void> acceptRSocketSetup(ByteBuf frame,
-          DuplexConnection clientServerConnection,
-          BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then);
+  abstract Mono<Void> acceptChannelSetup(ByteBuf frame,
+          Connection clientServerConnection,
+          BiFunction<KeepAliveHandler, Connection, Mono<Void>> then);
 
-  abstract Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection connection);
+  abstract Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection);
 
   void dispose() { }
 
-  void sendError(DuplexConnection duplexConnection, ProtocolErrorException exception) {
-    duplexConnection.sendErrorAndClose(exception);
-    duplexConnection.receive().subscribe();
+  void sendError(Connection connection, ProtocolErrorException exception) {
+    connection.sendErrorAndClose(exception);
+    connection.receive().subscribe();
   }
 
   static class DefaultServerSetup extends ServerSetup {
@@ -74,85 +73,76 @@ abstract class ServerSetup {
     }
 
     @Override
-    public Mono<Void> acceptRSocketSetup(ByteBuf frame, DuplexConnection duplexConnection,
-            BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then) {
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, Connection connection,
+            BiFunction<KeepAliveHandler, Connection, Mono<Void>> then) {
 
       if (SetupFrameCodec.resumeEnabled(frame)) {
-        sendError(duplexConnection, new UnsupportedSetupException("resume not supported"));
-        return duplexConnection.onClose();
+        sendError(connection, new UnsupportedSetupException("resume not supported"));
+        return connection.onClose();
       }
       else {
-        return then.apply(new DefaultKeepAliveHandler(), duplexConnection);
+        return then.apply(new DefaultKeepAliveHandler(), connection);
       }
     }
 
     @Override
-    public Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection duplexConnection) {
-      sendError(duplexConnection, new RejectedResumeException("resume not supported"));
-      return duplexConnection.onClose();
+    public Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection) {
+      sendError(connection, new RejectedResumeException("resume not supported"));
+      return connection.onClose();
     }
   }
 
   static class ResumableServerSetup extends ServerSetup {
-    private final SessionManager sessionManager;
-    private final Duration resumeSessionDuration;
     private final Duration resumeStreamTimeout;
-    private final Function<? super ByteBuf, ? extends ResumableFramesStore> resumeStoreFactory;
+
+    private final SessionManager sessionManager;
+
+    private final Duration resumeSessionDuration;
+
     private final boolean cleanupStoreOnKeepAlive;
+
+    private final ResumableFramesStoreFactory resumeStoreFactory;
 
     ResumableServerSetup(Duration timeout, SessionManager sessionManager,
             Duration resumeSessionDuration, Duration resumeStreamTimeout,
-            Function<? super ByteBuf, ? extends ResumableFramesStore> resumeStoreFactory, boolean cleanupStoreOnKeepAlive) {
+            ResumableFramesStoreFactory resumeStoreFactory, boolean cleanupStoreOnKeepAlive) {
       super(timeout);
       this.sessionManager = sessionManager;
-      this.resumeSessionDuration = resumeSessionDuration;
-      this.resumeStreamTimeout = resumeStreamTimeout;
       this.resumeStoreFactory = resumeStoreFactory;
+      this.resumeStreamTimeout = resumeStreamTimeout;
+      this.resumeSessionDuration = resumeSessionDuration;
       this.cleanupStoreOnKeepAlive = cleanupStoreOnKeepAlive;
     }
 
     @Override
-    public Mono<Void> acceptRSocketSetup(ByteBuf frame, DuplexConnection duplexConnection,
-            BiFunction<KeepAliveHandler, DuplexConnection, Mono<Void>> then) {
-
+    public Mono<Void> acceptChannelSetup(ByteBuf frame, Connection connection, BiFunction<KeepAliveHandler, Connection, Mono<Void>> then) {
       if (SetupFrameCodec.resumeEnabled(frame)) {
         ByteBuf resumeToken = SetupFrameCodec.resumeToken(frame);
 
-        final ResumableFramesStore resumableFramesStore = resumeStoreFactory.apply(resumeToken);
-        final ResumableDuplexConnection resumableDuplexConnection =
-                new ResumableDuplexConnection(
-                        "server", resumeToken, duplexConnection, resumableFramesStore);
-        final ServerChannelSession serverRSocketSession =
-                new ServerChannelSession(
-                        resumeToken,
-                        resumableDuplexConnection,
-                        duplexConnection,
-                        resumableFramesStore,
-                        resumeSessionDuration,
-                        cleanupStoreOnKeepAlive);
+        var resumableFramesStore = resumeStoreFactory.create(resumeToken);
+        var resumableConnection = new ResumableConnection("server", resumeToken, connection, resumableFramesStore);
+        var serverChannelSession = new ServerChannelSession(resumeToken, resumableConnection, connection,
+                resumableFramesStore, resumeSessionDuration, cleanupStoreOnKeepAlive);
 
-        sessionManager.save(serverRSocketSession, resumeToken);
+        sessionManager.save(serverChannelSession, resumeToken);
 
-        return then.apply(new ResumableKeepAliveHandler(
-                        resumableDuplexConnection, serverRSocketSession, serverRSocketSession),
-                resumableDuplexConnection);
+        return then.apply(new ResumableKeepAliveHandler(resumableConnection, serverChannelSession, serverChannelSession), resumableConnection);
       }
       else {
-        return then.apply(new DefaultKeepAliveHandler(), duplexConnection);
+        return then.apply(new DefaultKeepAliveHandler(), connection);
       }
     }
 
     @Override
-    public Mono<Void> acceptRSocketResume(ByteBuf frame, DuplexConnection duplexConnection) {
+    public Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection) {
       ServerChannelSession session = sessionManager.get(ResumeFrameCodec.token(frame));
       if (session != null) {
-        session.resumeWith(frame, duplexConnection);
-        return duplexConnection.onClose();
+        session.resumeWith(frame, connection);
       }
       else {
-        sendError(duplexConnection, new RejectedResumeException("unknown resume token"));
-        return duplexConnection.onClose();
+        sendError(connection, new RejectedResumeException("unknown resume token"));
       }
+      return connection.onClose();
     }
 
     @Override

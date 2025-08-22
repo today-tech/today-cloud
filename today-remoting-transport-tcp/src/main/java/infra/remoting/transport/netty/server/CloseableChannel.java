@@ -17,35 +17,22 @@
 
 package infra.remoting.transport.netty.server;
 
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
+import infra.core.FutureMono;
 import infra.remoting.Closeable;
-import infra.remoting.util.FutureMono;
 import io.netty.channel.Channel;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableChannel;
 
-import static infra.remoting.transport.tcp.PromiseAdapter.adapt;
+import static infra.remoting.util.PromiseAdapter.adapt;
 
 /**
  * An implementation of {@link Closeable} that wraps a {@link DisposableChannel}, enabling
  * close-ability and exposing the {@link DisposableChannel}'s address.
  */
 public final class CloseableChannel implements Closeable {
-
-  /** For forward compatibility: remove when RSocket compiles against Reactor 1.0. */
-  private static final Method channelAddressMethod;
-
-  static {
-    try {
-      channelAddressMethod = DisposableChannel.class.getMethod("address");
-    }
-    catch (NoSuchMethodException ex) {
-      throw new IllegalStateException("Expected address method", ex);
-    }
-  }
 
   private final Channel channel;
 
@@ -76,17 +63,7 @@ public final class CloseableChannel implements Closeable {
    * @see DisposableChannel#address()
    */
   public InetSocketAddress address() {
-    try {
-      return (InetSocketAddress) channel.localAddress();
-    }
-    catch (ClassCastException | NoSuchMethodError e) {
-      try {
-        return (InetSocketAddress) channelAddressMethod.invoke(this.channel);
-      }
-      catch (Exception ex) {
-        throw new IllegalStateException("Unable to obtain address", ex);
-      }
-    }
+    return (InetSocketAddress) channel.localAddress();
   }
 
   @Override

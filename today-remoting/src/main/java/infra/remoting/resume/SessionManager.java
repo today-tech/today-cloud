@@ -38,19 +38,12 @@ public class SessionManager {
     }
     else {
       final String token = resumeToken.toString(CharsetUtil.UTF_8);
-      session
-              .resumableConnection
-              .onClose()
-              .doFinally(
-                      __ -> {
-                        logger.debug(
-                                "ResumableConnection has been closed. Removing associated session {"
-                                        + token
-                                        + "}");
-                        if (isDisposed || sessions.get(token) == session) {
-                          sessions.remove(token);
-                        }
-                      })
+      session.resumableConnection.onClose().doFinally(__ -> {
+                logger.debug("ResumableConnection has been closed. Removing associated session '{}'", token);
+                if (isDisposed || sessions.get(token) == session) {
+                  sessions.remove(token);
+                }
+              })
               .subscribe();
       ServerChannelSession prevSession = sessions.remove(token);
       if (prevSession != null) {

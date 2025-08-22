@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 
 /**
  * Extends {@link InterceptorRegistry} with methods for building a chain of registered interceptors.
@@ -47,29 +47,29 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
                     .collect(Collectors.toList()));
   }
 
-  public DuplexConnection initConnection(ConnectionInterceptor.Type type, DuplexConnection connection) {
-    for (ConnectionInterceptor interceptor : connectionInterceptors) {
-      connection = interceptor.intercept(type, connection);
+  public Connection initConnection(ConnectionDecorator.Type type, Connection connection) {
+    for (ConnectionDecorator interceptor : connectionDecorators) {
+      connection = interceptor.decorate(type, connection);
     }
     return connection;
   }
 
-  public Channel decorateRequester(Channel rsocket) {
-    for (ChannelInterceptor interceptor : requesterChannelInterceptors) {
-      rsocket = interceptor.decorate(rsocket);
+  public Channel decorateRequester(Channel channel) {
+    for (ChannelDecorator interceptor : requesterChannelDecorators) {
+      channel = interceptor.decorate(channel);
     }
-    return rsocket;
+    return channel;
   }
 
-  public Channel decorateResponder(Channel rsocket) {
-    for (ChannelInterceptor interceptor : responderChannelInterceptors) {
-      rsocket = interceptor.decorate(rsocket);
+  public Channel decorateResponder(Channel channel) {
+    for (ChannelDecorator interceptor : responderChannelDecorators) {
+      channel = interceptor.decorate(channel);
     }
-    return rsocket;
+    return channel;
   }
 
   public ChannelAcceptor decorateAcceptor(ChannelAcceptor acceptor) {
-    for (ChannelAcceptorInterceptor interceptor : channelAcceptorInterceptors) {
+    for (ChannelAcceptorDecorator interceptor : channelAcceptorDecorators) {
       acceptor = interceptor.decorate(acceptor);
     }
     return acceptor;

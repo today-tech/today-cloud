@@ -31,8 +31,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * An implementation of {@link RemotingClient} backed by a pool of {@code RSocket} instances and
- * using a {@link LoadBalanceStrategy} to select the {@code RSocket} to use for a given request.
+ * An implementation of {@link RemotingClient} backed by a pool of {@code Channel} instances and
+ * using a {@link LoadBalanceStrategy} to select the {@code Channel} to use for a given request.
  */
 public class LoadBalanceRemotingClient implements RemotingClient {
 
@@ -52,7 +52,9 @@ public class LoadBalanceRemotingClient implements RemotingClient {
     return channelPool.connect();
   }
 
-  /** Return {@code Mono} that selects an RSocket from the underlying pool. */
+  /**
+   * Return {@code Mono} that selects a Channel from the underlying pool.
+   */
   @Override
   public Mono<Channel> source() {
     return Mono.fromSupplier(channelPool::select);
@@ -75,7 +77,7 @@ public class LoadBalanceRemotingClient implements RemotingClient {
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return source().flatMapMany(rSocket -> rSocket.requestChannel(payloads));
+    return source().flatMapMany(channel -> channel.requestChannel(payloads));
   }
 
   @Override
@@ -86,24 +88,6 @@ public class LoadBalanceRemotingClient implements RemotingClient {
   @Override
   public void dispose() {
     channelPool.dispose();
-  }
-
-  /**
-   * Shortcut to create an {@link LoadBalanceRemotingClient} with round-robin load balancing.
-   * Effectively a shortcut for:
-   *
-   * <pre class="cdoe">
-   * LoadBalanceRemotingClient.builder(targetPublisher)
-   *    .connector(RSocketConnector.create())
-   *    .build();
-   * </pre>
-   *
-   * @param connector a "template" for connecting to load balance targets
-   * @param targetPublisher refreshes the list of load balance targets periodically
-   * @return the created client instance
-   */
-  public static LoadBalanceRemotingClient create(ChannelConnector connector, Publisher<List<LoadBalanceTarget>> targetPublisher) {
-    return builder(targetPublisher).connector(connector).build();
   }
 
   /**
@@ -179,13 +163,10 @@ public class LoadBalanceRemotingClient implements RemotingClient {
 
     /** Build the {@link LoadBalanceRemotingClient} instance. */
     public LoadBalanceRemotingClient build() {
-      final ChannelConnector connector =
-              (this.connector != null ? this.connector : ChannelConnector.create());
-
-      final LoadBalanceStrategy strategy =
-              (this.loadbalanceStrategy != null
-                      ? this.loadbalanceStrategy
-                      : new RoundRobinLoadBalanceStrategy());
+      final ChannelConnector connector = this.connector != null ? this.connector : ChannelConnector.create();
+      final LoadBalanceStrategy strategy = loadbalanceStrategy != null
+              ? loadbalanceStrategy
+              : new RoundRobinLoadBalanceStrategy();
 
       if (strategy instanceof ClientLoadBalanceStrategy) {
         ((ClientLoadBalanceStrategy) strategy).initialize(connector);

@@ -1,12 +1,3 @@
-service:
-  provider:
-    uri: '/provider'
-
-registry:
-  http-url: 'http://localhost:5000/services'
-
-  services:
-    uri: '/services'
 
 infra:
   profiles:
@@ -18,6 +9,7 @@ logging:
     web: trace
     cn.taketoday.demo: debug
     infra.cloud.protocol: debug
+
 
 server:
   netty:

@@ -21,6 +21,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import infra.lang.Assert;
+
 /**
  * Host information.
  *
@@ -29,21 +31,15 @@ import java.nio.ByteBuffer;
  */
 public class HostInfo {
 
-  /**
-   * Should override the host info.
-   */
-  public boolean override;
+  private final String hostname;
 
-  private String ipAddress;
-
-  private String hostname;
+  private final String ipAddress;
 
   public HostInfo(String hostname, String ipAddress) {
+    Assert.notNull(hostname, "hostname is required");
+    Assert.notNull(ipAddress, "ipAddress is required");
     this.hostname = hostname;
     this.ipAddress = ipAddress;
-  }
-
-  public HostInfo() {
   }
 
   public int getIpAddressAsInt() {
@@ -61,28 +57,12 @@ public class HostInfo {
     return ByteBuffer.wrap(inetAddress.getAddress()).getInt();
   }
 
-  public boolean isOverride() {
-    return this.override;
-  }
-
-  public void setOverride(boolean override) {
-    this.override = override;
-  }
-
   public String getIpAddress() {
     return this.ipAddress;
   }
 
-  public void setIpAddress(String ipAddress) {
-    this.ipAddress = ipAddress;
-  }
-
   public String getHostname() {
     return this.hostname;
-  }
-
-  public void setHostname(String hostname) {
-    this.hostname = hostname;
   }
 
 }

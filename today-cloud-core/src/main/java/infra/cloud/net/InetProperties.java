@@ -18,11 +18,13 @@
 package infra.cloud.net;
 
 import java.net.InetAddress;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import infra.beans.factory.annotation.Value;
 import infra.context.properties.ConfigurationProperties;
+import infra.format.annotation.DurationUnit;
 
 /**
  * Properties for {@link InetService}.
@@ -36,7 +38,7 @@ public class InetProperties {
   /**
    * Prefix for the Inet properties.
    */
-  public static final String PREFIX = "cloud.inet";
+  public static final String PREFIX = "infra.cloud.inet";
 
   /**
    * The default hostname. Used in case of errors.
@@ -49,10 +51,10 @@ public class InetProperties {
   private String defaultIpAddress = "127.0.0.1";
 
   /**
-   * Timeout, in seconds, for calculating hostname.
+   * Timeout for calculating hostname.
    */
-  @Value("${cloud.inet.timeout.sec:${CLOUD_INET_TIMEOUT_SEC:4}}")
-  private int timeoutSeconds = 1;
+  @DurationUnit(ChronoUnit.SECONDS)
+  private Duration timeout = Duration.ofSeconds(4);
 
   /**
    * List of Java regular expressions for network interfaces that will be ignored.
@@ -86,12 +88,12 @@ public class InetProperties {
     this.defaultIpAddress = defaultIpAddress;
   }
 
-  public int getTimeoutSeconds() {
-    return this.timeoutSeconds;
+  public Duration getTimeout() {
+    return timeout;
   }
 
-  public void setTimeoutSeconds(int timeoutSeconds) {
-    this.timeoutSeconds = timeoutSeconds;
+  public void setTimeout(Duration timeout) {
+    this.timeout = timeout;
   }
 
   public List<String> getIgnoredInterfaces() {

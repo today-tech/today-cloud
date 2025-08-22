@@ -38,13 +38,10 @@ public class Resume {
 
   private static final Logger logger = LoggerFactory.getLogger(Resume.class);
 
-  Duration sessionDuration = Duration.ofMinutes(2);
-
   @Nullable
   private ResumableFramesStoreFactory storeFactory;
 
-  /* Storage */
-  boolean cleanupStoreOnKeepAlive;
+  Duration sessionDuration = Duration.ofMinutes(2);
 
   Duration streamTimeout = Duration.ofSeconds(10);
 
@@ -55,6 +52,9 @@ public class Resume {
           .maxBackoff(Duration.ofSeconds(16))
           .jitter(1.0)
           .doBeforeRetry(signal -> logger.debug("Connection error", signal.failure()));
+
+  /* Storage */
+  boolean cleanupStoreOnKeepAlive;
 
   public Resume() {
   }

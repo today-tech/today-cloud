@@ -22,7 +22,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -52,19 +51,16 @@ public class InetService {
     if (address != null) {
       return convertAddress(address);
     }
-    HostInfo hostInfo = new HostInfo();
-    hostInfo.setHostname(this.properties.getDefaultHostname());
-    hostInfo.setIpAddress(this.properties.getDefaultIpAddress());
-    return hostInfo;
+    return new HostInfo(properties.getDefaultHostname(), properties.getDefaultIpAddress());
   }
 
   public InetAddress findFirstNonLoopbackAddress() {
     InetAddress result = null;
     try {
       int lowest = Integer.MAX_VALUE;
-      for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces(); nics
-              .hasMoreElements(); ) {
-        NetworkInterface ifc = nics.nextElement();
+      var networkInterfaces = NetworkInterface.getNetworkInterfaces();
+      while (networkInterfaces.hasMoreElements()) {
+        NetworkInterface ifc = networkInterfaces.nextElement();
         if (ifc.isUp()) {
           log.trace("Testing interface: {}", ifc.getDisplayName());
           if (ifc.getIndex() < lowest || result == null) {
@@ -74,20 +70,16 @@ public class InetService {
             continue;
           }
 
-          // @formatter:off
-					if (!ignoreInterface(ifc.getDisplayName())) {
-						for (Enumeration<InetAddress> addrs = ifc
-								.getInetAddresses(); addrs.hasMoreElements();) {
-							InetAddress address = addrs.nextElement();
-							if (address instanceof Inet4Address
-									&& !address.isLoopbackAddress()
-									&& isPreferredAddress(address)) {
-								log.trace("Found non-loopback interface: {}" , ifc.getDisplayName());
-								result = address;
-							}
-						}
-					}
-					// @formatter:on
+          if (!ignoreInterface(ifc.getDisplayName())) {
+            var addresses = ifc.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+              InetAddress address = addresses.nextElement();
+              if (address instanceof Inet4Address && !address.isLoopbackAddress() && isPreferredAddress(address)) {
+                log.trace("Found non-loopback interface: {}", ifc.getDisplayName());
+                result = address;
+              }
+            }
+          }
         }
       }
     }
@@ -111,15 +103,14 @@ public class InetService {
 
   // For testing.
   boolean isPreferredAddress(InetAddress address) {
-
-    if (this.properties.isUseOnlySiteLocalInterfaces()) {
+    if (properties.isUseOnlySiteLocalInterfaces()) {
       final boolean siteLocalAddress = address.isSiteLocalAddress();
       if (!siteLocalAddress) {
         log.trace("Ignoring address: {}", address.getHostAddress());
       }
       return siteLocalAddress;
     }
-    final List<String> preferredNetworks = this.properties.getPreferredNetworks();
+    final List<String> preferredNetworks = properties.getPreferredNetworks();
     if (preferredNetworks.isEmpty()) {
       return true;
     }
@@ -135,7 +126,7 @@ public class InetService {
 
   // For testing
   boolean ignoreInterface(String interfaceName) {
-    for (String regex : this.properties.getIgnoredInterfaces()) {
+    for (String regex : properties.getIgnoredInterfaces()) {
       if (interfaceName.matches(regex)) {
         log.trace("Ignoring interface: {}", interfaceName);
         return true;
@@ -149,7 +140,7 @@ public class InetService {
 
     String hostname;
     try {
-      hostname = result.get(properties.getTimeoutSeconds(), TimeUnit.SECONDS);
+      hostname = result.get(properties.getTimeout().toMillis(), TimeUnit.MILLISECONDS);
     }
     catch (Exception e) {
       result.cancel(true);

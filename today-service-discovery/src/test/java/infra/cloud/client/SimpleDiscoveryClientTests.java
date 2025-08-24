@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.client.simple;
+package infra.cloud.client;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import infra.cloud.client.DefaultServiceInstance;
-import infra.cloud.client.ServiceInstance;
+import infra.cloud.client.simple.SimpleDiscoveryClient;
+import infra.cloud.client.simple.SimpleDiscoveryProperties;
 
 import static org.assertj.core.api.BDDAssertions.then;
 

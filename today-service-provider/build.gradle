@@ -7,15 +7,7 @@ dependencies {
   api project(":today-cloud-core")
   api project(":today-service-api")
 
-  implementation project(":today-service-registry")
-
   optional project(":today-remoting-transport-tcp")
-
-  optional 'io.netty:netty-transport'
-  optional 'io.netty:netty-codec'
-  optional 'io.netty:netty-handler'
-  optional 'io.netty:netty-transport-classes-epoll'
-
 }
 
 // --add-opens=java.base/java.nio=ALL-UNNAMED

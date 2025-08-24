@@ -1,9 +1,3 @@
-server:
-  port: 9000
-
-web:
-  resources:
-    add-default-mappings: false
 
 infra:
   profiles:
@@ -11,8 +5,12 @@ infra:
   cloud:
     service-registry:
       auto-registration:
-        port: 9000
         fail-fast: true
+
+      simple:
+        instance-port: 9000
+      uri: http://localhost:5000
+
 
 logging:
   level:

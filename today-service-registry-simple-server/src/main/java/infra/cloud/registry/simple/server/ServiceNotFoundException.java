@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.registry;
+package infra.cloud.registry.simple.server;
 
 import java.io.Serial;
 

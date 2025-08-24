@@ -17,7 +17,7 @@
 
 package infra.cloud.registry.event;
 
-import infra.cloud.registry.Registration;
+import infra.cloud.client.Registration;
 import infra.context.ApplicationEvent;
 
 /**

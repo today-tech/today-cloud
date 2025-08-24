@@ -17,6 +17,8 @@
 
 package infra.cloud.registry;
 
+import infra.cloud.client.Registration;
+
 /**
  * Service registration life cycle. This life cycle is only related to
  * {@link Registration}.

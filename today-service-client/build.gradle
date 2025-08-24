@@ -5,7 +5,7 @@ dependencies {
   api project(":today-remoting")
   api project(":today-cloud-core")
   api project(":today-service-api")
-  api project(":today-service-registry")
+  api project(":today-service-discovery")
 
   optional project(":today-remoting-transport-tcp")
 

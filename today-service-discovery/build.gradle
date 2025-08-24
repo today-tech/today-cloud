@@ -1,0 +1,12 @@
+description = "TODAY Service discovery client"
+
+dependencies {
+  api project(":today-cloud-core")
+
+  implementation 'cn.taketoday:today-beans'
+  implementation 'cn.taketoday:today-context'
+
+
+  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
+
+}

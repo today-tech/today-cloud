@@ -40,8 +40,8 @@ public interface SimpleHttpServiceRegistryAPI {
   @GET(produces = MediaType.APPLICATION_JSON_VALUE)
   MultiValueMap<String, HttpRegistration> services();
 
-  @GET("/{name}")
-  List<HttpRegistration> lookup(@PathVariable String name);
+  @GET("/{serviceId}")
+  List<HttpRegistration> lookup(@PathVariable String serviceId);
 
   @POST
   void register(@RequestBody HttpRegistration registration);

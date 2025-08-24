@@ -20,6 +20,7 @@ package infra.cloud.registry;
 import java.io.Serial;
 
 import infra.cloud.RemotingException;
+import infra.cloud.client.Registration;
 import infra.lang.Nullable;
 
 /**

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import infra.cloud.registry.ServiceNotFoundException;
 import infra.cloud.registry.simple.HttpRegistration;
 import infra.cloud.registry.simple.api.SimpleHttpServiceRegistryAPI;
 import infra.http.HttpStatus;
@@ -37,7 +36,6 @@ import infra.web.annotation.POST;
 import infra.web.annotation.PUT;
 import infra.web.annotation.PathVariable;
 import infra.web.annotation.RequestBody;
-import infra.web.annotation.RequestMapping;
 import infra.web.annotation.ResponseStatus;
 import infra.web.annotation.RestController;
 
@@ -45,7 +43,6 @@ import infra.web.annotation.RestController;
  * @author TODAY 2021/7/9 23:08
  */
 @RestController
-@RequestMapping("${registry.services.uri:/services}")
 class SimpleHttpServiceRegistryEndpoint implements SimpleHttpServiceRegistryAPI {
 
   private static final Logger log = LoggerFactory.getLogger(SimpleHttpServiceRegistryEndpoint.class);
@@ -59,12 +56,12 @@ class SimpleHttpServiceRegistryEndpoint implements SimpleHttpServiceRegistryAPI 
     return serviceMapping;
   }
 
-  @GET("/{name}")
   @Override
-  public List<HttpRegistration> lookup(@PathVariable String name) {
-    List<HttpRegistration> registrations = serviceMapping.get(name);
+  @GET("/{serviceId}")
+  public List<HttpRegistration> lookup(@PathVariable String serviceId) {
+    List<HttpRegistration> registrations = serviceMapping.get(serviceId);
     if (CollectionUtils.isEmpty(registrations)) {
-      throw new ServiceNotFoundException(name);
+      throw new ServiceNotFoundException(serviceId);
     }
 
     return registrations;
@@ -87,6 +84,7 @@ class SimpleHttpServiceRegistryEndpoint implements SimpleHttpServiceRegistryAPI 
     }
     else {
       registrations.removeIf(r -> r.getInstanceId().equals(registration.getInstanceId()));
+      registrations.add(registration);
     }
   }
 

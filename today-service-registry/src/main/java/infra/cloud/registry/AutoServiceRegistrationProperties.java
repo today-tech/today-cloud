@@ -36,11 +36,6 @@ public class AutoServiceRegistrationProperties {
    */
   private boolean failFast = false;
 
-  /**
-   * Service provider port
-   */
-  private int port = 9000;
-
   public boolean isEnabled() {
     return this.enabled;
   }
@@ -57,11 +52,4 @@ public class AutoServiceRegistrationProperties {
     this.failFast = failFast;
   }
 
-  public void setPort(int port) {
-    this.port = port;
-  }
-
-  public int getPort() {
-    return port;
-  }
 }

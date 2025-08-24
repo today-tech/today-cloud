@@ -15,14 +15,16 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.registry;
-
-import infra.cloud.client.ServiceInstance;
+package infra.cloud.registry.simple;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2023/11/20 21:50
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/24 16:48
  */
-public interface Registration extends ServiceInstance {
+public enum Status {
+
+  UP,
+
+  OUT_OF_SERVICE,
 
 }

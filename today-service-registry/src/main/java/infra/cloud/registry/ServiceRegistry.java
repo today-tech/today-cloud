@@ -17,6 +17,8 @@
 
 package infra.cloud.registry;
 
+import infra.cloud.client.Registration;
+
 /**
  * Contract to register and deregister instances with a Service Registry.
  *

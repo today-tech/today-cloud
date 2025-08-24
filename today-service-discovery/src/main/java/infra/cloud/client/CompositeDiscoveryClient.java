@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import infra.core.annotation.AnnotationAwareOrderComparator;
 import infra.util.CollectionUtils;
 
 /**

@@ -18,7 +18,7 @@
 package infra.cloud.registry.simple;
 
 import infra.cloud.client.DefaultServiceInstance;
-import infra.cloud.registry.Registration;
+import infra.cloud.client.Registration;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -26,13 +26,13 @@ import infra.cloud.registry.Registration;
  */
 public class HttpRegistration extends DefaultServiceInstance implements Registration {
 
-  private String status;
+  private Status status;
 
-  public String getStatus() {
+  public Status getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(Status status) {
     this.status = status;
   }
 }

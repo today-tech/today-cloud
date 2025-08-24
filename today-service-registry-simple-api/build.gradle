@@ -2,9 +2,8 @@ description = "TODAY Service Simple Registry API"
 
 
 dependencies {
-  api project(":today-service-registry")
-
-  api 'cn.taketoday:today-starter-web'
+  implementation project(":today-cloud-core")
+  implementation 'cn.taketoday:today-starter-web'
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'
 }

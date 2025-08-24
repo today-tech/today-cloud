@@ -15,14 +15,12 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.client.simple;
+package infra.cloud.client;
 
 import org.junit.jupiter.api.Test;
 
 import infra.app.test.context.InfraTest;
 import infra.beans.factory.annotation.Autowired;
-import infra.cloud.client.CompositeDiscoveryClient;
-import infra.cloud.client.DiscoveryClient;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.config.EnableAutoConfiguration;
 

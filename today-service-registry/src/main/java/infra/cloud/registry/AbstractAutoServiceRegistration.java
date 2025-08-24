@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import infra.cloud.client.Registration;
 import infra.cloud.registry.event.InstancePreRegisteredEvent;
 import infra.cloud.registry.event.InstanceRegisteredEvent;
 import infra.context.SmartLifecycle;
@@ -141,12 +142,8 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
   /**
    * @return True, if this is enabled.
    */
-  protected boolean isEnabled() {
-    return true;
-  }
+  protected abstract boolean isEnabled();
 
   protected abstract R getRegistration();
-
-  protected abstract R getManagementRegistration();
 
 }

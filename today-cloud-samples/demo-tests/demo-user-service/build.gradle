@@ -6,11 +6,12 @@ dependencies {
   implementation project(":today-service-provider")
   implementation project(":today-service-registry-simple-client")
 
-  implementation 'cn.taketoday:today-starter-web'
-  implementation 'cn.taketoday:today-starter-netty'
-  implementation 'ch.qos.logback:logback-classic'
+//  implementation 'cn.taketoday:today-starter-web'
+//  implementation 'cn.taketoday:today-starter-netty'
+  implementation 'cn.taketoday:today-starter-logback'
 
-  implementation "com.google.protobuf:protobuf-java"
+//  implementation "com.google.protobuf:protobuf-java"
 
+  implementation project(":today-remoting-transport-tcp")
 
 }

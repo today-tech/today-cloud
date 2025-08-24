@@ -30,7 +30,7 @@ public class UserServiceApplication {
 
   public static void main(String[] args) {
     ApplicationBuilder.forSources(UserServiceApplication.class)
-            .type(ApplicationType.NETTY_WEB)
+            .type(ApplicationType.NORMAL)
             .run(args);
   }
 

@@ -3,6 +3,10 @@ infra:
   profiles:
     active: dev
 
+  cloud:
+    service-registry:
+      uri: http://localhost:5000
+
 logging:
   level:
     root: info

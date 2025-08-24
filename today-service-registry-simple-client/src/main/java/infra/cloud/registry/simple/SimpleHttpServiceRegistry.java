@@ -24,7 +24,7 @@ import infra.cloud.registry.simple.api.SimpleHttpServiceRegistryAPI;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/7 20:40
  */
-public class SimpleHttpServiceRegistry implements ServiceRegistry<HttpRegistration, String> {
+public class SimpleHttpServiceRegistry implements ServiceRegistry<HttpRegistration, Status> {
 
   private final SimpleHttpServiceRegistryAPI serviceRegistryAPI;
 
@@ -48,12 +48,13 @@ public class SimpleHttpServiceRegistry implements ServiceRegistry<HttpRegistrati
   }
 
   @Override
-  public void setStatus(HttpRegistration registration, String status) {
+  public void setStatus(HttpRegistration registration, Status status) {
     registration.setStatus(status);
+    serviceRegistryAPI.update(registration);
   }
 
   @Override
-  public String getStatus(HttpRegistration registration) {
+  public Status getStatus(HttpRegistration registration) {
     return registration.getStatus();
   }
 

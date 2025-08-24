@@ -27,7 +27,6 @@ import infra.cloud.provider.ServiceChannelHandler;
 import infra.cloud.provider.ServiceProviderServer;
 import infra.cloud.provider.ServiceServerProperties;
 import infra.cloud.provider.TcpServerTransportFactory;
-import infra.cloud.registry.annotation.config.AutoServiceRegistrationAutoConfiguration;
 import infra.cloud.service.PackageInfoServiceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceMetadataProvider;
@@ -52,7 +51,7 @@ import infra.stereotype.Component;
  */
 @ConditionalOnDiscoveryEnabled
 @EnableConfigurationProperties({ InetProperties.class, ServiceServerProperties.class })
-@DisableDIAutoConfiguration(before = AutoServiceRegistrationAutoConfiguration.class)
+@DisableDIAutoConfiguration
 public class ServiceProviderAutoConfiguration {
 
   @Component

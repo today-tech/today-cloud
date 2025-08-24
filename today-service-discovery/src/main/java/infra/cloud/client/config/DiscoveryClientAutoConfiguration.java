@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.client.annotation.config;
+package infra.cloud.client.config;
 
 import infra.beans.factory.ObjectProvider;
 import infra.cloud.client.CompositeDiscoveryClient;

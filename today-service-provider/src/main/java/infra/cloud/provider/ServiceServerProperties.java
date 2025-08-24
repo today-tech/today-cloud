@@ -44,7 +44,7 @@ public class ServiceServerProperties {
   /**
    * The port to bind
    */
-  private int port;
+  private int port = 9000;
 
   /**
    * Configurations that exposes the maximum frame size that a Connection can bring up.

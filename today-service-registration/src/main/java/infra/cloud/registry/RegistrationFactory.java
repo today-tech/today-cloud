@@ -15,22 +15,17 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.service;
+package infra.cloud.registry;
+
+import infra.cloud.client.Registration;
+import infra.cloud.service.ServiceMetadata;
 
 /**
- * Read ServiceMetadata from {@link Package} MANIFEST.MF file
- *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2025/8/9 21:55
+ * @since 1.0 2025/8/24 22:12
  */
-public class PackageInfoServiceMetadataProvider implements ServiceMetadataProvider {
+public interface RegistrationFactory<R extends Registration> {
 
-  @Override
-  public ServiceMetadata getMetadata(Class<?> serviceInterface) {
-    Package servicePackage = serviceInterface.getPackage();
-    String specificationTitle = servicePackage.getSpecificationTitle();
-    String specificationVersion = servicePackage.getSpecificationVersion();
-    return new ServiceMetadata(specificationTitle, specificationVersion);
-  }
+  R createRegistration(ServiceMetadata serviceMetadata);
 
 }

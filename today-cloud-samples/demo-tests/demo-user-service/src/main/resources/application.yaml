@@ -11,6 +11,9 @@ infra:
         instance-port: 9000
       uri: http://localhost:5000
 
+service:
+  server:
+    port: 9000
 
 logging:
   level:

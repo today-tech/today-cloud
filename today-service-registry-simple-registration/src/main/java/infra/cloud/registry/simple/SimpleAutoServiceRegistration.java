@@ -17,7 +17,12 @@
 
 package infra.cloud.registry.simple;
 
+import java.util.List;
+
+import infra.cloud.provider.ServicesProvider;
 import infra.cloud.registry.AbstractAutoServiceRegistration;
+import infra.cloud.registry.RegistrationFactory;
+import infra.cloud.registry.RegistrationLifecycle;
 import infra.cloud.registry.ServiceRegistry;
 
 /**
@@ -26,14 +31,15 @@ import infra.cloud.registry.ServiceRegistry;
  */
 public class SimpleAutoServiceRegistration extends AbstractAutoServiceRegistration<HttpRegistration, Status> {
 
-  private final HttpRegistration registration;
+  private final HttpRegistrationFactory registrationFactory;
 
   private final SimpleRegistryProperties properties;
 
   public SimpleAutoServiceRegistration(ServiceRegistry<HttpRegistration, Status> serviceRegistry,
-          HttpRegistration registration, SimpleRegistryProperties properties) {
-    super(serviceRegistry);
-    this.registration = registration;
+          ServicesProvider servicesProvider, HttpRegistrationFactory registrationFactory,
+          SimpleRegistryProperties properties, List<RegistrationLifecycle<HttpRegistration>> registrationLifecycles) {
+    super(serviceRegistry, registrationLifecycles, servicesProvider);
+    this.registrationFactory = registrationFactory;
     this.properties = properties;
   }
 
@@ -43,8 +49,8 @@ public class SimpleAutoServiceRegistration extends AbstractAutoServiceRegistrati
   }
 
   @Override
-  protected HttpRegistration getRegistration() {
-    return registration;
+  protected RegistrationFactory<HttpRegistration> getRegistrationFactory() {
+    return registrationFactory;
   }
 
   @Override

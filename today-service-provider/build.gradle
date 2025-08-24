@@ -8,6 +8,8 @@ dependencies {
   api project(":today-service-api")
 
   optional project(":today-remoting-transport-tcp")
+
+  annotationProcessor 'cn.taketoday:infra-configuration-processor'
 }
 
 // --add-opens=java.base/java.nio=ALL-UNNAMED

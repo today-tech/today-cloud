@@ -30,7 +30,7 @@ public class SimpleRegistryProperties {
 
   private boolean enabled = true;
 
-  /** Id used to register with. Defaults to a random UUID. */
+  /** ID used to register with. Defaults to a random UUID. */
   private String instanceId;
 
   /**
@@ -47,9 +47,6 @@ public class SimpleRegistryProperties {
    * Use ip address rather than hostname during registration.
    */
   private boolean preferIpAddress = false;
-
-  /** Port to register the service under (defaults to listening port). */
-  private Integer instancePort;
 
   public SimpleRegistryProperties(InetService inetService) {
     var hostInfo = inetService.findFirstNonLoopbackHostInfo();
@@ -86,14 +83,6 @@ public class SimpleRegistryProperties {
 
   public void setInstanceIpAddress(String instanceIpAddress) {
     this.instanceIpAddress = instanceIpAddress;
-  }
-
-  public Integer getInstancePort() {
-    return instancePort;
-  }
-
-  public void setInstancePort(Integer instancePort) {
-    this.instancePort = instancePort;
   }
 
   public boolean isPreferIpAddress() {

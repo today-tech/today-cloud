@@ -17,6 +17,7 @@
 
 package infra.cloud.registry.event;
 
+import infra.cloud.client.Registration;
 import infra.context.ApplicationEvent;
 
 /**
@@ -32,19 +33,27 @@ public class InstanceRegisteredEvent<T> extends ApplicationEvent {
 
   private final T config;
 
+  private final Registration registration;
+
   /**
    * Creates a new {@link InstanceRegisteredEvent} instance.
    *
    * @param source The component that published the event (never {@code null}).
    * @param config The configuration of the instance.
+   * @param registration registration
    */
-  public InstanceRegisteredEvent(Object source, T config) {
+  public InstanceRegisteredEvent(Object source, Registration registration, T config) {
     super(source);
+    this.registration = registration;
     this.config = config;
   }
 
   public T getConfig() {
     return this.config;
+  }
+
+  public Registration getRegistration() {
+    return registration;
   }
 
 }

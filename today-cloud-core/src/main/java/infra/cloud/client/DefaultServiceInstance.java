@@ -135,6 +135,10 @@ public class DefaultServiceInstance implements ServiceInstance {
     return secure;
   }
 
+  public void setDefaultInstanceId() {
+    setInstanceId(getHost() + ":" + getPort() + ":" + getServiceId());
+  }
+
   public void setInstanceId(String instanceId) {
     this.instanceId = instanceId;
   }

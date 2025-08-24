@@ -55,8 +55,8 @@ import infra.stereotype.Component;
 public class ServiceProviderAutoConfiguration {
 
   @Component
-  public static LocalServiceHolder localServiceHolder() {
-    return new LocalServiceHolder();
+  public static LocalServiceHolder localServiceHolder(ServiceMetadataProvider metadataProvider) {
+    return new LocalServiceHolder(metadataProvider);
   }
 
   @Component

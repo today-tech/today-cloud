@@ -22,8 +22,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import infra.cloud.client.Registration;
+import infra.cloud.provider.ServicesProvider;
 import infra.cloud.registry.event.InstancePreRegisteredEvent;
 import infra.cloud.registry.event.InstanceRegisteredEvent;
+import infra.cloud.service.ServiceMetadata;
 import infra.context.SmartLifecycle;
 import infra.context.support.ApplicationObjectSupport;
 
@@ -45,14 +47,15 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
 
   private final List<RegistrationLifecycle<R>> registrationLifecycles;
 
-  protected AbstractAutoServiceRegistration(ServiceRegistry<R, S> serviceRegistry) {
-    this.serviceRegistry = serviceRegistry;
-    this.registrationLifecycles = new ArrayList<>();
-  }
+  private final ArrayList<R> registrations = new ArrayList<>();
 
-  protected AbstractAutoServiceRegistration(ServiceRegistry<R, S> serviceRegistry, List<RegistrationLifecycle<R>> registrationLifecycles) {
+  private final ServicesProvider servicesProvider;
+
+  protected AbstractAutoServiceRegistration(ServiceRegistry<R, S> serviceRegistry,
+          List<RegistrationLifecycle<R>> registrationLifecycles, ServicesProvider servicesProvider) {
     this.serviceRegistry = serviceRegistry;
     this.registrationLifecycles = registrationLifecycles;
+    this.servicesProvider = servicesProvider;
   }
 
   public void addRegistrationLifecycle(RegistrationLifecycle<R> registrationLifecycle) {
@@ -71,18 +74,22 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
     logger.info("Registering services to registry: [{}]", serviceRegistry);
 
     if (!running.get()) {
-      R registration = getRegistration();
-      obtainApplicationContext().publishEvent(new InstancePreRegisteredEvent(this, registration));
+      RegistrationFactory<R> registrationFactory = getRegistrationFactory();
+      for (ServiceMetadata serviceMetadata : servicesProvider.getServices()) {
+        R registration = registrationFactory.createRegistration(serviceMetadata);
+        obtainApplicationContext().publishEvent(new InstancePreRegisteredEvent(this, registration));
 
-      for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
-        lifecycle.postProcessBeforeStartRegister(registration);
-      }
-      register();
-      for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
-        lifecycle.postProcessAfterStartRegister(registration);
-      }
+        for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
+          lifecycle.postProcessBeforeStartRegister(registration);
+        }
+        register(registration);
+        for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
+          lifecycle.postProcessAfterStartRegister(registration);
+        }
 
-      obtainApplicationContext().publishEvent(new InstanceRegisteredEvent<>(this, getConfiguration()));
+        obtainApplicationContext().publishEvent(new InstanceRegisteredEvent<>(this, registration, getConfiguration()));
+        registrations.add(registration);
+      }
       running.compareAndSet(false, true);
     }
   }
@@ -100,15 +107,17 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
   /**
    * Register the local service with the {@link ServiceRegistry}.
    */
-  protected void register() {
-    serviceRegistry.register(getRegistration());
+  protected void register(R registration) {
+    logger.debug("Registering registration: [{}]", registration);
+    serviceRegistry.register(registration);
   }
 
   /**
    * un-register the local service with the {@link ServiceRegistry}.
    */
-  protected void unregister() {
-    serviceRegistry.unregister(getRegistration());
+  protected void unregister(R registration) {
+    logger.debug("Unregistering registration: [{}]", registration);
+    serviceRegistry.unregister(registration);
   }
 
   /**
@@ -118,19 +127,19 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
   public void stop() {
     if (running.compareAndSet(true, false) && isEnabled()) {
       logger.info("Un-Registering services: [{}]", serviceRegistry);
+      for (R registration : registrations) {
+        for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
+          lifecycle.postProcessBeforeStopRegister(registration);
+        }
 
-      R registration = getRegistration();
-      for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
-        lifecycle.postProcessBeforeStopRegister(registration);
+        unregister(registration);
+
+        for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
+          lifecycle.postProcessAfterStopRegister(registration);
+        }
+
+        serviceRegistry.close();
       }
-
-      unregister();
-
-      for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
-        lifecycle.postProcessAfterStopRegister(registration);
-      }
-
-      serviceRegistry.close();
     }
   }
 
@@ -144,6 +153,6 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
    */
   protected abstract boolean isEnabled();
 
-  protected abstract R getRegistration();
+  protected abstract RegistrationFactory<R> getRegistrationFactory();
 
 }

@@ -17,6 +17,10 @@
 
 package infra.cloud.service;
 
+import java.util.Objects;
+
+import infra.core.style.ToStringBuilder;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 21:51
@@ -38,6 +42,27 @@ public class ServiceMetadata {
 
   public String getVersion() {
     return version;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof ServiceMetadata that))
+      return false;
+    return Objects.equals(id, that.id)
+            && Objects.equals(version, that.version);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, version);
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.forInstance(this)
+            .append("id", id)
+            .append("version", version)
+            .toString();
   }
 
 }

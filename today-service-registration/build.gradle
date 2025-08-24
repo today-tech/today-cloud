@@ -1,9 +1,12 @@
-description = "TODAY Service Registry"
+description = "TODAY Service Registration API"
 
 dependencies {
   api project(":today-cloud-core")
+  api project(":today-service-provider")
+
   api 'cn.taketoday:today-core'
   api 'cn.taketoday:today-context'
+
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'
 

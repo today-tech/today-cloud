@@ -4,7 +4,7 @@ dependencies {
   implementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
   implementation project(":today-service-provider")
-  implementation project(":today-service-registry-simple-client")
+  implementation project(":today-service-registry-simple-registration")
 
 //  implementation 'cn.taketoday:today-starter-web'
 //  implementation 'cn.taketoday:today-starter-netty'

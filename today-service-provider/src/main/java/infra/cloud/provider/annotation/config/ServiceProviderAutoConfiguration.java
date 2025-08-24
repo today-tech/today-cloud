@@ -49,9 +49,9 @@ import infra.stereotype.Component;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 22:31
  */
+@DisableDIAutoConfiguration
 @ConditionalOnDiscoveryEnabled
 @EnableConfigurationProperties({ InetProperties.class, ServiceServerProperties.class })
-@DisableDIAutoConfiguration
 public class ServiceProviderAutoConfiguration {
 
   @Component

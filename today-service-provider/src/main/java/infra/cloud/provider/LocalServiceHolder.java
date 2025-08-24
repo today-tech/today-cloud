@@ -91,7 +91,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
           ServiceMetadata serviceMetadata = serviceMetadataProvider.getMetadata(anInterface);
           serviceMap.add(serviceMetadata, anInterface);
           classNameMap.put(interfaceName, anInterface);
-          logger.info("add service: [{}] to interface: [{}]", service, interfaceName);
+          logger.info("Adding service: [{}] to interface: [{}]", service, interfaceName);
         }
       }
     }

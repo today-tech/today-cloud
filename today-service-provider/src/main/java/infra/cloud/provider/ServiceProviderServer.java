@@ -17,8 +17,10 @@
 
 package infra.cloud.provider;
 
-import infra.context.Lifecycle;
+import infra.context.SmartLifecycle;
 import infra.lang.Nullable;
+import infra.logging.Logger;
+import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;
@@ -32,7 +34,9 @@ import reactor.core.publisher.Mono;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/21 22:25
  */
-public class ServiceProviderServer implements Lifecycle, ChannelAcceptor {
+public class ServiceProviderServer implements SmartLifecycle, ChannelAcceptor {
+
+  private static final Logger log = LoggerFactory.getLogger(ServiceProviderServer.class);
 
   private final ServiceServerProperties properties;
 
@@ -63,6 +67,8 @@ public class ServiceProviderServer implements Lifecycle, ChannelAcceptor {
             .maxTimeToFirstFrame(properties.getMaxTimeToFirstFrame())
             .maxInboundPayloadSize(properties.getMaxInboundPayloadSize().toBytesInt())
             .bindNow(serverTransportFactory.createTransport());
+
+    log.info("Service provider server started on port: {}", properties.getPort());
   }
 
   @Override
@@ -75,6 +81,11 @@ public class ServiceProviderServer implements Lifecycle, ChannelAcceptor {
   @Override
   public boolean isRunning() {
     return serverCloseable != null;
+  }
+
+  @Override
+  public boolean isPausable() {
+    return false;
   }
 
   @Override

@@ -17,9 +17,8 @@
 
 package cn.taketoday.demo.service;
 
-import infra.app.ApplicationType;
+import infra.app.Application;
 import infra.app.InfraApplication;
-import infra.app.builder.ApplicationBuilder;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
@@ -29,8 +28,8 @@ import infra.app.builder.ApplicationBuilder;
 public class UserServiceApplication {
 
   public static void main(String[] args) {
-    ApplicationBuilder.forSources(UserServiceApplication.class)
-            .type(ApplicationType.NORMAL)
+    Application.forNormalApplication(UserServiceApplication.class)
+            .keepAlive()
             .run(args);
   }
 

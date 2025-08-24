@@ -40,7 +40,7 @@ public class HttpRegistrationFactory implements RegistrationFactory<HttpRegistra
   @Override
   public HttpRegistration createRegistration(ServiceMetadata serviceMetadata) {
     String host = registryProperties.getInstanceHost();
-    if (!StringUtils.hasText(host)) {
+    if (StringUtils.isBlank(host)) {
       throw new IllegalStateException("instanceHost must not be empty");
     }
 

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import infra.app.test.context.InfraTest;
 import infra.beans.factory.annotation.Autowired;
+import infra.cloud.client.simple.SimpleDiscoveryClient;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.config.EnableAutoConfiguration;
 
@@ -39,7 +40,7 @@ class DiscoveryClientAutoConfigurationDefaultTests {
 
   @Test
   void simpleDiscoveryClientShouldBeTheDefault() {
-    then(this.discoveryClient).isInstanceOf(CompositeDiscoveryClient.class);
+    then(this.discoveryClient).isInstanceOf(SimpleDiscoveryClient.class);
   }
 
   @EnableAutoConfiguration

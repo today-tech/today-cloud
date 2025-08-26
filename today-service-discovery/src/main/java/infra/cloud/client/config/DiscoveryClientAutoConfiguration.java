@@ -42,8 +42,12 @@ public class DiscoveryClientAutoConfiguration {
 
   @Primary
   @Component
-  public static CompositeDiscoveryClient compositeDiscoveryClient(ObjectProvider<DiscoveryClient> discoveryClients) {
-    return new CompositeDiscoveryClient(discoveryClients.orderedList());
+  public static DiscoveryClient primaryDiscoveryClient(ObjectProvider<DiscoveryClient> discoveryClients) {
+    var discoveryClientList = discoveryClients.orderedList();
+    if (discoveryClientList.size() == 1) {
+      return discoveryClientList.get(0);
+    }
+    return new CompositeDiscoveryClient(discoveryClientList);
   }
 
   @MissingBean

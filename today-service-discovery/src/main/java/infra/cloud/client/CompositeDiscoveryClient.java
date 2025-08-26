@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import infra.lang.Assert;
 import infra.util.CollectionUtils;
 
 /**
@@ -36,7 +37,7 @@ public class CompositeDiscoveryClient implements DiscoveryClient {
   private final List<DiscoveryClient> discoveryClients;
 
   public CompositeDiscoveryClient(List<DiscoveryClient> discoveryClients) {
-//    AnnotationAwareOrderComparator.sort(discoveryClients);
+    Assert.notEmpty(discoveryClients, "discoveryClients must not be empty");
     this.discoveryClients = discoveryClients;
   }
 

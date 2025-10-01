@@ -16,6 +16,6 @@
  */
 
 /** The Netty-based client transport implementations. */
-@NonNullApi
+@NullMarked
 package infra.remoting.transport.netty.client;
 

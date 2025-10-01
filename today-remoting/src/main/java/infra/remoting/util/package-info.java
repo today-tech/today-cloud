@@ -16,6 +16,7 @@
  */
 
 /** Shared utility classes and {@link infra.remoting.Payload} implementations. */
-@NonNullApi
+@NullMarked
 package infra.remoting.util;
 
+import org.jspecify.annotations.NullMarked;

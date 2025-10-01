@@ -21,6 +21,7 @@
  * @see <a href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#error-codes">Error
  * Codes</a>
  */
-@NonNullApi
+@NullMarked
 package infra.remoting.error;
 
+import org.jspecify.annotations.NullMarked;

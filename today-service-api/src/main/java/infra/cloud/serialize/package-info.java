@@ -18,7 +18,6 @@
 /**
  * serialize
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.cloud.serialize;
 

@@ -19,6 +19,7 @@
  * Support for encoding and decoding of protocol frames to and from {@link infra.remoting.Payload
  * Payload}.
  */
-@NonNullApi
+@NullMarked
 package infra.remoting.frame;
 
+import org.jspecify.annotations.NullMarked;

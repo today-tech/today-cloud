@@ -18,7 +18,6 @@
 /**
  * The Netty-based TCP transport implementations.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.transport.tcp;
 

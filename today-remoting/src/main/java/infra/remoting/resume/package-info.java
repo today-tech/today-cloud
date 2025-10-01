@@ -22,6 +22,7 @@
  * href="https://github.com/today-tech/today-cloud/blob/master/today-remoting/Protocol.md#resuming-operation">Resuming
  * Operation</a>
  */
-@NonNullApi
+@NullMarked
 package infra.remoting.resume;
 
+import org.jspecify.annotations.NullMarked;

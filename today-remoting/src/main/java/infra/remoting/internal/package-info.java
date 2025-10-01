@@ -19,7 +19,7 @@
  * Internal package and <em>must not</em> be used outside this project. There are no guarantees for
  * API compatibility.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.internal;
 
+import org.jspecify.annotations.NullMarked;

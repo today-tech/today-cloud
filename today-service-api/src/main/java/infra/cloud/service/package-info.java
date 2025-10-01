@@ -15,7 +15,6 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.cloud.service;
 

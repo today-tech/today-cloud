@@ -23,7 +23,7 @@
  * <p>This package also contains a package private classes that implement support for the main
  * interactions.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.core;
 
+import org.jspecify.annotations.NullMarked;

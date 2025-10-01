@@ -18,7 +18,6 @@
 /**
  * The Netty-based remoting transport implementations.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.transport.netty;
 

@@ -16,6 +16,6 @@
  */
 
 /** Utilities for testing components. */
-@NonNullApi
+@NullMarked
 package infra.remoting.test;
 

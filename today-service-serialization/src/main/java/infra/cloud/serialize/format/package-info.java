@@ -18,7 +18,7 @@
 /**
  * msgpack specification implementation
  */
-@NonNullFields
-@NonNullApi
+@NullMarked
 package infra.cloud.serialize.format;
 
+import org.jspecify.annotations.NullMarked;

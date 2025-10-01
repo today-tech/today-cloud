@@ -16,6 +16,7 @@
  */
 
 /** Contracts for interception of transports, connections, and requests. */
-@NonNullApi
+@NullMarked
 package infra.remoting.plugins;
 
+import org.jspecify.annotations.NullMarked;

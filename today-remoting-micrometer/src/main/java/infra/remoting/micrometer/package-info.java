@@ -20,8 +20,7 @@
  *
  * @see <a href="https://micrometer.io">Micrometer</a>
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.micrometer;
 
 import reactor.util.annotation.NonNullApi;

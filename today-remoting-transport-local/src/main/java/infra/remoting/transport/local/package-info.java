@@ -18,7 +18,6 @@
 /**
  * The local remoting transport implementation.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.transport.local;
 

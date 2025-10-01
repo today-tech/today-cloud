@@ -16,6 +16,6 @@
  */
 
 /** The Netty-based server transport implementations. */
-@NonNullApi
+@NullMarked
 package infra.remoting.transport.netty.server;
 

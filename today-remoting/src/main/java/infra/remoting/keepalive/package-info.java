@@ -18,7 +18,7 @@
 /**
  * Support classes for sending and keeping track of KEEPALIVE frames from the remote.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.keepalive;
 
+import org.jspecify.annotations.NullMarked;

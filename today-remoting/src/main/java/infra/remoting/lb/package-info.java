@@ -18,7 +18,7 @@
 /**
  * Support client load-balancing in remoting Java.
  */
-@NonNullApi
-@NonNullFields
+@NullMarked
 package infra.remoting.lb;
 
+import org.jspecify.annotations.NullMarked;

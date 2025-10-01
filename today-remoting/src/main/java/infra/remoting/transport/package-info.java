@@ -16,6 +16,7 @@
  */
 
 /** Client and server transport contracts for pluggable transports. */
-@NonNullApi
+@NullMarked
 package infra.remoting.transport;
 
+import org.jspecify.annotations.NullMarked;

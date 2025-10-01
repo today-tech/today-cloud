@@ -25,4 +25,3 @@
 @NonNullApi
 package infra.remoting.lease;
 
-import infra.lang.NonNullApi;

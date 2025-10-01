@@ -17,6 +17,8 @@
 
 package infra.cloud.serialize;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -39,7 +41,6 @@ import infra.cloud.serialize.format.MessagePackException;
 import infra.cloud.serialize.format.MessageSizeException;
 import infra.cloud.serialize.format.MessageTypeException;
 import infra.lang.Constant;
-import infra.lang.Nullable;
 import infra.lang.TodayStrategies;
 import infra.util.CollectionUtils;
 import io.netty.buffer.ByteBuf;

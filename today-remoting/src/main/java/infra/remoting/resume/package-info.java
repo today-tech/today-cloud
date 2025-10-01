@@ -25,4 +25,3 @@
 @NonNullApi
 package infra.remoting.resume;
 
-import infra.lang.NonNullApi;

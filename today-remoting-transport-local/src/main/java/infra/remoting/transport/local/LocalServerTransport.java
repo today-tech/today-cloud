@@ -17,6 +17,8 @@
 
 package infra.remoting.transport.local;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -24,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import infra.lang.Nullable;
 import infra.remoting.Closeable;
 import infra.remoting.Connection;
 import infra.remoting.transport.ClientTransport;

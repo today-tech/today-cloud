@@ -19,5 +19,3 @@
 @NonNullFields
 package infra.remoting;
 
-import infra.lang.NonNullApi;
-import infra.lang.NonNullFields;

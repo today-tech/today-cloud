@@ -17,12 +17,13 @@
 
 package infra.cloud.provider;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Duration;
 
 import infra.cloud.service.config.ResumeProperties;
 import infra.context.properties.ConfigurationProperties;
 import infra.context.properties.NestedConfigurationProperty;
-import infra.lang.Nullable;
 import infra.remoting.frame.FrameLengthCodec;
 import infra.util.DataSize;
 

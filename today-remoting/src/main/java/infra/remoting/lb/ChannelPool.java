@@ -16,6 +16,7 @@
  */
 package infra.remoting.lb;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
 
@@ -29,7 +30,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.stream.Collectors;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.Closeable;
 import infra.remoting.Payload;

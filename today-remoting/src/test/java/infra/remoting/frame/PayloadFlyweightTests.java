@@ -22,11 +22,11 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import infra.remoting.Payload;
+import infra.remoting.util.DefaultPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import infra.remoting.Payload;
-import infra.remoting.util.DefaultPayload;
 
 public class PayloadFlyweightTests {
 

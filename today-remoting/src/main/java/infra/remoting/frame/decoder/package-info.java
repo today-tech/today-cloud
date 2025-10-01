@@ -22,4 +22,3 @@
 @NonNullApi
 package infra.remoting.frame.decoder;
 
-import infra.lang.NonNullApi;

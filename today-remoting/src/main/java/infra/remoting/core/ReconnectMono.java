@@ -17,6 +17,7 @@
 
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.time.Duration;
@@ -26,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import infra.lang.Nullable;
 import reactor.core.CoreSubscriber;
 import reactor.core.Disposable;
 import reactor.core.Scannable;

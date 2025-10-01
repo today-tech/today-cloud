@@ -17,7 +17,7 @@
 
 package infra.remoting.protocol;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Protocol parsing exception

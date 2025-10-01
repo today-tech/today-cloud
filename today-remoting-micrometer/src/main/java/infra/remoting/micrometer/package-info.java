@@ -24,5 +24,4 @@
 @NonNullFields
 package infra.remoting.micrometer;
 
-import infra.lang.NonNullFields;
 import reactor.util.annotation.NonNullApi;

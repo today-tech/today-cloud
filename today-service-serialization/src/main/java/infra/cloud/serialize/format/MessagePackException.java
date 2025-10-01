@@ -17,8 +17,9 @@
 
 package infra.cloud.serialize.format;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.cloud.serialize.SerializationException;
-import infra.lang.Nullable;
 
 /**
  * A base class of all the message pack exceptions.

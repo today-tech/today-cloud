@@ -16,7 +16,8 @@
  */
 package infra.remoting.core;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.FrameLengthCodec;
 import infra.remoting.frame.FrameType;

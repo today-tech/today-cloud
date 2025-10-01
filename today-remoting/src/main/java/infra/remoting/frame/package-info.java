@@ -22,4 +22,3 @@
 @NonNullApi
 package infra.remoting.frame;
 
-import infra.lang.NonNullApi;

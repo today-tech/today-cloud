@@ -17,8 +17,9 @@
 
 package infra.cloud.provider;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.context.SmartLifecycle;
-import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Channel;

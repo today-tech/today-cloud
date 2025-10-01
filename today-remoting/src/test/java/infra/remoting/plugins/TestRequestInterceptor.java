@@ -19,11 +19,11 @@ package infra.remoting.plugins;
 
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Queue;
 import java.util.function.Consumer;
 
-import infra.lang.Nullable;
 import infra.remoting.frame.FrameType;
 import infra.remoting.internal.jctools.queues.MpscUnboundedArrayQueue;
 import io.netty.buffer.ByteBuf;

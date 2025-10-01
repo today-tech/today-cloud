@@ -17,13 +17,14 @@
 
 package infra.cloud.client;
 
+import org.jspecify.annotations.Nullable;
+
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import infra.core.style.ToStringBuilder;
-import infra.lang.Nullable;
 
 /**
  * Default implementation of {@link ServiceInstance}.

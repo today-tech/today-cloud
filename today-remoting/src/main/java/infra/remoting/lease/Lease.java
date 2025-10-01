@@ -17,9 +17,10 @@
 
 package infra.remoting.lease;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Duration;
 
-import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 

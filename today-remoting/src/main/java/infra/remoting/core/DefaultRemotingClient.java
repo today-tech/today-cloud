@@ -16,6 +16,7 @@
  */
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -26,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;

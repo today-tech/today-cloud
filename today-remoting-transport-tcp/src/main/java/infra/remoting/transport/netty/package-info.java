@@ -22,5 +22,3 @@
 @NonNullFields
 package infra.remoting.transport.netty;
 
-import infra.lang.NonNullApi;
-import infra.lang.NonNullFields;

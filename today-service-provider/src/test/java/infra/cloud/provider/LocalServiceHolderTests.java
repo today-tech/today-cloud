@@ -17,8 +17,6 @@
 
 package infra.cloud.provider;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/24 22:07

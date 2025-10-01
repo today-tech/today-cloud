@@ -16,7 +16,8 @@
  */
 package infra.remoting.lb;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.frame.FrameType;
 import infra.remoting.plugins.RequestInterceptor;
 import io.netty.buffer.ByteBuf;

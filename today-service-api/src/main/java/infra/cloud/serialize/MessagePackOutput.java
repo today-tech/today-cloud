@@ -17,6 +17,8 @@
 
 package infra.cloud.serialize;
 
+import org.jspecify.annotations.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +27,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import infra.cloud.serialize.format.MessagePack;
-import infra.lang.Nullable;
 import io.netty.buffer.ByteBuf;
 
 import static infra.cloud.serialize.format.MessagePack.Code.ARRAY16;

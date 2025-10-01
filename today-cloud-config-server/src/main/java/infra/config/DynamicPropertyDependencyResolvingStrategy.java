@@ -17,10 +17,11 @@
 
 package infra.config;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.beans.factory.config.DependencyDescriptor;
 import infra.beans.factory.support.DependencyResolvingStrategy;
 import infra.context.BootstrapContext;
-import infra.lang.Nullable;
 
 /**
  * for DynamicProperty

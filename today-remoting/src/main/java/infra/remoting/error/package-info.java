@@ -24,4 +24,3 @@
 @NonNullApi
 package infra.remoting.error;
 
-import infra.lang.NonNullApi;

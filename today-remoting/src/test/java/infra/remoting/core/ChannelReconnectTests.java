@@ -27,8 +27,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-import infra.remoting.FrameAssert;
 import infra.remoting.Channel;
+import infra.remoting.FrameAssert;
 import infra.remoting.frame.FrameType;
 import infra.remoting.test.util.TestClientTransport;
 import infra.remoting.test.util.TestConnection;

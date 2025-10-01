@@ -20,9 +20,9 @@ package infra.remoting.util;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import infra.remoting.Payload;
 import io.netty.buffer.Unpooled;
 import io.netty.util.IllegalReferenceCountException;
-import infra.remoting.Payload;
 
 public class ByteBufPayloadTests {
 

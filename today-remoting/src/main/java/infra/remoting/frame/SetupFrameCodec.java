@@ -17,9 +17,10 @@
 
 package infra.remoting.frame;
 
+import org.jspecify.annotations.Nullable;
+
 import java.nio.charset.StandardCharsets;
 
-import infra.lang.Nullable;
 import infra.remoting.Payload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;

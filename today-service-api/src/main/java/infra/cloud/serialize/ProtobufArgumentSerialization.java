@@ -20,11 +20,12 @@ package infra.cloud.serialize;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Method;
 
 import infra.cloud.service.ServiceMethod;
 import infra.core.MethodParameter;
-import infra.lang.Nullable;
 import infra.util.ConcurrentReferenceHashMap;
 
 /**

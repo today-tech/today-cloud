@@ -22,5 +22,3 @@
 @NonNullApi
 package infra.cloud.serialize.format;
 
-import infra.lang.NonNullApi;
-import infra.lang.NonNullFields;

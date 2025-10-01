@@ -17,13 +17,14 @@
 
 package infra.cloud.registry.annotation.config;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.beans.factory.annotation.DisableDependencyInjection;
 import infra.cloud.registry.AutoServiceRegistration;
 import infra.cloud.registry.AutoServiceRegistrationProperties;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.Import;
 import infra.context.condition.ConditionalOnProperty;
-import infra.lang.Nullable;
 
 /**
  * @author Spencer Gibb

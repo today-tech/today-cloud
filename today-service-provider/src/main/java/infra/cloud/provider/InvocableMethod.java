@@ -17,11 +17,12 @@
 
 package infra.cloud.provider;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Method;
 
 import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceMethod;
-import infra.lang.Nullable;
 import infra.reflect.MethodInvoker;
 
 /**

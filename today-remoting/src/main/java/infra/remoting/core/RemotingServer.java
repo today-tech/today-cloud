@@ -17,12 +17,13 @@
 
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;

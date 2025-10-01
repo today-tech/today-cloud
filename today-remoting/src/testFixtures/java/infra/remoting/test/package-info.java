@@ -19,4 +19,3 @@
 @NonNullApi
 package infra.remoting.test;
 
-import infra.lang.NonNullApi;

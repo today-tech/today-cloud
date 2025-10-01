@@ -17,8 +17,9 @@
 
 package infra.cloud.serialize;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.core.MethodParameter;
-import infra.lang.Nullable;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>

@@ -17,7 +17,8 @@
 
 package infra.remoting.micrometer.observation;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
 import io.micrometer.observation.Observation;

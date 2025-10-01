@@ -17,7 +17,8 @@
 
 package infra.remoting.plugins;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
 import infra.remoting.lease.Lease;

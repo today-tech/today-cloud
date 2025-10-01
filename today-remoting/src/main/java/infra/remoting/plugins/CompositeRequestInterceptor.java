@@ -17,9 +17,10 @@
 
 package infra.remoting.plugins;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
-import infra.lang.Nullable;
 import infra.remoting.frame.FrameType;
 import io.netty.buffer.ByteBuf;
 import reactor.core.publisher.Operators;

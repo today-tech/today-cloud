@@ -17,7 +17,8 @@
 
 package infra.remoting;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.util.AbstractReferenceCounted;
 

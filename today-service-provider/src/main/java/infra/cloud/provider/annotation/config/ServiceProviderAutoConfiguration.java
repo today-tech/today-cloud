@@ -17,6 +17,8 @@
 
 package infra.cloud.provider.annotation.config;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
 import infra.cloud.net.InetProperties;
 import infra.cloud.net.InetService;
@@ -36,7 +38,6 @@ import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.context.condition.ConditionalOnBooleanProperty;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
-import infra.lang.Nullable;
 import infra.remoting.Closeable;
 import infra.remoting.core.Resume;
 import infra.remoting.resume.InMemoryResumableFramesStoreFactory;

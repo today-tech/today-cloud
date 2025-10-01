@@ -16,10 +16,11 @@
  */
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.frame.MetadataPushFrameCodec;
 import io.netty.buffer.ByteBuf;

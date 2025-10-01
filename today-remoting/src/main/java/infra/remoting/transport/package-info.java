@@ -19,4 +19,3 @@
 @NonNullApi
 package infra.remoting.transport;
 
-import infra.lang.NonNullApi;

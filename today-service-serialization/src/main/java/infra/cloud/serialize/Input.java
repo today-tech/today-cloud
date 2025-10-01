@@ -17,13 +17,13 @@
 
 package infra.cloud.serialize;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import infra.lang.Nullable;
 
 /**
  * An Input lets an application read primitive data types and objects from a source of data.

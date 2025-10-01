@@ -17,12 +17,13 @@
 
 package infra.remoting.util;
 
+import org.jspecify.annotations.Nullable;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import infra.lang.Nullable;
 import infra.remoting.Payload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

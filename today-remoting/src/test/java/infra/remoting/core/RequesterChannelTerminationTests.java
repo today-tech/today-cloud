@@ -29,9 +29,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.function.Function;
 
+import infra.remoting.Channel;
 import infra.remoting.FrameAssert;
 import infra.remoting.Payload;
-import infra.remoting.Channel;
 import infra.remoting.core.RequesterChannelTests.ClientChannelRule;
 import infra.remoting.frame.FrameType;
 import infra.remoting.util.EmptyPayload;

@@ -16,10 +16,11 @@
  */
 package infra.remoting.plugins;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Connection;

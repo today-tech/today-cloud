@@ -696,5 +696,5 @@ public class MessagePack {
       return bufferSize;
     }
   }
-  
+
 }

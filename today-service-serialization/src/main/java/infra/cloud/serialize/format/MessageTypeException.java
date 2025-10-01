@@ -17,7 +17,7 @@
 
 package infra.cloud.serialize.format;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Thrown when a type mismatch error occurs

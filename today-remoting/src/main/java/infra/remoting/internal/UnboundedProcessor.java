@@ -17,6 +17,7 @@
 
 package infra.remoting.internal;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.util.Objects;
@@ -26,7 +27,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.stream.Stream;
 
-import infra.lang.Nullable;
 import infra.remoting.internal.jctools.queues.MpscUnboundedArrayQueue;
 import io.netty.buffer.ByteBuf;
 import reactor.core.CoreSubscriber;

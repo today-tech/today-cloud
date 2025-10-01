@@ -17,6 +17,8 @@
 
 package infra.cloud.service;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -26,7 +28,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import infra.lang.Assert;
-import infra.lang.Nullable;
 import infra.util.ReflectionUtils;
 import io.netty.buffer.ByteBufAllocator;
 

@@ -23,7 +23,6 @@ import infra.remoting.Payload;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.DefaultPayload;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 
 final class PayloadUtils {

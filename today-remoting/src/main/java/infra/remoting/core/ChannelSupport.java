@@ -17,10 +17,11 @@
 
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 import java.util.function.Function;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.Connection;
 import infra.remoting.frame.decoder.PayloadDecoder;

@@ -17,6 +17,7 @@
 
 package infra.remoting.resume;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.util.ArrayDeque;
@@ -24,7 +25,6 @@ import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.internal.UnboundedProcessor;

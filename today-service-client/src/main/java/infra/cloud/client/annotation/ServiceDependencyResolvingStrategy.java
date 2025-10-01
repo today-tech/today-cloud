@@ -17,11 +17,12 @@
 
 package infra.cloud.client.annotation;
 
+import org.jspecify.annotations.Nullable;
+
 import infra.beans.factory.config.DependencyDescriptor;
 import infra.beans.factory.support.DependencyResolvingStrategy;
 import infra.cloud.service.ServiceProvider;
 import infra.context.ApplicationContext;
-import infra.lang.Nullable;
 import infra.stereotype.Service;
 
 /**

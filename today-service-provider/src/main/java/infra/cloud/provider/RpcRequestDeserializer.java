@@ -17,6 +17,8 @@
 
 package infra.cloud.provider;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +32,6 @@ import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.core.MethodParameter;
 import infra.lang.Assert;
-import infra.lang.Nullable;
 import infra.reflect.MethodInvoker;
 import infra.util.MapCache;
 import io.netty.buffer.ByteBuf;

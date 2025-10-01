@@ -17,7 +17,8 @@
 
 package infra.remoting.error;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.ProtocolErrorException;
 import infra.remoting.frame.ErrorFrameCodec;
 

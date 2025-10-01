@@ -17,11 +17,11 @@
 
 package infra.remoting.lb;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
 import java.util.List;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;

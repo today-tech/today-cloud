@@ -16,11 +16,11 @@
  */
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.Nullable;
 import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.frame.CancelFrameCodec;

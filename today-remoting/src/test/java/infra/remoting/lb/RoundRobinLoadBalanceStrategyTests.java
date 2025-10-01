@@ -29,8 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import infra.remoting.Payload;
 import infra.remoting.Channel;
+import infra.remoting.Payload;
 import infra.remoting.RaceTestConstants;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.transport.ClientTransport;

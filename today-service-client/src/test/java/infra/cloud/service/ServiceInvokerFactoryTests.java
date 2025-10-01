@@ -19,12 +19,6 @@ package infra.cloud.service;
 
 import org.junit.jupiter.api.Test;
 
-import cn.taketoday.demo.service.UserService;
-import infra.cloud.client.simple.SimpleDiscoveryClient;
-import infra.cloud.client.simple.SimpleDiscoveryProperties;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 20:43

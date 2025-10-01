@@ -17,13 +17,14 @@
 
 package infra.cloud.serialize;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import infra.beans.BeanUtils;
 import infra.cloud.serialize.value.ValueSerialization;
 import infra.core.MethodParameter;
-import infra.lang.Nullable;
 
 import static infra.cloud.serialize.value.ValueSerialization.map;
 

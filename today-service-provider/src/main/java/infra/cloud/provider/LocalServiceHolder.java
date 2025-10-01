@@ -17,6 +17,8 @@
 
 package infra.cloud.provider;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +30,6 @@ import infra.cloud.service.ServiceMetadataProvider;
 import infra.context.ApplicationContext;
 import infra.context.support.ApplicationObjectSupport;
 import infra.lang.Assert;
-import infra.lang.Nullable;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
 import infra.util.MultiValueMap;

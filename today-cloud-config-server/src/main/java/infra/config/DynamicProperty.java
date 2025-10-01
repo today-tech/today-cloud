@@ -17,10 +17,11 @@
 
 package infra.config;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.function.Supplier;
 
 import infra.lang.Assert;
-import infra.lang.Nullable;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

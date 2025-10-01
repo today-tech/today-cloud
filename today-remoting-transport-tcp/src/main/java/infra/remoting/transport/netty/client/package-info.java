@@ -19,4 +19,3 @@
 @NonNullApi
 package infra.remoting.transport.netty.client;
 
-import infra.lang.NonNullApi;

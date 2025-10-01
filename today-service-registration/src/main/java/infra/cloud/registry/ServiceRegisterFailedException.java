@@ -17,11 +17,12 @@
 
 package infra.cloud.registry;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Serial;
 
 import infra.cloud.RemotingException;
 import infra.cloud.client.Registration;
-import infra.lang.Nullable;
 
 /**
  * @author TODAY 2021/7/11 17:19

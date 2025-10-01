@@ -17,12 +17,13 @@
 
 package infra.remoting.lb;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.core.ChannelConnector;
 

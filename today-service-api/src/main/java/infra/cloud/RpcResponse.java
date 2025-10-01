@@ -17,11 +17,12 @@
 
 package infra.cloud;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Serial;
 import java.io.Serializable;
 
 import infra.cloud.service.ServiceMethod;
-import infra.lang.Nullable;
 
 /**
  * @author TODAY 2021/7/4 22:31

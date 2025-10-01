@@ -17,10 +17,10 @@
 
 package infra.cloud.serialize.format.buffer;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
-
-import infra.lang.Nullable;
 
 /**
  * Provides a sequence of MessageBuffer instances.

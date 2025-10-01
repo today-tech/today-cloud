@@ -17,10 +17,11 @@
 
 package infra.remoting.resume;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import io.netty.buffer.ByteBuf;

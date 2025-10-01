@@ -17,7 +17,8 @@
 
 package infra.remoting.error;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.ProtocolErrorException;
 
 /** The root of the setup exception hierarchy. */

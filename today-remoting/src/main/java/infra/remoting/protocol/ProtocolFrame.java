@@ -17,9 +17,10 @@
 
 package infra.remoting.protocol;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.Flow;
 
-import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.decoder.PayloadDecoder;

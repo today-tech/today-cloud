@@ -16,6 +16,8 @@
  */
 package infra.remoting.lb;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -26,8 +28,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.IntToLongFunction;
-
-import infra.lang.Nullable;
 
 /** A open addressing with linear probing hash map specialised for primitive key and value pairs. */
 class Int2LongHashMap implements Map<Integer, Long>, Serializable {

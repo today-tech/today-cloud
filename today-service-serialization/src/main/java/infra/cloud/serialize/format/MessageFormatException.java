@@ -17,7 +17,7 @@
 
 package infra.cloud.serialize.format;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Thrown when the input message pack format is invalid

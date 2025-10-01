@@ -17,7 +17,8 @@
 
 package infra.remoting.core;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
+
 import infra.remoting.Availability;
 import infra.remoting.Connection;
 import infra.remoting.frame.LeaseFrameCodec;

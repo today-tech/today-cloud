@@ -17,7 +17,7 @@
 
 package infra.remoting;
 
-import infra.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Exception that represents a protocol error.

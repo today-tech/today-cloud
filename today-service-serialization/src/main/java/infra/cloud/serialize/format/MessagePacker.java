@@ -17,6 +17,8 @@
 
 package infra.cloud.serialize.format;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -35,7 +37,6 @@ import infra.cloud.serialize.format.buffer.MessageBuffer;
 import infra.cloud.serialize.format.buffer.MessageBufferOutput;
 import infra.cloud.serialize.format.buffer.OutputStreamBufferOutput;
 import infra.cloud.serialize.format.value.Value;
-import infra.lang.Nullable;
 
 import static infra.cloud.serialize.format.MessagePack.Code.ARRAY16;
 import static infra.cloud.serialize.format.MessagePack.Code.ARRAY32;

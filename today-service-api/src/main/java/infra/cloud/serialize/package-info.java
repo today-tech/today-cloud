@@ -21,3 +21,4 @@
 @NullMarked
 package infra.cloud.serialize;
 
+import org.jspecify.annotations.NullMarked;

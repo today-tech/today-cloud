@@ -23,4 +23,4 @@
 @NullMarked
 package infra.remoting.micrometer;
 
-import reactor.util.annotation.NonNullApi;
+import org.jspecify.annotations.NullMarked;

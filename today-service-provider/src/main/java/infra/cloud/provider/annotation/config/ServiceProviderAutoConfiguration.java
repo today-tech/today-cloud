@@ -77,8 +77,8 @@ public class ServiceProviderAutoConfiguration {
   }
 
   @Component
-  public static ServiceChannelHandler serviceChannelHandler() {
-    return new ServiceChannelHandler();
+  public static ServiceChannelHandler serviceChannelHandler(LocalServiceHolder localServiceHolder) {
+    return new ServiceChannelHandler(localServiceHolder);
   }
 
   @Component

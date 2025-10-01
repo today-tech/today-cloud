@@ -17,32 +17,27 @@
 
 package infra.cloud.provider;
 
-import java.lang.reflect.Method;
-
-import infra.cloud.service.ServiceInterfaceMetadata;
-import infra.cloud.service.ServiceMethod;
-import infra.lang.Nullable;
-import infra.reflect.MethodInvoker;
-
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2024/12/20 21:49
+ * @since 1.0 2025/8/26 22:07
  */
-public class InvocableMethod extends ServiceMethod {
+public class ServiceObject {
+
+  private final Class<?> serviceInterface;
 
   private final Object instance;
 
-  private final MethodInvoker invoker;
-
-  public InvocableMethod(ServiceInterfaceMetadata<?> metadata, ServiceObject service, Method method, MethodInvoker invoker) {
-    super(metadata.getServiceMetadata(), service.getInterface(), method);
-    this.invoker = invoker;
-    this.instance = service.getInstance();
+  public ServiceObject(Class<?> serviceInterface, Object instance) {
+    this.serviceInterface = serviceInterface;
+    this.instance = instance;
   }
 
-  @Nullable
-  public Object invoke(Object[] args) {
-    return invoker.invoke(instance, args);
+  public Class<?> getInterface() {
+    return serviceInterface;
+  }
+
+  public Object getInstance() {
+    return instance;
   }
 
 }

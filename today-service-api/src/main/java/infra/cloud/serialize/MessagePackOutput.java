@@ -17,8 +17,6 @@
 
 package infra.cloud.serialize;
 
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -70,11 +68,6 @@ public class MessagePackOutput implements Output {
   private static final long NANOS_PER_SECOND = 1000000000L;
 
   private final ByteBuf buffer;
-
-  /**
-   * String encoder
-   */
-  private CharsetEncoder encoder;
 
   public MessagePackOutput(ByteBuf buffer) {
     this.buffer = buffer;
@@ -538,15 +531,6 @@ public class MessagePackOutput implements Output {
     buffer.writeByte(EXT_TIMESTAMP);
     buffer.writeInt(nsec);
     buffer.writeLong(sec);
-  }
-
-  private void prepareEncoder() {
-    if (encoder == null) {
-      this.encoder = MessagePack.UTF8.newEncoder()
-              .onMalformedInput(CodingErrorAction.REPLACE)
-              .onUnmappableCharacter(CodingErrorAction.REPLACE);
-    }
-    encoder.reset();
   }
 
 }

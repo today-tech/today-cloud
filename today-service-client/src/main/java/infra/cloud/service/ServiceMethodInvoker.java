@@ -22,8 +22,8 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import infra.cloud.RpcRequest;
-import infra.cloud.serialize.RpcRequestSerialization;
-import infra.cloud.serialize.RpcResponseSerialization;
+import infra.cloud.service.serialize.RequestSerializer;
+import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
@@ -52,9 +52,9 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   private final ByteBufAllocator allocator;
 
-  private RpcRequestSerialization requestSerialization;
+  private RequestSerializer requestSerializer;
 
-  private RpcResponseSerialization responseSerialization;
+  private ResponseDeserializer responseDeserializer;
 
   ServiceMethodInvoker(ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata,
           ClientInterceptor[] interceptors, RemotingOperationsProvider remotingOperationsProvider, ByteBufAllocator allocator) {
@@ -82,8 +82,8 @@ public class ServiceMethodInvoker implements ServiceInvoker {
       RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceMethod());
       return switch (getType()) {
         case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload()));
-        case REQUEST_RESPONSE -> new RequestResponseResult(operations.requestResponse(createMonoPayload()));
-        case RESPONSE_STREAMING -> new ResponseStreamingResult(operations.requestStream(createMonoPayload()));
+        case REQUEST_RESPONSE -> new RequestResponseResult(getServiceMethod(), operations.requestResponse(createMonoPayload()), responseDeserializer);
+        case RESPONSE_STREAMING -> new ResponseStreamingResult(getServiceMethod(), operations.requestStream(createMonoPayload()), responseDeserializer);
         case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload()));
       };
     }
@@ -96,7 +96,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
         ByteBuf buffer = allocator.ioBuffer();
         Payload payload = ByteBufPayload.create(buffer);
-        requestSerialization.serialize(request, buffer);
+        requestSerializer.serialize(request, buffer);
         return Mono.just(payload);
       });
     }
@@ -105,14 +105,9 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     private Publisher<Payload> createChannelPayload() {
       Flux<Object> flux = (Flux<Object>) getArguments()[0];
 
-      return null;
+      return Flux.empty();
     }
 
-  }
-
-  private Object deserialize(Payload payload) {
-//    responseSerialization.deserialize();
-    return null;
   }
 
   class InvocationResult0 extends AbstractInvocationResult implements Publisher<Object>,

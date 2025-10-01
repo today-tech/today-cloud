@@ -19,6 +19,9 @@ package infra.cloud.service;
 
 import org.reactivestreams.Publisher;
 
+import java.util.function.Function;
+
+import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
 import infra.util.concurrent.Future;
 import reactor.core.publisher.Flux;
@@ -27,12 +30,18 @@ import reactor.core.publisher.Flux;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 20:34
  */
-class ResponseStreamingResult extends AbstractInvocationResult {
+final class ResponseStreamingResult extends AbstractInvocationResult implements Function<Payload, Object> {
 
   private final Flux<Payload> payloadFlux;
 
-  public ResponseStreamingResult(Flux<Payload> payloadFlux) {
+  private final ServiceInterfaceMethod method;
+
+  private final ResponseDeserializer responseDeserializer;
+
+  public ResponseStreamingResult(ServiceInterfaceMethod method, Flux<Payload> payloadFlux, ResponseDeserializer responseDeserializer) {
+    this.method = method;
     this.payloadFlux = payloadFlux;
+    this.responseDeserializer = responseDeserializer;
   }
 
   @Override
@@ -72,6 +81,12 @@ class ResponseStreamingResult extends AbstractInvocationResult {
 
   @Override
   public Publisher<Object> publisher() {
-    return null;
+    return payloadFlux.map(this);
   }
+
+  @Override
+  public Object apply(Payload payload) {
+    return responseDeserializer.deserialize(method, payload.data());
+  }
+
 }

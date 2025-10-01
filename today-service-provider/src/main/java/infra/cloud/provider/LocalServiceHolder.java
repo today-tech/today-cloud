@@ -41,7 +41,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
 
   private final HashMap<Class<?>, Object> localServices = new HashMap<>();
 
-  private final HashMap<String, Class<?>> classNameMap = new HashMap<>();
+  private final HashMap<String, ServiceObject> classNameMap = new HashMap<>();
 
   private final MultiValueMap<ServiceMetadata, Class<?>> serviceMap = MultiValueMap.forLinkedHashMap();
 
@@ -59,7 +59,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
   }
 
   @Nullable
-  public Class<?> getServiceInterface(String serviceClass) {
+  public ServiceObject getServiceInterface(String serviceClass) {
     return classNameMap.get(serviceClass);
   }
 
@@ -90,7 +90,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
 
           ServiceMetadata serviceMetadata = serviceMetadataProvider.getMetadata(anInterface);
           serviceMap.add(serviceMetadata, anInterface);
-          classNameMap.put(interfaceName, anInterface);
+          classNameMap.put(interfaceName, new ServiceObject(anInterface, service));
           logger.info("Adding service: [{}] to interface: [{}]", service, interfaceName);
         }
       }

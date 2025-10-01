@@ -15,11 +15,14 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.cloud.serialize;
+package infra.cloud.service.serialize;
 
 import java.util.List;
 
 import infra.cloud.RpcRequest;
+import infra.cloud.serialize.MessagePackOutput;
+import infra.cloud.serialize.Output;
+import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.service.ServiceMethod;
 import infra.core.MethodParameter;
 import io.netty.buffer.ByteBuf;
@@ -29,11 +32,11 @@ import io.netty.buffer.ByteBuf;
  * @since 1.0 2024/12/20 15:59
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
-public class RpcRequestSerialization {
+public class RequestSerializer {
 
   private final List<RpcArgumentSerialization> argumentSerializations;
 
-  public RpcRequestSerialization(List<RpcArgumentSerialization> argumentSerializations) {
+  public RequestSerializer(List<RpcArgumentSerialization> argumentSerializations) {
     this.argumentSerializations = argumentSerializations;
   }
 

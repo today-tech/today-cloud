@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import infra.cloud.RpcRequest;
+import infra.cloud.serialize.Input;
 import infra.cloud.serialize.MessagePackInput;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.SerializationException;
@@ -29,6 +30,7 @@ import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.core.MethodParameter;
 import infra.lang.Assert;
+import infra.lang.Nullable;
 import infra.reflect.MethodInvoker;
 import infra.util.MapCache;
 import io.netty.buffer.ByteBuf;
@@ -56,17 +58,18 @@ public class RpcRequestDeserializer {
     this.localServiceHolder = localServiceHolder;
   }
 
-  public RpcRequest deserialize(ByteBuf payload) throws SerializationException {
+  public RemoteRequest deserialize(ByteBuf payload) throws SerializationException {
     MessagePackInput input = new MessagePackInput(payload);
     RpcRequest request = new RpcRequest();
     request.readFrom(input);
 
-    String serviceClass = request.getServiceClass();
-    Class<?> serviceInterface = localServiceHolder.getServiceInterface(serviceClass);
-    Assert.state(serviceInterface != null, "service interface not found");
-    InvocableMethod method = methodMapCache.get(new MethodKey(serviceClass, request.getMethodName(), request.getParamTypes()), serviceInterface);
+    String serviceClass = input.readString();
+    String methodName = input.readString();
+    String[] paramTypes = input.read(String.class, Input::readString);
 
-    request.setMethod(method);
+    var serviceInterface = localServiceHolder.getServiceInterface(serviceClass);
+    Assert.state(serviceInterface != null, "service interface not found");
+    InvocableMethod method = methodMapCache.get(new MethodKey(serviceClass, methodName, paramTypes), serviceInterface);
 
     MethodParameter[] parameters = method.getParameters();
     Object[] args = new Object[parameters.length];
@@ -77,8 +80,7 @@ public class RpcRequestDeserializer {
       args[idx++] = serialization.deserialize(parameter, input);
     }
 
-    request.setArguments(args);
-    return request;
+    return new RemoteRequest(method, args, serviceInterface);
   }
 
   private RpcArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
@@ -90,19 +92,20 @@ public class RpcRequestDeserializer {
     throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
   }
 
-  private final class MethodMapCache extends MapCache<MethodKey, InvocableMethod, Class<?>> {
+  private final class MethodMapCache extends MapCache<MethodKey, InvocableMethod, ServiceObject> {
 
     @Override
-    protected InvocableMethod createValue(MethodKey key, Class<?> serviceInterface) {
-      Method methodToUse = getMethod(key, serviceInterface);
+    protected InvocableMethod createValue(MethodKey key, ServiceObject serviceObject) {
+      Method methodToUse = getMethod(key, serviceObject.getInterface());
       if (methodToUse == null) {
         throw new IllegalStateException("No method found for method: " + key.method);
       }
       MethodInvoker methodInvoker = MethodInvoker.forMethod(methodToUse);
-      ServiceInterfaceMetadata metadata = metadataProvider.getMetadata(serviceInterface);
-      return new InvocableMethod(metadata, serviceInterface, methodToUse, methodInvoker);
+      ServiceInterfaceMetadata metadata = metadataProvider.getMetadata(serviceObject.getInterface());
+      return new InvocableMethod(metadata, serviceObject, methodToUse, methodInvoker);
     }
 
+    @Nullable
     private static Method getMethod(MethodKey key, Class<?> serviceInterface) {
       String method = key.method;
       String[] paramTypes = key.paramTypes;

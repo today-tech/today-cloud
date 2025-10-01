@@ -30,9 +30,26 @@ import reactor.core.publisher.Mono;
  */
 public class ServiceChannelHandler implements Channel {
 
+  private RpcRequestDeserializer requestDeserializer;
+
+  private ResponseSerializer responseSerializer;
+
+  private final LocalServiceHolder localServiceHolder;
+
+  public ServiceChannelHandler(LocalServiceHolder localServiceHolder) {
+    this.localServiceHolder = localServiceHolder;
+  }
+
   @Override
   public Mono<Payload> requestResponse(Payload payload) {
-    return Channel.super.requestResponse(payload);
+    RemoteRequest request = requestDeserializer.deserialize(payload.data());
+    try {
+      Object result = request.invoke();
+      return responseSerializer.serialize(request, result);
+    }
+    catch (Throwable e) {
+      return responseSerializer.serialize(request, e);
+    }
   }
 
   @Override

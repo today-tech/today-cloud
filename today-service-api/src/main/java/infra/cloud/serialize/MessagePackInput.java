@@ -638,7 +638,7 @@ public class MessagePackInput implements Input {
    *
    * @throws MessageTypeException when value is not MessagePack Nil type
    */
-  public void unpackNil() {
+  public void readNull() {
     byte b = readInt8();
     if (b == Code.NIL) {
       return;
@@ -649,8 +649,8 @@ public class MessagePackInput implements Input {
   /**
    * Peeks a Nil byte and reads it if next byte is a nil value.
    * <p>
-   * The difference from {@link #unpackNil()} is that unpackNil throws an exception if the next byte is not nil value
-   * while this tryUnpackNil method returns false without changing position.
+   * The difference from {@link #readNull()} is that readNull throws an exception if the next byte is not nil value
+   * while this tryReadNull method returns false without changing position.
    *
    * @return true if a {@code null} value is read
    * @throws MessageInsufficientBufferException when the end of file reached

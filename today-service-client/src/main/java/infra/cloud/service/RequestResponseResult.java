@@ -17,29 +17,42 @@
 
 package infra.cloud.service;
 
-import org.reactivestreams.Publisher;
+import java.util.function.Function;
 
+import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.lang.Nullable;
 import infra.remoting.Payload;
 import infra.util.concurrent.Future;
+import infra.util.concurrent.PublisherFuture;
 import reactor.core.publisher.Mono;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 19:55
  */
-class RequestResponseResult extends AbstractInvocationResult {
+final class RequestResponseResult extends AbstractInvocationResult implements Function<Payload, Object> {
 
   private final Mono<Payload> payloadMono;
 
-  RequestResponseResult(Mono<Payload> payloadMono) {
+  private final ServiceInterfaceMethod method;
+
+  private final ResponseDeserializer responseDeserializer;
+
+  RequestResponseResult(ServiceInterfaceMethod method, Mono<Payload> payloadMono, ResponseDeserializer responseDeserializer) {
     this.payloadMono = payloadMono;
+    this.method = method;
+    this.responseDeserializer = responseDeserializer;
   }
 
   @Nullable
   @Override
   public Object getValue() {
-    return payloadMono.map(this::deserialize).block();
+    return publisher().block();
+  }
+
+  @Override
+  public Object apply(Payload payload) {
+    return responseDeserializer.deserialize(method, payload.data());
   }
 
   @Override
@@ -69,12 +82,12 @@ class RequestResponseResult extends AbstractInvocationResult {
 
   @Override
   public Future<Object> future() {
-    return null;
+    return PublisherFuture.of(publisher());
   }
 
   @Override
-  public Publisher<Object> publisher() {
-    return null;
+  public Mono<Object> publisher() {
+    return payloadMono.map(this);
   }
 
 }

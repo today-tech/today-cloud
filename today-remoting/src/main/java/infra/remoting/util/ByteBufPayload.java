@@ -44,6 +44,7 @@ public final class ByteBufPayload extends AbstractReferenceCounted implements Pa
 
   private ByteBuf data;
 
+  @Nullable
   private ByteBuf metadata;
 
   private ByteBufPayload(final Handle<ByteBufPayload> handle) {

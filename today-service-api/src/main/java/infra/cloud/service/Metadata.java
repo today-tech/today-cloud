@@ -15,7 +15,7 @@
  * along with this program.  If not, see [http://www.gnu.org/licenses/]
  */
 
-package infra.remoting.protocol;
+package infra.cloud.service;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>

@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+package infra.cloud.provider;
+
+import org.jspecify.annotations.Nullable;
+
+import java.time.Duration;
+
 import infra.cloud.service.config.ResumeProperties;
 import infra.context.properties.ConfigurationProperties;
 import infra.context.properties.NestedConfigurationProperty;

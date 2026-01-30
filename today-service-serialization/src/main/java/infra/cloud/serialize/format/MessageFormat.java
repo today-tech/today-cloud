@@ -16,8 +16,6 @@
 
 package infra.cloud.serialize.format;
 
-import infra.cloud.serialize.format.MessagePack.Code;
-import infra.cloud.serialize.format.value.ValueType;
 import infra.lang.VisibleForTesting;
 
 /**
@@ -111,52 +109,52 @@ public enum MessageFormat {
    */
   @VisibleForTesting
   static MessageFormat toMessageFormat(final byte b) {
-    if (Code.isPosFixInt(b)) {
+    if (MessagePackCode.isPosFixInt(b)) {
       return POS_FIX_INT;
     }
-    if (Code.isNegFixInt(b)) {
+    if (MessagePackCode.isNegFixInt(b)) {
       return NEG_FIX_INT;
     }
-    if (Code.isFixStr(b)) {
+    if (MessagePackCode.isFixStr(b)) {
       return FIX_STR;
     }
-    if (Code.isFixedArray(b)) {
+    if (MessagePackCode.isFixedArray(b)) {
       return FIX_ARRAY;
     }
-    if (Code.isFixedMap(b)) {
+    if (MessagePackCode.isFixedMap(b)) {
       return FIX_MAP;
     }
     return switch (b) {
-      case Code.NIL -> NIL;
-      case Code.FALSE, Code.TRUE -> BOOLEAN;
-      case Code.BIN8 -> BIN8;
-      case Code.BIN16 -> BIN16;
-      case Code.BIN32 -> BIN32;
-      case Code.EXT8 -> EXT8;
-      case Code.EXT16 -> EXT16;
-      case Code.EXT32 -> EXT32;
-      case Code.FLOAT32 -> FLOAT32;
-      case Code.FLOAT64 -> FLOAT64;
-      case Code.UINT8 -> UINT8;
-      case Code.UINT16 -> UINT16;
-      case Code.UINT32 -> UINT32;
-      case Code.UINT64 -> UINT64;
-      case Code.INT8 -> INT8;
-      case Code.INT16 -> INT16;
-      case Code.INT32 -> INT32;
-      case Code.INT64 -> INT64;
-      case Code.FIXEXT1 -> FIX_EXT1;
-      case Code.FIXEXT2 -> FIX_EXT2;
-      case Code.FIXEXT4 -> FIX_EXT4;
-      case Code.FIXEXT8 -> FIX_EXT8;
-      case Code.FIXEXT16 -> FIX_EXT16;
-      case Code.STR8 -> STR8;
-      case Code.STR16 -> STR16;
-      case Code.STR32 -> STR32;
-      case Code.ARRAY16 -> ARRAY16;
-      case Code.ARRAY32 -> ARRAY32;
-      case Code.MAP16 -> MAP16;
-      case Code.MAP32 -> MAP32;
+      case MessagePackCode.NIL -> NIL;
+      case MessagePackCode.FALSE, MessagePackCode.TRUE -> BOOLEAN;
+      case MessagePackCode.BIN8 -> BIN8;
+      case MessagePackCode.BIN16 -> BIN16;
+      case MessagePackCode.BIN32 -> BIN32;
+      case MessagePackCode.EXT8 -> EXT8;
+      case MessagePackCode.EXT16 -> EXT16;
+      case MessagePackCode.EXT32 -> EXT32;
+      case MessagePackCode.FLOAT32 -> FLOAT32;
+      case MessagePackCode.FLOAT64 -> FLOAT64;
+      case MessagePackCode.UINT8 -> UINT8;
+      case MessagePackCode.UINT16 -> UINT16;
+      case MessagePackCode.UINT32 -> UINT32;
+      case MessagePackCode.UINT64 -> UINT64;
+      case MessagePackCode.INT8 -> INT8;
+      case MessagePackCode.INT16 -> INT16;
+      case MessagePackCode.INT32 -> INT32;
+      case MessagePackCode.INT64 -> INT64;
+      case MessagePackCode.FIXEXT1 -> FIX_EXT1;
+      case MessagePackCode.FIXEXT2 -> FIX_EXT2;
+      case MessagePackCode.FIXEXT4 -> FIX_EXT4;
+      case MessagePackCode.FIXEXT8 -> FIX_EXT8;
+      case MessagePackCode.FIXEXT16 -> FIX_EXT16;
+      case MessagePackCode.STR8 -> STR8;
+      case MessagePackCode.STR16 -> STR16;
+      case MessagePackCode.STR32 -> STR32;
+      case MessagePackCode.ARRAY16 -> ARRAY16;
+      case MessagePackCode.ARRAY32 -> ARRAY32;
+      case MessagePackCode.MAP16 -> MAP16;
+      case MessagePackCode.MAP32 -> MAP32;
       default -> NEVER_USED;
     };
   }

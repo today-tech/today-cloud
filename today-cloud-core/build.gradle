@@ -3,6 +3,8 @@ description = "TODAY Cloud Core Technologies"
 dependencies {
   api 'cn.taketoday:infra-core'
 
+  optional 'cn.taketoday:infra-app'
+
   implementation 'cn.taketoday:infra-context'
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'

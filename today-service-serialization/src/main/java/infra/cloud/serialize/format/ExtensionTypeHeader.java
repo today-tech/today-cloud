@@ -12,10 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */es
  */
+
+package infra.cloud.serialize.format;
+
+import infra.lang.Assert;
+
 public class ExtensionTypeHeader {
+
   private final byte type;
+
   private final int length;
 
   /**
@@ -48,7 +54,7 @@ public class ExtensionTypeHeader {
   }
 
   public boolean isTimestampType() {
-    return type == MessagePack.Code.EXT_TIMESTAMP;
+    return type == MessagePackCode.EXT_TIMESTAMP;
   }
 
   public int getLength() {

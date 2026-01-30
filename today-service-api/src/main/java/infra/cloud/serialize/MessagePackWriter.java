@@ -25,40 +25,39 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import infra.cloud.serialize.format.MessagePack;
 import infra.lang.Enumerable;
 import io.netty.buffer.ByteBuf;
 
-import static infra.cloud.serialize.format.MessagePack.Code.ARRAY16;
-import static infra.cloud.serialize.format.MessagePack.Code.ARRAY32;
-import static infra.cloud.serialize.format.MessagePack.Code.BIN16;
-import static infra.cloud.serialize.format.MessagePack.Code.BIN32;
-import static infra.cloud.serialize.format.MessagePack.Code.BIN8;
-import static infra.cloud.serialize.format.MessagePack.Code.EXT8;
-import static infra.cloud.serialize.format.MessagePack.Code.EXT_TIMESTAMP;
-import static infra.cloud.serialize.format.MessagePack.Code.FALSE;
-import static infra.cloud.serialize.format.MessagePack.Code.FIXARRAY_PREFIX;
-import static infra.cloud.serialize.format.MessagePack.Code.FIXEXT4;
-import static infra.cloud.serialize.format.MessagePack.Code.FIXEXT8;
-import static infra.cloud.serialize.format.MessagePack.Code.FIXMAP_PREFIX;
-import static infra.cloud.serialize.format.MessagePack.Code.FIXSTR_PREFIX;
-import static infra.cloud.serialize.format.MessagePack.Code.FLOAT32;
-import static infra.cloud.serialize.format.MessagePack.Code.FLOAT64;
-import static infra.cloud.serialize.format.MessagePack.Code.INT16;
-import static infra.cloud.serialize.format.MessagePack.Code.INT32;
-import static infra.cloud.serialize.format.MessagePack.Code.INT64;
-import static infra.cloud.serialize.format.MessagePack.Code.INT8;
-import static infra.cloud.serialize.format.MessagePack.Code.MAP16;
-import static infra.cloud.serialize.format.MessagePack.Code.MAP32;
-import static infra.cloud.serialize.format.MessagePack.Code.NIL;
-import static infra.cloud.serialize.format.MessagePack.Code.STR16;
-import static infra.cloud.serialize.format.MessagePack.Code.STR32;
-import static infra.cloud.serialize.format.MessagePack.Code.STR8;
-import static infra.cloud.serialize.format.MessagePack.Code.TRUE;
-import static infra.cloud.serialize.format.MessagePack.Code.UINT16;
-import static infra.cloud.serialize.format.MessagePack.Code.UINT32;
-import static infra.cloud.serialize.format.MessagePack.Code.UINT64;
-import static infra.cloud.serialize.format.MessagePack.Code.UINT8;
+import static infra.cloud.serialize.format.MessagePackCode.ARRAY16;
+import static infra.cloud.serialize.format.MessagePackCode.ARRAY32;
+import static infra.cloud.serialize.format.MessagePackCode.BIN16;
+import static infra.cloud.serialize.format.MessagePackCode.BIN32;
+import static infra.cloud.serialize.format.MessagePackCode.BIN8;
+import static infra.cloud.serialize.format.MessagePackCode.EXT8;
+import static infra.cloud.serialize.format.MessagePackCode.EXT_TIMESTAMP;
+import static infra.cloud.serialize.format.MessagePackCode.FALSE;
+import static infra.cloud.serialize.format.MessagePackCode.FIXARRAY_PREFIX;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT4;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT8;
+import static infra.cloud.serialize.format.MessagePackCode.FIXMAP_PREFIX;
+import static infra.cloud.serialize.format.MessagePackCode.FIXSTR_PREFIX;
+import static infra.cloud.serialize.format.MessagePackCode.FLOAT32;
+import static infra.cloud.serialize.format.MessagePackCode.FLOAT64;
+import static infra.cloud.serialize.format.MessagePackCode.INT16;
+import static infra.cloud.serialize.format.MessagePackCode.INT32;
+import static infra.cloud.serialize.format.MessagePackCode.INT64;
+import static infra.cloud.serialize.format.MessagePackCode.INT8;
+import static infra.cloud.serialize.format.MessagePackCode.MAP16;
+import static infra.cloud.serialize.format.MessagePackCode.MAP32;
+import static infra.cloud.serialize.format.MessagePackCode.NIL;
+import static infra.cloud.serialize.format.MessagePackCode.STR16;
+import static infra.cloud.serialize.format.MessagePackCode.STR32;
+import static infra.cloud.serialize.format.MessagePackCode.STR8;
+import static infra.cloud.serialize.format.MessagePackCode.TRUE;
+import static infra.cloud.serialize.format.MessagePackCode.UINT16;
+import static infra.cloud.serialize.format.MessagePackCode.UINT32;
+import static infra.cloud.serialize.format.MessagePackCode.UINT64;
+import static infra.cloud.serialize.format.MessagePackCode.UINT8;
 
 /**
  * A writer for serializing data into MessagePack format.
@@ -84,9 +83,7 @@ public class MessagePackWriter implements Writable {
    * This method is used with {@link #writeStringHeader(int)} or {@link #writeBinaryHeader(int)} methods.
    * <p>
    * Unlike {@link #writeFully(byte[])} method, this method does not make a defensive copy of the given byte
-   * array, even if it is shorter than {@link MessagePack.PackerConfig#withBufferFlushThreshold(int)}. This is
-   * faster than {@link #writeFully(byte[])} method but caller must not modify the byte array after calling
-   * this method.
+   * array
    *
    * @param b the data to add
    * @throws SerializationException if an I/O error occurs.

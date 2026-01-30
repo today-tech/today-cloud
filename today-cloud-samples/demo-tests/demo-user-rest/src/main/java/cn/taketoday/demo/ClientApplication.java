@@ -29,7 +29,7 @@ public class ClientApplication {
 
   public static void main(String[] args) {
     ApplicationBuilder.forSources(ClientApplication.class)
-            .type(ApplicationType.NETTY_WEB)
+            .type(ApplicationType.WEB)
             .run(args);
   }
 

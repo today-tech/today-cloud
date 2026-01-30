@@ -7,6 +7,7 @@ dependencies {
   api project(":today-cloud-core")
   api project(":today-service-api")
 
+  optional 'cn.taketoday:infra-context'
   optional project(":today-remoting-transport-tcp")
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'

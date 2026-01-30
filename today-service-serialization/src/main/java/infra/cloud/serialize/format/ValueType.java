@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package infra.cloud.serialize.format.value;
-
-import infra.cloud.serialize.format.MessageFormat;
+package infra.cloud.serialize.format;
 
 /**
  * Representation of MessagePack types.
@@ -45,54 +43,19 @@ public enum ValueType {
    */
 
   private final boolean numberType;
+
   private final boolean rawType;
 
-  private ValueType(boolean numberType, boolean rawType) {
+  ValueType(boolean numberType, boolean rawType) {
     this.numberType = numberType;
     this.rawType = rawType;
-  }
-
-  public boolean isNilType() {
-    return this == NIL;
-  }
-
-  public boolean isBooleanType() {
-    return this == BOOLEAN;
   }
 
   public boolean isNumberType() {
     return numberType;
   }
 
-  public boolean isIntegerType() {
-    return this == INTEGER;
-  }
-
-  public boolean isFloatType() {
-    return this == FLOAT;
-  }
-
   public boolean isRawType() {
     return rawType;
-  }
-
-  public boolean isStringType() {
-    return this == STRING;
-  }
-
-  public boolean isBinaryType() {
-    return this == BINARY;
-  }
-
-  public boolean isArrayType() {
-    return this == ARRAY;
-  }
-
-  public boolean isMapType() {
-    return this == MAP;
-  }
-
-  public boolean isExtensionType() {
-    return this == EXTENSION;
   }
 }

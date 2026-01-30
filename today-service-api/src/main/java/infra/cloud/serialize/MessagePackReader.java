@@ -35,7 +35,6 @@ import infra.cloud.serialize.format.MessageFormatException;
 import infra.cloud.serialize.format.MessageInsufficientBufferException;
 import infra.cloud.serialize.format.MessageIntegerOverflowException;
 import infra.cloud.serialize.format.MessageNeverUsedFormatException;
-import infra.cloud.serialize.format.MessagePack.Code;
 import infra.cloud.serialize.format.MessagePackException;
 import infra.cloud.serialize.format.MessageSizeException;
 import infra.cloud.serialize.format.MessageTypeException;
@@ -46,7 +45,42 @@ import infra.util.CollectionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 
-import static infra.cloud.serialize.format.MessagePack.Code.EXT_TIMESTAMP;
+import static infra.cloud.serialize.format.MessagePackCode.ARRAY16;
+import static infra.cloud.serialize.format.MessagePackCode.ARRAY32;
+import static infra.cloud.serialize.format.MessagePackCode.BIN16;
+import static infra.cloud.serialize.format.MessagePackCode.BIN32;
+import static infra.cloud.serialize.format.MessagePackCode.BIN8;
+import static infra.cloud.serialize.format.MessagePackCode.EXT16;
+import static infra.cloud.serialize.format.MessagePackCode.EXT32;
+import static infra.cloud.serialize.format.MessagePackCode.EXT8;
+import static infra.cloud.serialize.format.MessagePackCode.EXT_TIMESTAMP;
+import static infra.cloud.serialize.format.MessagePackCode.FALSE;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT1;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT16;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT2;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT4;
+import static infra.cloud.serialize.format.MessagePackCode.FIXEXT8;
+import static infra.cloud.serialize.format.MessagePackCode.FLOAT32;
+import static infra.cloud.serialize.format.MessagePackCode.FLOAT64;
+import static infra.cloud.serialize.format.MessagePackCode.INT16;
+import static infra.cloud.serialize.format.MessagePackCode.INT32;
+import static infra.cloud.serialize.format.MessagePackCode.INT64;
+import static infra.cloud.serialize.format.MessagePackCode.INT8;
+import static infra.cloud.serialize.format.MessagePackCode.MAP16;
+import static infra.cloud.serialize.format.MessagePackCode.MAP32;
+import static infra.cloud.serialize.format.MessagePackCode.NIL;
+import static infra.cloud.serialize.format.MessagePackCode.STR16;
+import static infra.cloud.serialize.format.MessagePackCode.STR32;
+import static infra.cloud.serialize.format.MessagePackCode.STR8;
+import static infra.cloud.serialize.format.MessagePackCode.TRUE;
+import static infra.cloud.serialize.format.MessagePackCode.UINT16;
+import static infra.cloud.serialize.format.MessagePackCode.UINT32;
+import static infra.cloud.serialize.format.MessagePackCode.UINT64;
+import static infra.cloud.serialize.format.MessagePackCode.UINT8;
+import static infra.cloud.serialize.format.MessagePackCode.isFixInt;
+import static infra.cloud.serialize.format.MessagePackCode.isFixedArray;
+import static infra.cloud.serialize.format.MessagePackCode.isFixedMap;
+import static infra.cloud.serialize.format.MessagePackCode.isFixedRaw;
 
 /**
  * MessagePack specification reader implementation
@@ -125,10 +159,10 @@ public class MessagePackReader implements Readable {
   @Override
   public boolean readBoolean() {
     byte b = buffer.readByte();
-    if (b == Code.FALSE) {
+    if (b == FALSE) {
       return false;
     }
-    else if (b == Code.TRUE) {
+    else if (b == TRUE) {
       return true;
     }
     throw unexpected("boolean", b);
@@ -137,49 +171,49 @@ public class MessagePackReader implements Readable {
   @Override
   public byte readByte() {
     byte b = readInt8();
-    if (Code.isFixInt(b)) {
+    if (isFixInt(b)) {
       return b;
     }
     switch (b) {
-      case Code.UINT8: // unsigned int 8
+      case UINT8: // unsigned int 8
         byte u8 = readInt8();
         if (u8 < (byte) 0) {
           throw overflowU8(u8);
         }
         return u8;
-      case Code.UINT16: // unsigned int 16
+      case UINT16: // unsigned int 16
         short u16 = readInt16();
         if (u16 < 0 || u16 > Byte.MAX_VALUE) {
           throw overflowU16(u16);
         }
         return (byte) u16;
-      case Code.UINT32: // unsigned int 32
+      case UINT32: // unsigned int 32
         int u32 = readInt32();
         if (u32 < 0 || u32 > Byte.MAX_VALUE) {
           throw overflowU32(u32);
         }
         return (byte) u32;
-      case Code.UINT64: // unsigned int 64
+      case UINT64: // unsigned int 64
         long u64 = readInt64();
         if (u64 < 0L || u64 > Byte.MAX_VALUE) {
           throw overflowU64(u64);
         }
         return (byte) u64;
-      case Code.INT8: // signed int 8
+      case INT8: // signed int 8
         return readInt8();
-      case Code.INT16: // signed int 16
+      case INT16: // signed int 16
         short i16 = readInt16();
         if (i16 < Byte.MIN_VALUE || i16 > Byte.MAX_VALUE) {
           throw overflowI16(i16);
         }
         return (byte) i16;
-      case Code.INT32: // signed int 32
+      case INT32: // signed int 32
         int i32 = readInt32();
         if (i32 < Byte.MIN_VALUE || i32 > Byte.MAX_VALUE) {
           throw overflowI32(i32);
         }
         return (byte) i32;
-      case Code.INT64: // signed int 64
+      case INT64: // signed int 64
         long i64 = readInt64();
         if (i64 < Byte.MIN_VALUE || i64 > Byte.MAX_VALUE) {
           throw overflowI64(i64);
@@ -197,42 +231,42 @@ public class MessagePackReader implements Readable {
   @Override
   public short readShort() {
     byte b = readInt8();
-    if (Code.isFixInt(b)) {
+    if (isFixInt(b)) {
       return b;
     }
     switch (b) {
-      case Code.UINT8: // unsigned int 8
+      case UINT8: // unsigned int 8
         byte u8 = readInt8();
         return (short) (u8 & 0xff);
-      case Code.UINT16: // unsigned int 16
+      case UINT16: // unsigned int 16
         short u16 = readInt16();
         if (u16 < (short) 0) {
           throw overflowU16(u16);
         }
         return u16;
-      case Code.UINT32: // unsigned int 32
+      case UINT32: // unsigned int 32
         int u32 = readInt32();
         if (u32 < 0 || u32 > Short.MAX_VALUE) {
           throw overflowU32(u32);
         }
         return (short) u32;
-      case Code.UINT64: // unsigned int 64
+      case UINT64: // unsigned int 64
         long u64 = readInt64();
         if (u64 < 0L || u64 > Short.MAX_VALUE) {
           throw overflowU64(u64);
         }
         return (short) u64;
-      case Code.INT8: // signed int 8
+      case INT8: // signed int 8
         return readInt8();
-      case Code.INT16: // signed int 16
+      case INT16: // signed int 16
         return readInt16();
-      case Code.INT32: // signed int 32
+      case INT32: // signed int 32
         int i32 = readInt32();
         if (i32 < Short.MIN_VALUE || i32 > Short.MAX_VALUE) {
           throw overflowI32(i32);
         }
         return (short) i32;
-      case Code.INT64: // signed int 64
+      case INT64: // signed int 64
         long i64 = readInt64();
         if (i64 < Short.MIN_VALUE || i64 > Short.MAX_VALUE) {
           throw overflowI64(i64);
@@ -250,35 +284,35 @@ public class MessagePackReader implements Readable {
   @Override
   public int readInt() {
     byte b = readInt8();
-    if (Code.isFixInt(b)) {
+    if (isFixInt(b)) {
       return b;
     }
     switch (b) {
-      case Code.UINT8: // unsigned int 8
+      case UINT8: // unsigned int 8
         byte u8 = readInt8();
         return u8 & 0xff;
-      case Code.UINT16: // unsigned int 16
+      case UINT16: // unsigned int 16
         short u16 = readInt16();
         return u16 & 0xffff;
-      case Code.UINT32: // unsigned int 32
+      case UINT32: // unsigned int 32
         int u32 = readInt32();
         if (u32 < 0) {
           throw overflowU32(u32);
         }
         return u32;
-      case Code.UINT64: // unsigned int 64
+      case UINT64: // unsigned int 64
         long u64 = readInt64();
         if (u64 < 0L || u64 > (long) Integer.MAX_VALUE) {
           throw overflowU64(u64);
         }
         return (int) u64;
-      case Code.INT8: // signed int 8
+      case INT8: // signed int 8
         return readInt8();
-      case Code.INT16: // signed int 16
+      case INT16: // signed int 16
         return readInt16();
-      case Code.INT32: // signed int 32
+      case INT32: // signed int 32
         return readInt32();
-      case Code.INT64: // signed int 64
+      case INT64: // signed int 64
         long i64 = readInt64();
         if (i64 < (long) Integer.MIN_VALUE || i64 > (long) Integer.MAX_VALUE) {
           throw overflowI64(i64);
@@ -291,17 +325,17 @@ public class MessagePackReader implements Readable {
   @Override
   public long readLong() {
     byte b = readInt8();
-    if (Code.isFixInt(b)) {
+    if (isFixInt(b)) {
       return b;
     }
     switch (b) {
-      case Code.UINT8: // unsigned int 8
+      case UINT8: // unsigned int 8
         byte u8 = readInt8();
         return u8 & 0xff;
-      case Code.UINT16: // unsigned int 16
+      case UINT16: // unsigned int 16
         short u16 = readInt16();
         return u16 & 0xffff;
-      case Code.UINT32: // unsigned int 32
+      case UINT32: // unsigned int 32
         int u32 = readInt32();
         if (u32 < 0) {
           return (long) (u32 & 0x7fffffff) + 0x80000000L;
@@ -309,19 +343,19 @@ public class MessagePackReader implements Readable {
         else {
           return u32;
         }
-      case Code.UINT64: // unsigned int 64
+      case UINT64: // unsigned int 64
         long u64 = readInt64();
         if (u64 < 0L) {
           throw overflowU64(u64);
         }
         return u64;
-      case Code.INT8: // signed int 8
+      case INT8: // signed int 8
         return readInt8();
-      case Code.INT16: // signed int 16
+      case INT16: // signed int 16
         return readInt16();
-      case Code.INT32: // signed int 32
+      case INT32: // signed int 32
         return readInt32();
-      case Code.INT64: // signed int 64
+      case INT64: // signed int 64
         return readInt64();
     }
     throw unexpected("Integer", b);
@@ -331,8 +365,8 @@ public class MessagePackReader implements Readable {
   public float readFloat() {
     byte b = readInt8();
     return switch (b) {
-      case Code.FLOAT32 -> readFloat32();
-      case Code.FLOAT64 -> (float) readFloat64();
+      case FLOAT32 -> readFloat32();
+      case FLOAT64 -> (float) readFloat64();
       default -> throw unexpected("Float", b);
     };
   }
@@ -341,8 +375,8 @@ public class MessagePackReader implements Readable {
   public double readDouble() {
     byte b = readInt8();
     return switch (b) {
-      case Code.FLOAT32 -> readFloat32();
-      case Code.FLOAT64 -> readFloat64();
+      case FLOAT32 -> readFloat32();
+      case FLOAT64 -> readFloat64();
       default -> throw unexpected("Float", b);
     };
   }
@@ -455,14 +489,14 @@ public class MessagePackReader implements Readable {
    */
   public int readArrayHeader() {
     byte b = readInt8();
-    if (Code.isFixedArray(b)) { // fixarray
+    if (isFixedArray(b)) { // fixarray
       return b & 0x0f;
     }
     return switch (b) {
       // array 16
-      case Code.ARRAY16 -> readNextLength16();
+      case ARRAY16 -> readNextLength16();
       // array 32
-      case Code.ARRAY32 -> readNextLength32();
+      case ARRAY32 -> readNextLength32();
       default -> throw unexpected("Array", b);
     };
   }
@@ -481,12 +515,12 @@ public class MessagePackReader implements Readable {
    */
   public int readMapHeader() {
     byte b = readInt8();
-    if (Code.isFixedMap(b)) { // fixmap
+    if (isFixedMap(b)) { // fixmap
       return b & 0x0f;
     }
     return switch (b) {
-      case Code.MAP16 -> readNextLength16();// map 16
-      case Code.MAP32 -> readNextLength32();// map 32
+      case MAP16 -> readNextLength16();// map 16
+      case MAP32 -> readNextLength32();// map 32
       default -> throw unexpected("Map", b);
     };
   }
@@ -494,37 +528,37 @@ public class MessagePackReader implements Readable {
   public ExtensionTypeHeader readExtensionTypeHeader() {
     byte b = readInt8();
     switch (b) {
-      case Code.FIXEXT1: {
+      case FIXEXT1: {
         byte type = readInt8();
         return new ExtensionTypeHeader(type, 1);
       }
-      case Code.FIXEXT2: {
+      case FIXEXT2: {
         byte type = readInt8();
         return new ExtensionTypeHeader(type, 2);
       }
-      case Code.FIXEXT4: {
+      case FIXEXT4: {
         byte type = readInt8();
         return new ExtensionTypeHeader(type, 4);
       }
-      case Code.FIXEXT8: {
+      case FIXEXT8: {
         byte type = readInt8();
         return new ExtensionTypeHeader(type, 8);
       }
-      case Code.FIXEXT16: {
+      case FIXEXT16: {
         byte type = readInt8();
         return new ExtensionTypeHeader(type, 16);
       }
-      case Code.EXT8: {
+      case EXT8: {
         int length = readNextLength8();
         byte type = readInt8();
         return new ExtensionTypeHeader(type, length);
       }
-      case Code.EXT16: {
+      case EXT16: {
         int length = readNextLength16();
         byte type = readInt8();
         return new ExtensionTypeHeader(type, length);
       }
-      case Code.EXT32: {
+      case EXT32: {
         int length = readNextLength32();
         byte type = readInt8();
         return new ExtensionTypeHeader(type, length);
@@ -581,25 +615,25 @@ public class MessagePackReader implements Readable {
 
   private int tryReadStringHeader(byte b) {
     return switch (b) {
-      case Code.STR8 -> readNextLength8(); // str 8
-      case Code.STR16 -> readNextLength16(); // str 16
-      case Code.STR32 -> readNextLength32(); // str 32
+      case STR8 -> readNextLength8(); // str 8
+      case STR16 -> readNextLength16(); // str 16
+      case STR32 -> readNextLength32(); // str 32
       default -> -1;
     };
   }
 
   private int tryReadBinaryHeader(byte b) {
     return switch (b) {
-      case Code.BIN8 -> readNextLength8(); // bin 8
-      case Code.BIN16 -> readNextLength16(); // bin 16
-      case Code.BIN32 -> readNextLength32(); // bin 32
+      case BIN8 -> readNextLength8(); // bin 8
+      case BIN16 -> readNextLength16(); // bin 16
+      case BIN32 -> readNextLength32(); // bin 32
       default -> -1;
     };
   }
 
   public int readStringHeader() {
     byte b = readInt8();
-    if (Code.isFixedRaw(b)) { // FixRaw
+    if (isFixedRaw(b)) { // FixRaw
       return b & 0x1f;
     }
     int len = tryReadStringHeader(b);
@@ -624,11 +658,11 @@ public class MessagePackReader implements Readable {
    * @return the size of the map to be read
    * @throws MessageTypeException when value is not MessagePack Map type
    * @throws MessageSizeException when size of the map is larger than 2^31 - 1
-   * @ when underlying input
+   * when underlying input
    */
   public int readBinaryHeader() {
     byte b = readInt8();
-    if (Code.isFixedRaw(b)) { // FixRaw
+    if (isFixedRaw(b)) { // FixRaw
       return b & 0x1f;
     }
     int len = tryReadBinaryHeader(b);
@@ -646,7 +680,7 @@ public class MessagePackReader implements Readable {
    */
   public void readNull() {
     byte b = readInt8();
-    if (b == Code.NIL) {
+    if (b == NIL) {
       return;
     }
     throw unexpected("Nil", b);
@@ -669,7 +703,7 @@ public class MessagePackReader implements Readable {
     }
     int index = buffer.readerIndex();
     byte b = buffer.getByte(index);
-    if (b == Code.NIL) {
+    if (b == NIL) {
       buffer.readerIndex(index + 1);
       return true;
     }

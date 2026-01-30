@@ -635,7 +635,6 @@ class Int2LongHashMap implements Map<Integer, Long>, Serializable {
       throw new IllegalStateException();
     }
 
-    /** {@inheritDoc} */
     public void remove() {
       if (isPositionValid) {
         final int position = keyPosition();

@@ -34,7 +34,7 @@ import infra.remoting.core.ChannelConnector;
  * <p>Use {@link #create()} or a {@link #builder() Builder} to create an instance.
  *
  * @see <a href="https://www.youtube.com/watch?v=6NdxUY1La2I">Predictive Load-Balancing: Unfair but
- * Faster & more Robust</a>
+ * Faster and more Robust</a>
  * @see WeightedStatsRequestInterceptor
  */
 public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {

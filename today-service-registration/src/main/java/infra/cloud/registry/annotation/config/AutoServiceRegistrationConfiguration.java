@@ -12,7 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */Properties;
+ */
+
+package infra.cloud.registry.annotation.config;
+
+import infra.cloud.registry.AutoServiceRegistrationProperties;
 import infra.context.annotation.Configuration;
 import infra.context.condition.ConditionalOnProperty;
 import infra.context.properties.EnableConfigurationProperties;

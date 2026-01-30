@@ -1,7 +1,7 @@
 description = "TODAY Service serialization API and default format based on msgpack specification"
 
 dependencies {
-  api "cn.taketoday:today-core"
+  api "cn.taketoday:infra-core"
 
 }
 

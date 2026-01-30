@@ -4,8 +4,8 @@ dependencies {
   api project(":today-cloud-core")
   api project(":today-service-provider")
 
-  api 'cn.taketoday:today-core'
-  api 'cn.taketoday:today-context'
+  api 'cn.taketoday:infra-core'
+  api 'cn.taketoday:infra-context'
 
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'

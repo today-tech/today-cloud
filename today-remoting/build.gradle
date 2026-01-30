@@ -4,7 +4,7 @@ description = "TODAY Cloud Remoting"
 
 dependencies {
 
-  api "cn.taketoday:today-core"
+  api "cn.taketoday:infra-core"
   api 'io.netty:netty-buffer'
   api 'io.projectreactor:reactor-core'
 
@@ -19,7 +19,7 @@ dependencies {
 
   testRuntimeOnly 'ch.qos.logback:logback-classic'
 
-  testFixturesApi "cn.taketoday:today-core"
+  testFixturesApi "cn.taketoday:infra-core"
   testFixturesApi 'org.assertj:assertj-core'
   testFixturesApi 'org.junit.jupiter:junit-jupiter-api'
   testFixturesApi 'org.junit.jupiter:junit-jupiter-params'

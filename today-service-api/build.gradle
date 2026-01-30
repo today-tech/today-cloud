@@ -6,8 +6,8 @@ dependencies {
   api project(":today-cloud-core")
   api project(":today-service-serialization")
 
-  implementation 'cn.taketoday:today-beans'
-  implementation 'cn.taketoday:today-context'
+  implementation 'cn.taketoday:infra-beans'
+  implementation 'cn.taketoday:infra-context'
 
   optional "com.google.protobuf:protobuf-java"
 

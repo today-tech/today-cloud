@@ -6,9 +6,9 @@ dependencies {
   implementation project(":today-service-provider")
   implementation project(":today-service-registry-simple-registration")
 
-//  implementation 'cn.taketoday:today-starter-web'
-//  implementation 'cn.taketoday:today-starter-netty'
-  implementation 'cn.taketoday:today-starter-logback'
+//  implementation 'cn.taketoday:infra-starter-web'
+//  implementation 'cn.taketoday:infra-starter-netty'
+  implementation 'cn.taketoday:infra-starter-logback'
 
 //  implementation "com.google.protobuf:protobuf-java"
 

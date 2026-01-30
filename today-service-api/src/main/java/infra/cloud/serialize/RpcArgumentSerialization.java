@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,10 +35,10 @@ public interface RpcArgumentSerialization<T> {
    */
   boolean supportsArgument(MethodParameter parameter);
 
-  void serialize(MethodParameter parameter, @Nullable T value, Output output)
+  void serialize(MethodParameter parameter, @Nullable T value, Writable writable)
           throws SerializationException;
 
   @Nullable
-  T deserialize(MethodParameter parameter, Input input) throws SerializationException;
+  T deserialize(MethodParameter parameter, Readable readable) throws SerializationException;
 
 }

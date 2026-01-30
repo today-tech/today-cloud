@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,14 +37,14 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
   private final Map<Class<?>, ValueSerialization<?>> serializationMap = new HashMap<>();
 
   public SimpleValueArgumentSerialization() {
-    serializationMap.put(int.class, map(Input::readInt, Output::write));
-    serializationMap.put(Integer.class, map(Input::readInt, Output::write));
+    serializationMap.put(int.class, map(Readable::readInt, Writable::write));
+    serializationMap.put(Integer.class, map(Readable::readInt, Writable::write));
 
-    serializationMap.put(long.class, map(Input::readLong, Output::write));
-    serializationMap.put(Long.class, map(Input::readLong, Output::write));
+    serializationMap.put(long.class, map(Readable::readLong, Writable::write));
+    serializationMap.put(Long.class, map(Readable::readLong, Writable::write));
 
-    serializationMap.put(short.class, map(Input::readShort, Output::write));
-    serializationMap.put(Short.class, map(Input::readShort, Output::write));
+    serializationMap.put(short.class, map(Readable::readShort, Writable::write));
+    serializationMap.put(Short.class, map(Readable::readShort, Writable::write));
   }
 
   @Override
@@ -54,16 +54,16 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
 
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public void serialize(MethodParameter parameter, @Nullable Object value, Output output) {
+  public void serialize(MethodParameter parameter, @Nullable Object value, Writable writable) {
     ValueSerialization serialization = findSerialization(parameter.getParameterType());
-    serialization.serialize(parameter, value, output);
+    serialization.serialize(parameter, value, writable);
   }
 
   @Nullable
   @Override
-  public Object deserialize(MethodParameter parameter, Input input) {
+  public Object deserialize(MethodParameter parameter, Readable readable) {
     var serialization = findSerialization(parameter.getParameterType());
-    return serialization.deserialize(parameter, input);
+    return serialization.deserialize(parameter, readable);
   }
 
   @SuppressWarnings({ "rawtypes" })

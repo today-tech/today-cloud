@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * @see java.io.DataInput
  * @since 1.0 2025/8/16 16:59
  */
-public interface Input {
+public interface Readable {
 
   /**
    * Reads some bytes from an input
@@ -179,7 +179,7 @@ public interface Input {
   void read(Message message);
 
   @Nullable
-  <V> V readNullable(Function<Input, V> valueMapper);
+  <V> V readNullable(Function<Readable, V> valueMapper);
 
   /**
    * Reads a {@code array} value.
@@ -187,7 +187,7 @@ public interface Input {
    * @return a array object.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> T[] read(Class<T> type, Function<Input, T> mapper);
+  <T> T[] read(Class<T> type, Function<Readable, T> mapper);
 
   /**
    * Reads a {@code array} value.
@@ -203,7 +203,7 @@ public interface Input {
    * @return a List object.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> List<T> read(Function<Input, T> mapper);
+  <T> List<T> read(Function<Readable, T> mapper);
 
   /**
    * Reads a {@link List} value.
@@ -219,6 +219,6 @@ public interface Input {
    * @return a Map object.
    * @throws SerializationException if a serialization error occurs.
    */
-  <K, V> Map<K, V> read(Function<Input, K> keyMapper, Function<Input, V> valueMapper);
+  <K, V> Map<K, V> read(Function<Readable, K> keyMapper, Function<Readable, V> valueMapper);
 
 }

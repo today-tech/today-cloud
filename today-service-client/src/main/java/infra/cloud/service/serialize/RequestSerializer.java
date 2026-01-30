@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@ package infra.cloud.service.serialize;
 import java.util.List;
 
 import infra.cloud.RpcRequest;
-import infra.cloud.serialize.MessagePackOutput;
-import infra.cloud.serialize.Output;
+import infra.cloud.serialize.MessagePackWriter;
+import infra.cloud.serialize.Writable;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.service.ServiceMethod;
 import infra.core.MethodParameter;
@@ -42,20 +42,20 @@ public class RequestSerializer {
 
   @SuppressWarnings("unchecked")
   public void serialize(RpcRequest request, ByteBuf payload) {
-    Output output = new MessagePackOutput(payload);
-    request.writeTo(output);
+    Writable writable = new MessagePackWriter(payload);
+    request.writeTo(writable);
 
     ServiceMethod method = request.getMethod();
 
     int idx = 0;
     Object[] arguments = request.getArguments();
 
-    beforeSerializeArguments(output, arguments);
+    beforeSerializeArguments(writable, arguments);
     for (MethodParameter parameter : method.getParameters()) {
       var serialization = findArgumentSerialization(parameter);
-      serialization.serialize(parameter, arguments[idx++], output);
+      serialization.serialize(parameter, arguments[idx++], writable);
     }
-    afterSerializeArguments(output, arguments);
+    afterSerializeArguments(writable, arguments);
   }
 
   private RpcArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
@@ -67,11 +67,11 @@ public class RequestSerializer {
     throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
   }
 
-  protected void afterSerializeArguments(Output output, Object[] arguments) {
+  protected void afterSerializeArguments(Writable writable, Object[] arguments) {
 
   }
 
-  protected void beforeSerializeArguments(Output output, Object[] arguments) {
+  protected void beforeSerializeArguments(Writable writable, Object[] arguments) {
 
   }
 

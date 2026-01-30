@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,25 +36,48 @@ public interface Message {
 
   /**
    * The object implements the writeTo method to save its contents
-   * by calling the methods of {@link Output} for its primitive values or
+   * by calling the methods of {@link Writable} for its primitive values or
    * calling the write method of Output for objects, strings,
    * and arrays.
    *
-   * @param output the stream to write the object to
+   * @param writable the stream to write the object to
    * @throws SerializationException Serialization occur
    */
-  void writeTo(Output output);
+  void writeTo(Writable writable);
 
   /**
    * The object implements the readFrom method to restore its
-   * contents by calling the methods of {@link Input} for primitive
+   * contents by calling the methods of {@link Readable} for primitive
    * types and read for objects, strings and arrays.  The
    * readFrom method must read the values in the same sequence
    * and with the same types as were written by writeTo.
    *
-   * @param input the source to read data from in order to restore the object
+   * @param readable the source to read data from in order to restore the object
    * @throws SerializationException Serialization occur
    */
-  void readFrom(Input input);
+  void readFrom(Readable readable);
+
+  interface Factory<M> {
+
+    /**
+     * Create a new instance of the Message class, instantiating it
+     * from the given Input whose data had previously been written by
+     * {@link Message#writeTo Message.writeTo()}.
+     *
+     * @param source The Parcel to read the object's data from.
+     * @return Returns a new instance of the Message class.
+     * @throws SerializationException Serialization occur
+     */
+    M create(Readable source);
+
+    /**
+     * Create a new array of the Parcelable class.
+     *
+     * @param size Size of the array.
+     * @return Returns an array of the Parcelable class, with every entry
+     * initialized to null.
+     */
+    M[] newArray(int size);
+  }
 
 }

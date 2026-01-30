@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ public interface ReturnValueDeserializer<T> {
 
   boolean supportsReturnValue(ServiceMethod method);
 
-  T deserialize(ServiceMethod method, Input input)
+  T deserialize(ServiceMethod method, Readable readable)
           throws SerializationException;
 
 }

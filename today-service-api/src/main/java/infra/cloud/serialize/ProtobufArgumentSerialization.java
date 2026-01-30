@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,16 +44,16 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public void serialize(MethodParameter parameter, @Nullable Message value, Output output) throws SerializationException {
-    output.write(value == null ? null : value.toByteArray());
+  public void serialize(MethodParameter parameter, @Nullable Message value, Writable writable) throws SerializationException {
+    writable.write(value == null ? null : value.toByteArray());
   }
 
   @Override
-  public Message deserialize(MethodParameter parameter, Input input) throws SerializationException {
+  public Message deserialize(MethodParameter parameter, Readable readable) throws SerializationException {
     Class<?> parameterType = parameter.getParameterType();
     Message.Builder messageBuilder = getMessageBuilder(parameterType);
     try {
-      byte[] bytes = input.read();
+      byte[] bytes = readable.read();
       return messageBuilder.mergeFrom(bytes).build();
     }
     catch (InvalidProtocolBufferException e) {
@@ -90,8 +90,8 @@ public class ProtobufArgumentSerialization implements RpcArgumentSerialization<M
   }
 
   @Override
-  public void serialize(ServiceMethod method, Message value, Output output) {
-    output.write(value.toByteArray());
+  public void serialize(ServiceMethod method, Message value, Writable writable) {
+    writable.write(value.toByteArray());
   }
 
 //  @Override

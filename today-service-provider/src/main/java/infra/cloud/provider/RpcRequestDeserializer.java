@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Objects;
 
 import infra.cloud.RpcRequest;
-import infra.cloud.serialize.Input;
-import infra.cloud.serialize.MessagePackInput;
+import infra.cloud.serialize.Readable;
+import infra.cloud.serialize.MessagePackReader;
 import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.SerializationException;
 import infra.cloud.service.ServiceInterfaceMetadata;
@@ -60,13 +60,13 @@ public class RpcRequestDeserializer {
   }
 
   public RemoteRequest deserialize(ByteBuf payload) throws SerializationException {
-    MessagePackInput input = new MessagePackInput(payload);
+    MessagePackReader input = new MessagePackReader(payload);
     RpcRequest request = new RpcRequest();
     request.readFrom(input);
 
     String serviceClass = input.readString();
     String methodName = input.readString();
-    String[] paramTypes = input.read(String.class, Input::readString);
+    String[] paramTypes = input.read(String.class, Readable::readString);
 
     var serviceInterface = localServiceHolder.getServiceInterface(serviceClass);
     Assert.state(serviceInterface != null, "service interface not found");

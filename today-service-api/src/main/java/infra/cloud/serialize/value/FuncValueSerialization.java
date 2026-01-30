@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@ package infra.cloud.serialize.value;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import infra.cloud.serialize.Input;
-import infra.cloud.serialize.Output;
+import infra.cloud.serialize.Readable;
+import infra.cloud.serialize.Writable;
 import infra.cloud.serialize.SerializationException;
 import infra.core.MethodParameter;
 
@@ -31,23 +31,23 @@ import infra.core.MethodParameter;
  */
 final class FuncValueSerialization<T> implements ValueSerialization<T> {
 
-  private final Function<Input, T> reader;
+  private final Function<Readable, T> reader;
 
-  private final BiConsumer<Output, T> writer;
+  private final BiConsumer<Writable, T> writer;
 
-  FuncValueSerialization(Function<Input, T> reader, BiConsumer<Output, T> writer) {
+  FuncValueSerialization(Function<Readable, T> reader, BiConsumer<Writable, T> writer) {
     this.reader = reader;
     this.writer = writer;
   }
 
   @Override
-  public void serialize(MethodParameter parameter, T value, Output payload) {
+  public void serialize(MethodParameter parameter, T value, Writable payload) {
     writer.accept(payload, value);
   }
 
   @Override
-  public T deserialize(MethodParameter parameter, Input input) throws SerializationException {
-    return reader.apply(input);
+  public T deserialize(MethodParameter parameter, Readable readable) throws SerializationException {
+    return reader.apply(readable);
   }
 
 }

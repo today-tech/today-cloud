@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ package infra.cloud.service.serialize;
 import java.util.List;
 
 import infra.cloud.RpcResponse;
-import infra.cloud.serialize.MessagePackInput;
+import infra.cloud.serialize.MessagePackReader;
 import infra.cloud.serialize.ReturnValueDeserializer;
 import infra.cloud.serialize.SerializationException;
 import infra.cloud.serialize.ThrowableSerialization;
@@ -45,7 +45,7 @@ public class ResponseDeserializer {
   }
 
   public RpcResponse deserialize(ServiceInterfaceMethod method, ByteBuf body) throws SerializationException {
-    MessagePackInput input = new MessagePackInput(body);
+    MessagePackReader input = new MessagePackReader(body);
     RpcResponse response = new RpcResponse();
     response.setMethod(method);
 

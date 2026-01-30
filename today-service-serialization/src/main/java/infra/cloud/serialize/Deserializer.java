@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,6 @@ public interface Deserializer {
    * @return the deserialized object
    * @throws IOException in case of errors reading from the stream
    */
-  Object read(Input input) throws IOException;
+  Object read(Readable readable) throws IOException;
 
 }

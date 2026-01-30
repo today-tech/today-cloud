@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ import static infra.cloud.serialize.format.MessagePack.Code.EXT_TIMESTAMP;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/18 14:52
  */
-public class MessagePackInput implements Input {
+public class MessagePackReader implements Readable {
 
   private static final int stringSizeLimit = TodayStrategies.getInt(
           "infra.cloud.serialize.stringSizeLimit", Integer.MAX_VALUE / 2);
@@ -64,7 +64,7 @@ public class MessagePackInput implements Input {
 
   private final ByteBuf buffer;
 
-  public MessagePackInput(ByteBuf buffer) {
+  public MessagePackReader(ByteBuf buffer) {
     this.buffer = buffer;
   }
 
@@ -103,7 +103,7 @@ public class MessagePackInput implements Input {
 
   @Nullable
   @Override
-  public <V> V readNullable(Function<Input, V> valueMapper) {
+  public <V> V readNullable(Function<Readable, V> valueMapper) {
     if (tryReadNull()) {
       return null;
     }
@@ -387,7 +387,7 @@ public class MessagePackInput implements Input {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T[] read(Class<T> type, Function<Input, T> mapper) {
+  public <T> T[] read(Class<T> type, Function<Readable, T> mapper) {
     int size = readArrayHeader();
     T[] array = (T[]) Array.newInstance(type, size);
     for (int i = 0; i < size; i++) {
@@ -408,7 +408,7 @@ public class MessagePackInput implements Input {
   }
 
   @Override
-  public <T> List<T> read(Function<Input, T> mapper) {
+  public <T> List<T> read(Function<Readable, T> mapper) {
     int size = readArrayHeader();
     ArrayList<T> result = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
@@ -428,7 +428,7 @@ public class MessagePackInput implements Input {
   }
 
   @Override
-  public <K, V> Map<K, V> read(Function<Input, K> keyMapper, Function<Input, V> valueMapper) {
+  public <K, V> Map<K, V> read(Function<Readable, K> keyMapper, Function<Readable, V> valueMapper) {
     int size = readMapHeader();
     LinkedHashMap<K, V> result = CollectionUtils.newLinkedHashMap(size);
     for (int i = 0; i < size; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-import infra.cloud.serialize.MessagePackOutput;
-import infra.cloud.serialize.Output;
+import infra.cloud.serialize.MessagePackWriter;
+import infra.cloud.serialize.Writable;
 import infra.cloud.serialize.ReturnValueSerializer;
 import infra.cloud.service.ServiceMethod;
 import infra.remoting.Payload;
@@ -48,9 +48,9 @@ public class ResponseSerializer {
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public Mono<Payload> serialize(RemoteRequest request, @Nullable Object result) {
     ByteBuf buffer = allocator.ioBuffer();
-    Output output = new MessagePackOutput(buffer);
+    Writable writable = new MessagePackWriter(buffer);
 
-    output.writeNullable(result, (out, v) -> {
+    writable.writeNullable(result, (out, v) -> {
       InvocableMethod invocableMethod = request.getMethod();
       ReturnValueSerializer serializer = findSerializer(invocableMethod);
       serializer.serialize(invocableMethod, v, out);

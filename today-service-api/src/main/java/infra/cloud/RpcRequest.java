@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
-import infra.cloud.serialize.Input;
+import infra.cloud.serialize.Readable;
 import infra.cloud.serialize.Message;
-import infra.cloud.serialize.Output;
+import infra.cloud.serialize.Writable;
 import infra.cloud.service.ServiceMethod;
 
 /**
@@ -86,17 +86,17 @@ public class RpcRequest implements Serializable, Message {
   }
 
   @Override
-  public void writeTo(Output output) {
-    output.write(serviceClass);
-    output.write(methodName);
-    output.write(paramTypes, Output::write);
+  public void writeTo(Writable writable) {
+    writable.write(serviceClass);
+    writable.write(methodName);
+    writable.write(paramTypes, Writable::write);
   }
 
   @Override
-  public void readFrom(Input input) {
-    this.serviceClass = input.readString();
-    this.methodName = input.readString();
-    this.paramTypes = input.read(String.class, Input::readString);
+  public void readFrom(Readable readable) {
+    this.serviceClass = readable.readString();
+    this.methodName = readable.readString();
+    this.paramTypes = readable.read(String.class, Readable::readString);
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@ public interface Serializer {
    * Write an object to the given Output.
    *
    * @param object the object to serialize
-   * @param output the output stream
+   * @param writable the output stream
    * @throws IOException in case of errors writing to the stream
    */
-  void write(Object object, Output output) throws IOException;
+  void write(Object object, Writable writable) throws IOException;
 
 }

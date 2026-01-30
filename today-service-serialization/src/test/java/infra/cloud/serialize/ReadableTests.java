@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,22 +30,22 @@ import java.util.stream.Stream;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/18 17:12
  */
-class InputTests {
+class ReadableTests {
 
   @ParameterizedTest
   @MethodSource("args")
-  void list(Input input) {
-    List<Integer> list = input.read(Input::readInt);
+  void list(Readable readable) {
+    List<Integer> list = readable.read(Readable::readInt);
 
     Random random = new Random();
-    List<Integer> read = input.read(() -> random.nextInt());
+    List<Integer> read = readable.read(() -> random.nextInt());
 
   }
 
   @ParameterizedTest
   @MethodSource("args")
-  void map(Input input) {
-    Map<String, String> map = input.read(Input::readString, Input::readString);
+  void map(Readable readable) {
+    Map<String, String> map = readable.read(Readable::readString, Readable::readString);
 
   }
 

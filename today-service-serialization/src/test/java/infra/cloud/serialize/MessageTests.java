@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,15 +65,15 @@ class MessageTests {
     }
 
     @Override
-    public void writeTo(Output output) {
-      output.write(name);
-      output.write(age);
+    public void writeTo(Writable writable) {
+      writable.write(name);
+      writable.write(age);
     }
 
     @Override
-    public void readFrom(Input input) {
-      this.name = input.readString();
-      this.age = input.readInt();
+    public void readFrom(Readable readable) {
+      this.name = readable.readString();
+      this.age = readable.readInt();
     }
 
   }

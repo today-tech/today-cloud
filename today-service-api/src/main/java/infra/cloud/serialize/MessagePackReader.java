@@ -50,7 +50,7 @@ import io.netty.buffer.ByteBufUtil;
 import static infra.cloud.serialize.format.MessagePack.Code.EXT_TIMESTAMP;
 
 /**
- * Message pack specification input
+ * MessagePack specification reader implementation
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/18 14:52

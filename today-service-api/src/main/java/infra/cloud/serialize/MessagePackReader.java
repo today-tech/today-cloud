@@ -41,6 +41,7 @@ import infra.cloud.serialize.format.MessagePackException;
 import infra.cloud.serialize.format.MessageSizeException;
 import infra.cloud.serialize.format.MessageTypeException;
 import infra.lang.Constant;
+import infra.lang.Enumerable;
 import infra.lang.TodayStrategies;
 import infra.util.CollectionUtils;
 import io.netty.buffer.ByteBuf;
@@ -99,6 +100,11 @@ public class MessagePackReader implements Readable {
   @Override
   public void read(Message message) {
     message.readFrom(this);
+  }
+
+  @Override
+  public <V extends Enumerable<Integer>> V readEnum(Class<V> type) {
+    return Enumerable.of(type, readInt());
   }
 
   @Nullable

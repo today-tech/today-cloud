@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import infra.lang.Enumerable;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @see java.io.DataOutput
@@ -123,6 +125,14 @@ public interface Writable {
    * @throws SerializationException if a serialization error occurs.
    */
   void write(@Nullable String v);
+
+  /**
+   * Writes an {@code Enumerable<Integer>} value.
+   *
+   * @param v the enumerable integer value to be written.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  void write(Enumerable<Integer> v);
 
   /**
    * Writes a Timestamp value.

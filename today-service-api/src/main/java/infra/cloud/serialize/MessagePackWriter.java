@@ -27,6 +27,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import infra.cloud.serialize.format.MessagePack;
+import infra.lang.Enumerable;
 import io.netty.buffer.ByteBuf;
 
 import static infra.cloud.serialize.format.MessagePack.Code.ARRAY16;
@@ -276,6 +277,11 @@ public class MessagePackWriter implements Writable {
       writeStringHeader(bytes.length);
       writeFully(bytes);
     }
+  }
+
+  @Override
+  public void write(Enumerable<Integer> v) {
+    write(v.getValue());
   }
 
   @Override

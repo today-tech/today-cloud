@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2026 the original author or authors.
+ * Copyright 2021 - 2024 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import infra.lang.Enumerable;
 
 /**
  * An Input lets an application read primitive data types and objects from a source of data.
@@ -178,8 +180,23 @@ public interface Readable {
    */
   void read(Message message);
 
-  @Nullable
-  <V> V readNullable(Function<Readable, V> valueMapper);
+  /**
+   * Reads an enum value.
+   *
+   * @param type the enum class type.
+   * @return an enum value.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <V extends Enumerable<Integer>> V readEnum(Class<V> type);
+
+  /**
+   * Reads a nullable value.
+   *
+   * @param valueMapper function to map the value from readable.
+   * @return a nullable value.
+   * @throws SerializationException if a serialization error occurs.
+   */
+  <V extends @Nullable Object> V readNullable(Function<Readable, V> valueMapper);
 
   /**
    * Reads a {@code array} value.
@@ -187,7 +204,7 @@ public interface Readable {
    * @return a array object.
    * @throws SerializationException if a serialization error occurs.
    */
-  <T> T[] read(Class<T> type, Function<Readable, T> mapper);
+  <T extends @Nullable Object> T[] read(Class<T> type, Function<Readable, T> mapper);
 
   /**
    * Reads a {@code array} value.

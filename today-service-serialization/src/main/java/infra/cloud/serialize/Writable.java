@@ -28,6 +28,9 @@ import java.util.function.Consumer;
 import infra.lang.Enumerable;
 
 /**
+ * Interface for writing data to an output stream.
+ * Provides methods for writing various data types including primitives, arrays, collections, and objects.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @see java.io.DataOutput
  * @since 1.0 2025/8/16 16:58

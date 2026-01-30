@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,8 @@ import java.util.function.Supplier;
 import infra.lang.Enumerable;
 
 /**
- * An Input lets an application read primitive data types and objects from a source of data.
+ * A readable interface that allows an application to read
+ * primitive data types and objects from a data source.
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @see java.io.DataInput

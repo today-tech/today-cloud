@@ -62,7 +62,11 @@ import static infra.cloud.serialize.format.MessagePack.Code.UINT64;
 import static infra.cloud.serialize.format.MessagePack.Code.UINT8;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * A writer for serializing data into MessagePack format.
+ * This class provides methods to write various data types according to the MessagePack specification,
+ * automatically choosing the most efficient encoding based on the value being written.
+ *
+ * @author <a href="https://github.com/TAKETODAY">TAKETODAY</a>
  * @since 1.0 2025/8/18 17:50
  */
 public class MessagePackWriter implements Writable {

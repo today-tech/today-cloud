@@ -20,6 +20,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Metadata container for a service interface, holding the associated service metadata,
+ * the service interface class, and an immutable list of its service methods.
+ *
+ * @param <M> the type of service method, which must extend {@link ServiceMethod}
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 21:59
  */
@@ -31,20 +35,42 @@ public class ServiceInterfaceMetadata<M extends ServiceMethod> {
 
   private final List<M> serviceMethods;
 
+  /**
+   * Constructs a new {@code ServiceInterfaceMetadata} instance.
+   *
+   * @param serviceInterface the class representing the service interface
+   * @param serviceMetadata the metadata associated with the service
+   * @param serviceMethods the list of service methods belonging to this interface
+   */
   public ServiceInterfaceMetadata(Class<?> serviceInterface, ServiceMetadata serviceMetadata, List<M> serviceMethods) {
     this.serviceInterface = serviceInterface;
     this.serviceMetadata = serviceMetadata;
     this.serviceMethods = serviceMethods;
   }
 
+  /**
+   * Returns the class representing the service interface.
+   *
+   * @return the service interface class
+   */
   public Class<?> getServiceInterface() {
     return serviceInterface;
   }
 
+  /**
+   * Returns the metadata associated with the service.
+   *
+   * @return the service metadata
+   */
   public ServiceMetadata getServiceMetadata() {
     return serviceMetadata;
   }
 
+  /**
+   * Returns an unmodifiable list of service methods belonging to this interface.
+   *
+   * @return an immutable list of service methods
+   */
   public List<M> getServiceMethods() {
     return Collections.unmodifiableList(serviceMethods);
   }

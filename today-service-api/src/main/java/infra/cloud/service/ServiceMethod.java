@@ -23,6 +23,10 @@ import java.lang.reflect.Method;
 import infra.core.MethodParameter;
 
 /**
+ * Represents a method within a service, encapsulating metadata such as the service interface,
+ * the underlying {@link Method}, and its parameters. This class provides access to service
+ * identification, metadata, and reflection-based method details.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 08:20
  */

@@ -17,11 +17,24 @@
 package infra.cloud.service;
 
 /**
+ * Provider interface for retrieving metadata associated with service interfaces.
+ * <p>
+ * Implementations of this interface are responsible for supplying {@link ServiceMetadata}
+ * for a given service interface class. This metadata typically includes configuration,
+ * routing information, or other descriptive attributes required by the service infrastructure.
+ * </p>
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 21:50
  */
 public interface ServiceMetadataProvider {
 
+  /**
+   * Retrieves the metadata for the specified service interface.
+   *
+   * @param serviceInterface the class object representing the service interface
+   * @return the {@link ServiceMetadata} associated with the given interface
+   */
   ServiceMetadata getMetadata(Class<?> serviceInterface);
 
 }

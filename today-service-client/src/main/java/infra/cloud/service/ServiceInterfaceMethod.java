@@ -22,6 +22,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 /**
+ * Represents a method defined in a service interface, extending {@link ServiceMethod}
+ * with specific invocation logic and return value resolution strategies.
+ * <p>
+ * This class determines the invocation type (e.g., blocking or non-blocking) based on
+ * the method's return type and configures the appropriate {@link ReturnValueResolver}
+ * to handle the result of the method invocation.
+ * </p>
+ *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2024/1/7 21:03
  */

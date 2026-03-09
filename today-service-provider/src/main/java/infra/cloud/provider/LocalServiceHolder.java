@@ -33,6 +33,13 @@ import infra.util.ClassUtils;
 import infra.util.MultiValueMap;
 
 /**
+ * Holder for local service instances, managing the mapping between service interfaces
+ * and their corresponding implementations. It collects beans annotated with {@link Service}
+ * during the application context initialization and registers them for retrieval.
+ *
+ * <p>This class implements {@link SmartInitializingSingleton} to ensure all services are
+ * registered after all singleton beans have been instantiated.
+ *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2022/10/19 21:40
  */
@@ -51,9 +58,8 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
     this.serviceMetadataProvider = serviceMetadataProvider;
   }
 
-  @Nullable
   @SuppressWarnings("unchecked")
-  public <T> T getService(Class<T> serviceInterface) {
+  public <T> @Nullable T getService(Class<T> serviceInterface) {
     return (T) localServices.get(serviceInterface);
   }
 

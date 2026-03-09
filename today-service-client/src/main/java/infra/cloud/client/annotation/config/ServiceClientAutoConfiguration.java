@@ -44,7 +44,7 @@ import infra.stereotype.Component;
 @DisableDIAutoConfiguration
 @ConditionalOnDiscoveryEnabled
 @EnableConfigurationProperties(SimpleDiscoveryProperties.class)
-public class ServiceClientAutoConfiguration {
+public final class ServiceClientAutoConfiguration {
 
   @Component
   public static DefaultServiceProxyFactory serviceProxyFactory(

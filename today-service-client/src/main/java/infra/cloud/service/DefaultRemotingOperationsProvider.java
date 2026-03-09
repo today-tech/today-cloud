@@ -18,9 +18,7 @@ package infra.cloud.service;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 import infra.cloud.client.DiscoveryClient;
 import infra.cloud.client.ServiceInstance;
@@ -31,10 +29,17 @@ import infra.remoting.transport.netty.client.TcpClientTransport;
 import reactor.core.publisher.Flux;
 
 /**
+ * Default implementation of {@link RemotingOperationsProvider} that provides remoting operations
+ * based on service discovery. It maintains a cache of {@link RemotingClient} instances keyed by
+ * service ID and periodically refreshes the list of available service instances for load balancing.
+ * <p>
+ * This class also acts as a function to convert {@link ServiceInstance} lists into
+ * {@link LoadBalanceTarget} lists for the load balancer.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 22:08
  */
-public class DefaultRemotingOperationsProvider implements RemotingOperationsProvider, Function<List<ServiceInstance>, List<LoadBalanceTarget>> {
+public class DefaultRemotingOperationsProvider implements RemotingOperationsProvider {
 
   private final DiscoveryClient discoveryClient;
 
@@ -61,19 +66,16 @@ public class DefaultRemotingOperationsProvider implements RemotingOperationsProv
   public RemotingOperations getRemotingOperations(String serviceId) {
     return remotingClientMap.computeIfAbsent(serviceId, name -> RemotingClient.forLoadBalance(Flux.interval(discoveryPeriod)
                     .map(i -> discoveryClient.getInstances(name))
-                    .map(this))
+                    .map(instances -> {
+                      var targets = new ArrayList<LoadBalanceTarget>(instances.size());
+                      for (ServiceInstance instance : instances) {
+                        targets.add(LoadBalanceTarget.of(instance.getInstanceId(),
+                                TcpClientTransport.create(instance.getHost(), instance.getPort())));
+                      }
+                      return targets;
+                    }))
             .weightedLoadBalanceStrategy()
             .build());
-  }
-
-  @Override
-  public List<LoadBalanceTarget> apply(List<ServiceInstance> instances) {
-    var targets = new ArrayList<LoadBalanceTarget>(instances.size());
-    for (ServiceInstance instance : instances) {
-      targets.add(LoadBalanceTarget.of(instance.getInstanceId(),
-              TcpClientTransport.create(instance.getHost(), instance.getPort())));
-    }
-    return targets;
   }
 
 }

@@ -21,6 +21,8 @@ import java.util.Objects;
 import infra.core.style.ToStringBuilder;
 
 /**
+ * Metadata representing a service, including its unique identifier and version.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 21:51
  */

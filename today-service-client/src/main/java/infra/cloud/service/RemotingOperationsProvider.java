@@ -19,11 +19,24 @@ package infra.cloud.service;
 import infra.remoting.RemotingOperations;
 
 /**
+ * Provider for obtaining {@link RemotingOperations} instances based on a given service method.
+ * <p>
+ * This interface defines a contract for retrieving remote operation handlers dynamically
+ * according to the specified {@link ServiceMethod}. Implementations are responsible for
+ * returning the appropriate remoting operations capable of handling the requested service.
+ * </p>
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 22:10
  */
 public interface RemotingOperationsProvider {
 
+  /**
+   * Retrieves the {@link RemotingOperations} instance associated with the given service method.
+   *
+   * @param serviceMethod the specific service method to obtain remoting operations for
+   * @return the corresponding {@link RemotingOperations} instance; must not be null
+   */
   RemotingOperations getRemotingOperations(ServiceMethod serviceMethod);
 
 }

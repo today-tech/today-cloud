@@ -17,11 +17,25 @@
 package infra.cloud.service;
 
 /**
+ * Provider interface for retrieving metadata associated with a service interface.
+ * <p>
+ * This interface is responsible for extracting and providing structural or descriptive
+ * information about a given service interface, typically used in RPC or cloud service
+ * discovery scenarios. The metadata is generic over {@link ServiceMethod} to allow
+ * flexible method-level descriptions.
+ *
+ * @param <M> the type of service method metadata, which must extend {@link ServiceMethod}
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 08:22
  */
 public interface ServiceInterfaceMetadataProvider<M extends ServiceMethod> {
 
+  /**
+   * Retrieves the metadata for the specified service interface.
+   *
+   * @param serviceInterface the class object of the service interface to inspect
+   * @return the metadata associated with the given service interface
+   */
   ServiceInterfaceMetadata<M> getMetadata(Class<?> serviceInterface);
 
 }

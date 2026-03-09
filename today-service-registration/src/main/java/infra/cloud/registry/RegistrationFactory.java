@@ -20,11 +20,24 @@ import infra.cloud.client.Registration;
 import infra.cloud.service.ServiceMetadata;
 
 /**
+ * A factory interface responsible for creating {@link Registration} instances.
+ * <p>
+ * Implementations of this interface should generate a specific registration object
+ * based on the provided {@link ServiceMetadata}. This is typically used during the
+ * service discovery process to register a service instance with a registry center.
+ *
+ * @param <R> the type of registration, which must extend {@link Registration}
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/24 22:12
  */
 public interface RegistrationFactory<R extends Registration> {
 
+  /**
+   * Creates a new registration instance using the given service metadata.
+   *
+   * @param serviceMetadata the metadata containing information about the service to be registered
+   * @return a new instance of {@code R} representing the service registration
+   */
   R createRegistration(ServiceMetadata serviceMetadata);
 
 }

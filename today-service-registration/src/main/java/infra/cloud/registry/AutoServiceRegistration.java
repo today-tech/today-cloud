@@ -17,6 +17,12 @@
 package infra.cloud.registry;
 
 /**
+ * Interface for auto service registration.
+ * <p>
+ * Implementations of this interface are responsible for automatically registering
+ * services with a service discovery system during application startup.
+ * </p>
+ *
  * @author Spencer Gibb
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */

@@ -25,14 +25,20 @@ import infra.cloud.provider.ServicesProvider;
 import infra.cloud.registry.event.InstancePreRegisteredEvent;
 import infra.cloud.registry.event.InstanceRegisteredEvent;
 import infra.cloud.service.ServiceMetadata;
+import infra.context.ApplicationContext;
 import infra.context.SmartLifecycle;
 import infra.context.support.ApplicationObjectSupport;
 
 /**
- * Lifecycle methods that may be useful and common to {@link ServiceRegistry}
- * implementations.
+ * Provides common lifecycle management methods for {@link ServiceRegistry} implementations.
+ * <p>
+ * This abstract class handles the registration and un-registration processes of service
+ * instances, including event publishing and lifecycle callbacks via {@link RegistrationLifecycle}.
+ * It implements {@link SmartLifecycle} to integrate with the application context's lifecycle.
+ * </p>
  *
- * @param <R> Registration type passed to the {@link ServiceRegistry}.
+ * @param <R> The type of {@link Registration} used by the {@link ServiceRegistry}.
+ * @param <S> The type of configuration or source object associated with the registry.
  * @author Spencer Gibb
  * @author Zen Huifer
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -73,10 +79,11 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
     logger.info("Registering services to registry: [{}]", serviceRegistry);
 
     if (!running.get()) {
+      ApplicationContext context = applicationContext();
       RegistrationFactory<R> registrationFactory = getRegistrationFactory();
       for (ServiceMetadata serviceMetadata : servicesProvider.getServices()) {
         R registration = registrationFactory.createRegistration(serviceMetadata);
-        obtainApplicationContext().publishEvent(new InstancePreRegisteredEvent(this, registration));
+        context.publishEvent(new InstancePreRegisteredEvent(this, registration));
 
         for (RegistrationLifecycle<R> lifecycle : registrationLifecycles) {
           lifecycle.postProcessBeforeStartRegister(registration);
@@ -86,7 +93,7 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
           lifecycle.postProcessAfterStartRegister(registration);
         }
 
-        obtainApplicationContext().publishEvent(new InstanceRegisteredEvent<>(this, registration, getConfiguration()));
+        context.publishEvent(new InstanceRegisteredEvent<>(this, registration, getConfiguration()));
         registrations.add(registration);
       }
       running.compareAndSet(false, true);
@@ -152,6 +159,11 @@ public abstract class AbstractAutoServiceRegistration<R extends Registration, S>
    */
   protected abstract boolean isEnabled();
 
+  /**
+   * Returns the factory used to create {@link Registration} instances for the services.
+   *
+   * @return the registration factory
+   */
   protected abstract RegistrationFactory<R> getRegistrationFactory();
 
 }

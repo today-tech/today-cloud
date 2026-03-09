@@ -26,7 +26,6 @@ import java.util.Set;
 import infra.beans.factory.SmartInitializingSingleton;
 import infra.cloud.service.ServiceMetadata;
 import infra.cloud.service.ServiceMetadataProvider;
-import infra.context.ApplicationContext;
 import infra.context.support.ApplicationObjectSupport;
 import infra.lang.Assert;
 import infra.stereotype.Service;
@@ -70,8 +69,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
 
   @Override
   public void afterSingletonsInstantiated() {
-    ApplicationContext context = obtainApplicationContext();
-    List<Object> services = context.getAnnotatedBeans(Service.class);
+    List<Object> services = applicationContext().getAnnotatedBeans(Service.class);
 
     for (Object service : services) {
       Class<Object> serviceImpl = ClassUtils.getUserClass(service);

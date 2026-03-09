@@ -16,7 +16,6 @@
 
 package infra.cloud.client;
 
-import java.net.URI;
 import java.util.Map;
 
 /**
@@ -55,11 +54,6 @@ public interface ServiceInstance {
    * @return Whether the port of the registered service instance uses HTTPS.
    */
   boolean isSecure();
-
-  /**
-   * @return The service URI address.
-   */
-  URI getHttpURI();
 
   /**
    * @return The key / value pair metadata associated with the service instance.

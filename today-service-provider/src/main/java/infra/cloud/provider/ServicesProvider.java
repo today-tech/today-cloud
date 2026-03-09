@@ -21,11 +21,22 @@ import java.util.List;
 import infra.cloud.service.ServiceMetadata;
 
 /**
- * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * Provider interface for discovering and retrieving available service metadata.
+ * <p>
+ * Implementations of this interface are responsible for providing a list of
+ * {@link ServiceMetadata} representing the services currently available in the cloud environment.
+ * </p>
+ *
+ * @author <a href="https://github.com/TAKETODAY">Hai Zi Yang</a>
  * @since 1.0 2025/8/24 22:08
  */
 public interface ServicesProvider {
 
+  /**
+   * Retrieves a list of metadata for all available services.
+   *
+   * @return a list of {@link ServiceMetadata} objects
+   */
   List<ServiceMetadata> getServices();
 
 }

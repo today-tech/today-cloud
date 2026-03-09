@@ -8,12 +8,12 @@ infra:
         fail-fast: true
 
       simple:
-        instance-port: 9000
-      uri: http://localhost:5000
+        instance-port: 8080
+      uri: http://localhost:9000
 
 service:
   server:
-    port: 9000
+    port: 8080
 
 logging:
   level:

@@ -5,7 +5,7 @@ dependencies {
   api project(":today-service-registration")
   api project(":today-service-registry-simple-api")
 
-  implementation 'cn.taketoday:infra-starter-web'
+  implementation 'cn.taketoday:infra-starter-webmvc'
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'
 }

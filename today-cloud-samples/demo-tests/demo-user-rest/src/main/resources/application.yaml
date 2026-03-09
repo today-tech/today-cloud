@@ -5,7 +5,7 @@ infra:
 
   cloud:
     service-registry:
-      uri: http://localhost:5000
+      uri: http://localhost:9000
 
 logging:
   level:

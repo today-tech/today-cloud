@@ -24,6 +24,7 @@ import infra.cloud.registry.simple.HttpRegistration;
 import infra.cloud.registry.simple.api.SimpleHttpServiceRegistryAPI;
 import infra.http.HttpStatus;
 import infra.http.MediaType;
+import infra.lang.Assert;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.util.CollectionUtils;
@@ -69,6 +70,7 @@ class SimpleHttpServiceRegistryEndpoint implements SimpleHttpServiceRegistryAPI 
   @POST
   @Override
   public void register(@RequestBody HttpRegistration registration) {
+    Assert.notNull(registration.getServiceId(), "Service ID is required");
     log.info("Registering service: [{}] ", registration);
     serviceMapping.add(registration.getServiceId(), registration);
   }

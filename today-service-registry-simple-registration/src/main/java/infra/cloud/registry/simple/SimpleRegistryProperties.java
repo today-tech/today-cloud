@@ -24,7 +24,7 @@ import infra.util.StringUtils;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/23 21:52
  */
-@ConfigurationProperties(prefix = "infra.cloud.service-registry.simple")
+@ConfigurationProperties(prefix = "today.service-registry.simple")
 public class SimpleRegistryProperties {
 
   private boolean enabled = true;

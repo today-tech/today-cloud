@@ -24,7 +24,7 @@ import infra.context.properties.ConfigurationProperties;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/24 17:54
  */
-@ConfigurationProperties(prefix = "infra.cloud.service-registry")
+@ConfigurationProperties(prefix = "today.service-registry.simple")
 public class SimpleHttpProperties {
 
   private URI uri;

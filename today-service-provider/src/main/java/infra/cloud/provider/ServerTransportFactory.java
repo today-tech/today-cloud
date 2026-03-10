@@ -20,8 +20,12 @@ import infra.remoting.Closeable;
 import infra.remoting.transport.ServerTransport;
 
 /**
- * ServerTransport factory
+ * Factory interface for creating {@link ServerTransport} instances.
+ * <p>
+ * Implementations of this interface are responsible for instantiating and configuring
+ * server transport objects that handle incoming network connections and communication.
  *
+ * @param <T> the type of closeable resource associated with the transport
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @see ServerTransport
  * @since 1.0 2025/8/22 22:18
@@ -29,7 +33,12 @@ import infra.remoting.transport.ServerTransport;
 public interface ServerTransportFactory<T extends Closeable> {
 
   /**
-   * Creates {@link ServerTransport}
+   * Creates a new {@link ServerTransport} instance.
+   * <p>
+   * The returned transport is ready to accept connections and handle communication
+   * according to its specific implementation details.
+   *
+   * @return a new {@code ServerTransport} instance
    */
   ServerTransport<T> createTransport();
 

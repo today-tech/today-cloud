@@ -27,7 +27,7 @@ import infra.context.properties.EnableConfigurationProperties;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(AutoServiceRegistrationProperties.class)
-@ConditionalOnProperty(value = "infra.cloud.service-registry.auto-registration.enabled", matchIfMissing = true)
+@ConditionalOnProperty(value = "today.service.auto-registration.enabled", matchIfMissing = true)
 public class AutoServiceRegistrationConfiguration {
 
 }

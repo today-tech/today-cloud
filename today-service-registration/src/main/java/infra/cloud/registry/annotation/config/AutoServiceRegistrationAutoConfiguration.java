@@ -32,7 +32,7 @@ import infra.context.condition.ConditionalOnProperty;
 @DisableDependencyInjection
 @Configuration(proxyBeanMethods = false)
 @Import(AutoServiceRegistrationConfiguration.class)
-@ConditionalOnProperty(value = "infra.cloud.service-registry.auto-registration.enabled", matchIfMissing = true)
+@ConditionalOnProperty(value = "today.service.auto-registration.enabled", matchIfMissing = true)
 public class AutoServiceRegistrationAutoConfiguration {
 
   public AutoServiceRegistrationAutoConfiguration(@Nullable AutoServiceRegistration autoRegistration, AutoServiceRegistrationProperties properties) {

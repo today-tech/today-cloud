@@ -20,6 +20,12 @@ import infra.cloud.client.DefaultServiceInstance;
 import infra.cloud.client.Registration;
 
 /**
+ * HTTP based service registration implementation.
+ * <p>
+ * This class extends {@link DefaultServiceInstance} and implements {@link Registration}
+ * to provide service registration capabilities over HTTP, including status management.
+ * </p>
+ *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/11/20 21:59
  */

@@ -22,7 +22,7 @@ import infra.context.properties.ConfigurationProperties;
  * @author Spencer Gibb
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */
-@ConfigurationProperties("infra.cloud.service-registry.auto-registration")
+@ConfigurationProperties("today.service.auto-registration")
 public class AutoServiceRegistrationProperties {
 
   /**

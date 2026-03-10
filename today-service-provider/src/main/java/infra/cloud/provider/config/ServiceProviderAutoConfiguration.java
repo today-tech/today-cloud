@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package infra.cloud.provider.annotation.config;
+package infra.cloud.provider.config;
 
 import org.jspecify.annotations.Nullable;
 
@@ -46,13 +46,15 @@ import infra.remoting.resume.ResumeTokenGenerator;
 import infra.stereotype.Component;
 
 /**
+ * Auto-configuration for the Service Provider.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 22:31
  */
 @DisableDIAutoConfiguration
 @ConditionalOnDiscoveryEnabled
 @EnableConfigurationProperties({ InetProperties.class, ServiceServerProperties.class })
-public class ServiceProviderAutoConfiguration {
+public final class ServiceProviderAutoConfiguration {
 
   @Component
   public static LocalServiceHolder localServiceHolder(ServiceMetadataProvider metadataProvider) {
@@ -89,7 +91,7 @@ public class ServiceProviderAutoConfiguration {
 
   @Component
   @ConditionalOnMissingBean
-  @ConditionalOnBooleanProperty(name = "service.server.resume.enabled", matchIfMissing = true)
+  @ConditionalOnBooleanProperty(name = "today.service.server.resume.enabled", matchIfMissing = true)
   public static Resume remotingResume(@Nullable ResumableFramesStoreFactory storeFactory,
           ResumeTokenGenerator resumeTokenGenerator, ServiceServerProperties properties) {
     ResumeProperties resume = properties.resume;

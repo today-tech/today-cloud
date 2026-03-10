@@ -32,7 +32,7 @@ import infra.util.DataSize;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2023/9/4 16:56
  */
-@ConfigurationProperties("service.server")
+@ConfigurationProperties("today.service.server")
 public class ServiceServerProperties {
 
   /**

@@ -31,6 +31,14 @@ import infra.remoting.frame.decoder.PayloadDecoder;
 import reactor.core.publisher.Mono;
 
 /**
+ * The {@code ServiceProviderServer} is responsible for starting and managing the lifecycle of a service provider.
+ * It implements {@link SmartLifecycle} to handle startup and shutdown processes, and {@link ChannelAcceptor}
+ * to accept incoming connections and configure the communication channel with the appropriate handler.
+ * <p>
+ * This server utilizes a {@link ServiceChannelHandler} to process channels and relies on a
+ * {@link ServerTransportFactory} to create the underlying transport mechanism. It also supports optional
+ * session resumption via the {@link Resume} component.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/21 22:25
  */

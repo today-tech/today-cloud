@@ -25,6 +25,14 @@ import infra.cloud.registry.RegistrationLifecycle;
 import infra.cloud.registry.ServiceRegistry;
 
 /**
+ * Auto-service registration implementation for the simple registry.
+ * <p>
+ * This class extends {@link AbstractAutoServiceRegistration} to provide
+ * automatic service registration capabilities using {@link HttpRegistration}
+ * and {@link Status}. It utilizes {@link HttpRegistrationFactory} for creating
+ * registration instances and {@link SimpleRegistryProperties} for configuration.
+ * </p>
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/23 21:50
  */

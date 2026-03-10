@@ -23,7 +23,6 @@ package infra.cloud.registry;
  * services with a service discovery system during application startup.
  * </p>
  *
- * @author Spencer Gibb
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */
 public interface AutoServiceRegistration {

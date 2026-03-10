@@ -4,6 +4,8 @@ server:
 web:
   resources:
     add-default-mappings: false
+  error:
+    include-message: always
 
 infra:
   profiles:
@@ -23,3 +25,8 @@ config:
 
 app:
   name: demo
+
+logging:
+  level:
+    root: info
+    web: trace

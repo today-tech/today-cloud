@@ -1,19 +1,18 @@
-
 infra:
   profiles:
     active: dev
-  cloud:
-    service-registry:
-      auto-registration:
-        fail-fast: true
 
-      simple:
-        instance-port: 8080
+
+today:
+  service:
+    auto-registration:
+      fail-fast: true
+    server:
+      port: 8080
+
+  service-registry:
+    simple:
       uri: http://localhost:9000
-
-service:
-  server:
-    port: 8080
 
 logging:
   level:

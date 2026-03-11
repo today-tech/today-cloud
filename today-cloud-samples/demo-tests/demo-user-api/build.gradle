@@ -1,5 +1,7 @@
 description = "Demo User API"
 
+apply plugin: "today.cloud-application"
+
 dependencies {
   implementation 'cn.taketoday:infra-context'
 
@@ -14,25 +16,3 @@ jar {
   manifest.attributes["Specification-Vendor"] = 'TODAY Tech'
   manifest.attributes["Specification-Vendor-Id"] = 'cn.taketoday'
 }
-
-apply plugin: 'java'
-
-tasks.register('generateServiceMetadata') {
-  doLast {
-    def outputDir = file("$buildDir/resources/main/META-INF")
-    outputDir.mkdirs()
-
-    def propsFile = new File(outputDir, 'service-metadata.properties')
-    def props = new Properties()
-
-    props.setProperty('service.id', project.name)
-    props.setProperty('service.version', project.version.toString())
-
-    propsFile.withOutputStream { out ->
-      props.store(out, "Generated service metadata - DO NOT EDIT")
-    }
-    println "Generated service metadata: ${propsFile.absolutePath}"
-  }
-}
-
-processResources.dependsOn('generateServiceMetadata')

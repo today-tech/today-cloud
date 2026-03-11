@@ -11,6 +11,6 @@ dependencies {
   optional project(":today-remoting-transport-tcp")
 
   testImplementation "cn.taketoday:infra-app-test"
-  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
+//  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
 }

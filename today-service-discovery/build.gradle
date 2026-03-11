@@ -7,6 +7,6 @@ dependencies {
   implementation 'cn.taketoday:infra-context'
 
   testImplementation 'cn.taketoday:infra-app-test'
-  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
+//  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 
 }

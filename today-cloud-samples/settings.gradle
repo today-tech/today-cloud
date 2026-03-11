@@ -1,0 +1,40 @@
+pluginManagement {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+
+rootProject.name = 'today-cloud-samples'
+
+include 'demo-tests:demo-registry'
+include 'demo-tests:demo-user-api'
+include 'demo-tests:demo-user-rest'
+include 'demo-tests:demo-user-service'
+include 'today-petclinic'
+
+// 引用主项目以访问其模块
+includeBuild('../') {
+  dependencySubstitution {
+    substitute module('cn.taketoday.cloud:today-cloud-bom') using project(':today-cloud-bom')
+    substitute module('cn.taketoday.cloud:today-cloud-dependencies') using project(':today-cloud-dependencies')
+    substitute module('cn.taketoday.cloud:today-cloud-core') using project(':today-cloud-core')
+    substitute module('cn.taketoday.cloud:today-service-api') using project(':today-service-api')
+    substitute module('cn.taketoday.cloud:today-service-client') using project(':today-service-client')
+    substitute module('cn.taketoday.cloud:today-service-provider') using project(':today-service-provider')
+    substitute module('cn.taketoday.cloud:today-service-discovery') using project(':today-service-discovery')
+    substitute module('cn.taketoday.cloud:today-service-registration') using project(':today-service-registration')
+    substitute module('cn.taketoday.cloud:today-service-serialization') using project(':today-service-serialization')
+    substitute module('cn.taketoday.cloud:today-service-registry-simple-api') using project(':today-service-registry-simple-api')
+    substitute module('cn.taketoday.cloud:today-service-registry-simple-server') using project(':today-service-registry-simple-server')
+    substitute module('cn.taketoday.cloud:today-service-registry-simple-discovery') using project(':today-service-registry-simple-discovery')
+    substitute module('cn.taketoday.cloud:today-service-registry-simple-registration') using project(':today-service-registry-simple-registration')
+    substitute module('cn.taketoday.cloud:today-remoting') using project(':today-remoting')
+    substitute module('cn.taketoday.cloud:today-remoting-micrometer') using project(':today-remoting-micrometer')
+    substitute module('cn.taketoday.cloud:today-remoting-transport-tcp') using project(':today-remoting-transport-tcp')
+    substitute module('cn.taketoday.cloud:today-remoting-transport-local') using project(':today-remoting-transport-local')
+    substitute module('cn.taketoday.cloud:today-remoting-transport-websocket') using project(':today-remoting-transport-websocket')
+    substitute module('cn.taketoday.cloud:today-cloud-build:today-cloud-gradle-plugin') using project(':today-cloud-build:today-cloud-gradle-plugin')
+  }
+}

@@ -19,6 +19,13 @@ jar {
   manifest.attributes["Automatic-Module-Name"] = project.name.replace('-', '.')  // for Jigsaw
   manifest.attributes["Created-By"] =
       "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+
+  from("${rootDir}") {
+    include "LICENSE"
+    include "NOTICE"
+    into "META-INF"
+    expand(copyright: new Date().format("yyyy"), version: project.version)
+  }
 }
 
 normalization {
@@ -69,6 +76,8 @@ publishing {
     }
   }
 }
+
+apply from: "$rootDir/gradle/signing.gradle"
 
 // Disable publication of test fixture artifacts.
 if (configurations.findByName("testFixturesApiElements") != null) {

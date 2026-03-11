@@ -48,11 +48,4 @@ include 'today-remoting-transport-tcp'
 include 'today-remoting-transport-local'
 include 'today-remoting-transport-websocket'
 
-// Samples
-
-include 'today-cloud-samples:demo-tests:demo-registry'
-include 'today-cloud-samples:demo-tests:demo-user-api'
-include 'today-cloud-samples:demo-tests:demo-user-rest'
-include 'today-cloud-samples:demo-tests:demo-user-service'
-include 'today-cloud-samples:today-petclinic'
-
+include 'today-cloud-build:today-cloud-gradle-plugin'

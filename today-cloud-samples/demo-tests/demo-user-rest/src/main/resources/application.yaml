@@ -3,10 +3,6 @@ infra:
   profiles:
     active: dev
 
-  cloud:
-    service-registry:
-      uri: http://localhost:9000
-
 logging:
   level:
     root: info
@@ -21,3 +17,8 @@ server:
       quiet-period: 0
       unit: seconds
       timeout: 2
+
+today:
+  service-registry:
+    simple:
+      uri: http://localhost:9000

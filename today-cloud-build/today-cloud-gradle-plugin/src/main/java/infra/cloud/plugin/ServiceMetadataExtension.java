@@ -45,8 +45,9 @@ public abstract class ServiceMetadataExtension implements Serializable {
    */
   public ServiceMetadataExtension(Project project) {
     getServiceId().convention(project.provider(project::getName));
-    getDescription().convention(project.provider(project::getDescription));
+    getServiceDescription().convention(project.provider(project::getDescription));
     getServiceVersion().convention(project.provider(() -> project.getVersion().toString()));
+    getServiceGroup().convention("default");
   }
 
   /**
@@ -73,7 +74,11 @@ public abstract class ServiceMetadataExtension implements Serializable {
 
   @Input
   @Optional
-  public abstract Property<String> getDescription();
+  public abstract Property<String> getServiceDescription();
+
+  @Input
+  @Optional
+  public abstract Property<String> getServiceGroup();
 
   /**
    * Gets the map property for storing additional custom metadata.

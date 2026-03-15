@@ -52,6 +52,8 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
 
     properties.setProperty("service.id", serviceMetadata.getServiceId().get());
     properties.setProperty("service.version", serviceMetadata.getServiceVersion().get());
+    properties.setProperty("service.group", serviceMetadata.getServiceGroup().get());
+    properties.setProperty("service.description", serviceMetadata.getServiceDescription().get());
 
     convertToStringValues(serviceMetadata.getAdditional().get())
             .forEach((name, value) -> {

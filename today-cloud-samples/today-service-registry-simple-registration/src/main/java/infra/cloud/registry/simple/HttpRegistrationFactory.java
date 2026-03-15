@@ -53,6 +53,9 @@ public class HttpRegistrationFactory implements RegistrationFactory<HttpRegistra
     if (registration.getServiceId() == null) {
       registration.setDefaultInstanceId();
     }
+
+    registration.setDefaultInstanceId();
+    registration.getMetadata().putAll(serviceMetadata.getProperties());
     return registration;
   }
 

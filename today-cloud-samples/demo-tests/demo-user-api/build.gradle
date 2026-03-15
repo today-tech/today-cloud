@@ -1,7 +1,5 @@
 description = "Demo User API"
 
-apply plugin: "today.cloud-application"
-
 dependencies {
   implementation 'cn.taketoday:infra-context'
 
@@ -18,5 +16,9 @@ jar {
 }
 
 serviceMetadata {
+
+  additional = [
+      "demo": "demo"
+  ]
 
 }

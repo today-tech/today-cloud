@@ -33,6 +33,14 @@ import java.util.Properties;
 import infra.util.CollectionUtils;
 
 /**
+ * A Gradle task that generates service metadata properties file.
+ * <p>
+ * This task reads configuration from {@link ServiceMetadataExtension} and writes
+ * a {@code service-metadata.properties} file to the build resources directory.
+ * The generated file contains service identification, versioning, grouping,
+ * description, and any additional custom properties.
+ * </p>
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2026/3/10 21:59
  */
@@ -58,7 +66,10 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
     convertToStringValues(serviceMetadata.getAdditional().get())
             .forEach((name, value) -> {
               if (value != null) {
-                properties.put("service." + name, value);
+                if (!name.startsWith("service.")) {
+                  name = "service." + name;
+                }
+                properties.put(name, value);
               }
             });
 

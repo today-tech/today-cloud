@@ -48,7 +48,7 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
     File propertiesFile = new File(outputDir, "service-metadata.properties");
     createFileIfNecessary(propertiesFile);
 
-    Properties properties = CollectionUtils.createSortedProperties(true);
+    Properties properties = CollectionUtils.createSortedProperties(false);
 
     properties.setProperty("service.id", serviceMetadata.getServiceId().get());
     properties.setProperty("service.version", serviceMetadata.getServiceVersion().get());

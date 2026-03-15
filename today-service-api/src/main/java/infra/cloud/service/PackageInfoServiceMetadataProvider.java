@@ -52,8 +52,8 @@ public class PackageInfoServiceMetadataProvider implements ServiceMetadataProvid
   public static final String DEFAULT_METADATA_LOCATION = "META-INF/service-metadata.properties";
 
   public static final String KEY_SERVICE_ID = "service.id";
-  public static final String KEY_SERVICE_VERSION = "service.version";
   public static final String KEY_SERVICE_GROUP = "service.group";
+  public static final String KEY_SERVICE_VERSION = "service.version";
   public static final String KEY_SERVICE_DESCRIPTION = "service.description";
 
   /**
@@ -134,7 +134,6 @@ public class PackageInfoServiceMetadataProvider implements ServiceMetadataProvid
           Properties props = new Properties();
           props.load(input);
 
-          // 验证是否包含必需的 service.id
           String serviceId = props.getProperty(KEY_SERVICE_ID);
           if (StringUtils.hasText(serviceId)) {
             return props;
@@ -142,8 +141,7 @@ public class PackageInfoServiceMetadataProvider implements ServiceMetadataProvid
         }
       }
     }
-    catch (IOException ex) {
-      // 静默失败，降级到其他策略
+    catch (IOException ignored) {
     }
 
     return null;

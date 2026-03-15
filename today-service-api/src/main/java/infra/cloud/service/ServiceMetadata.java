@@ -159,12 +159,13 @@ public class ServiceMetadata {
       return false;
     return Objects.equals(id, that.id)
             && Objects.equals(version, that.version)
+            && Objects.equals(interfaces, that.interfaces)
             && Objects.equals(properties, that.properties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, version, properties);
+    return Objects.hash(id, version, interfaces, properties);
   }
 
   @Override

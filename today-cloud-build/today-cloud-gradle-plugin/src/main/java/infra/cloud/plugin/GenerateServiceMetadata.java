@@ -65,9 +65,9 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
     properties.setProperty("service.group", serviceMetadata.getServiceGroup().get());
     properties.setProperty("service.description", serviceMetadata.getServiceDescription().get());
 
-    List<String> interfaces = ServiceClassFinder.findInterfaces(project.getRootDir());
+    List<String> interfaces = ServiceClassFinder.findInterfaces(project.getProjectDir());
     properties.setProperty("service.interfaces", StringUtils.collectionToCommaDelimitedString(interfaces));
-    
+
     convertToStringValues(serviceMetadata.getAdditional().get())
             .forEach((name, value) -> {
               if (value != null) {

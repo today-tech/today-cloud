@@ -16,6 +16,8 @@
 
 package infra.cloud.service;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -101,13 +103,21 @@ public class DefaultServiceMetadataProvider implements ServiceMetadataProvider {
   /**
    * Creates ServiceMetadata from loaded properties.
    *
-   * @param props the loaded properties
+   * @param properties the loaded properties
    * @return a new ServiceMetadata instance
    */
-  protected ServiceMetadata createMetadata(MultiValueMap<String, String> props) {
+  protected @Nullable ServiceMetadata createMetadata(Properties properties) {
+    MultiValueMap<String, String> props = MultiValueMap.forLinkedHashMap();
+    readStrategies(props, properties);
+
+    List<String> interfaces = props.remove(KEY_SERVICE_INTERFACES);
+
+    if (interfaces == null) {
+      return null;
+    }
+
     String serviceId = CollectionUtils.firstElement(props.remove(KEY_SERVICE_ID));
     String version = CollectionUtils.firstElement(props.remove(KEY_SERVICE_VERSION));
-    List<String> interfaces = props.remove(KEY_SERVICE_INTERFACES);
 
     Set<String> keys = props.keySet();
     var metadata = CollectionUtils.<String, String>newLinkedHashMap(keys.size());
@@ -122,7 +132,7 @@ public class DefaultServiceMetadataProvider implements ServiceMetadataProvider {
   }
 
   protected List<ServiceMetadata> loadResources(ClassLoader classLoader, String metadataLocation) {
-    List<ServiceMetadata> serviceMetadata = new ArrayList<>();
+    List<ServiceMetadata> serviceMetadataList = new ArrayList<>();
     try {
       log.debug("Detecting service-metadata location '{}'", metadataLocation);
       Enumeration<URL> urls = classLoader.getResources(metadataLocation);
@@ -135,16 +145,17 @@ public class DefaultServiceMetadataProvider implements ServiceMetadataProvider {
           properties.load(inputStream);
         }
 
-        MultiValueMap<String, String> metadata = MultiValueMap.forLinkedHashMap();
-        readStrategies(metadata, properties);
-        serviceMetadata.add(createMetadata(metadata));
+        ServiceMetadata metadata = createMetadata(properties);
+        if (metadata != null) {
+          serviceMetadataList.add(metadata);
+        }
       }
     }
     catch (IOException ex) {
       throw new IllegalArgumentException(
               "Unable to load service-metadata from location [%s]".formatted(metadataLocation), ex);
     }
-    return serviceMetadata;
+    return serviceMetadataList;
   }
 
 }

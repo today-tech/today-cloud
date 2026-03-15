@@ -172,6 +172,7 @@ public class ServiceMetadata {
     return ToStringBuilder.forInstance(this)
             .append("id", id)
             .append("version", version)
+            .append("interfaces", interfaces)
             .append("properties", properties)
             .toString();
   }

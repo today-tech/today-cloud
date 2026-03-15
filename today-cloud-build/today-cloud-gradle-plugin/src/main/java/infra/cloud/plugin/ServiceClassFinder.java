@@ -37,6 +37,7 @@ import infra.bytecode.AnnotationVisitor;
 import infra.bytecode.ClassReader;
 import infra.bytecode.ClassVisitor;
 import infra.bytecode.Type;
+import infra.lang.Constant;
 
 /**
  * Utility class for finding service interfaces within a given directory structure by scanning
@@ -216,7 +217,7 @@ public abstract class ServiceClassFinder {
     @Override
     public void visit(int version, int access, String name, @Nullable String signature, @Nullable String superName, String @Nullable [] interfaces) {
       if (Modifier.isPublic(access) && Modifier.isInterface(access)) {
-        this.name = name;
+        this.name = name.replace(Constant.PATH_SEPARATOR, Constant.PACKAGE_SEPARATOR);
       }
     }
 

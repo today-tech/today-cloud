@@ -2,8 +2,8 @@ description = "Demo Client"
 
 
 dependencies {
-  implementation project(":today-service-client")
-  implementation project(":today-cloud-samples:demo-tests:demo-user-api")
+  implementation "cn.taketoday:today-service-client"
+  implementation project(":demo-tests:demo-user-api")
 
   implementation 'cn.taketoday:infra-starter-web'
   implementation 'cn.taketoday:infra-starter-application'

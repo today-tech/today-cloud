@@ -2,7 +2,7 @@
   <configuration default="false" name="UserServiceApplication" type="InfraApplicationConfigurationType" factoryName="Infra" nameIsGenerated="true">
     <option name="ACTIVE_PROFILES" />
     <option name="MAIN_CLASS_NAME" value="cn.taketoday.demo.service.UserServiceApplication" />
-    <module name="cn.taketoday.cloud.today-cloud.today-cloud-samples.demo-tests.demo-user-service.main" />
+    <module name="today-cloud-samples.demo-tests.demo-user-service.main" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="cn.taketoday.demo.service.*" />

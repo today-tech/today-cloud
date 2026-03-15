@@ -1,9 +1,11 @@
 description = "Demo Service Registry"
+
+apply plugin: "java"
 apply plugin: "infra.application"
 
-infraJar {
-  enabled = false
-}
+//infraJar {
+//  enabled = false
+//}
 
 dependencies {
   implementation project(":today-service-registry-simple-server")

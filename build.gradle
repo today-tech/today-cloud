@@ -16,7 +16,7 @@ ext {
 }
 
 configure(allprojects) {
-  group = "cn.taketoday.cloud"
+  group = "cn.taketoday"
 
   if (it.hasProperty("skipDocs")) {
     it.afterEvaluate {

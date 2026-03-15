@@ -1,18 +1,18 @@
 description = "Demo User Service"
 
 dependencies {
-  implementation project(":today-cloud-samples:demo-tests:demo-user-api")
+  implementation "cn.taketoday:today-service-provider"
 
-  implementation project(":today-service-provider")
+  implementation project(":demo-tests:demo-user-api")
   implementation project(":today-service-registry-simple-registration")
 
 //  implementation 'cn.taketoday:infra-starter-web'
-//  implementation 'cn.taketoday:infra-starter-netty'
+//  implementation 'cn.taketoday:infra-starter-netty-server'
   implementation 'cn.taketoday:infra-starter-logback'
   implementation 'cn.taketoday:infra-starter-application'
 
 //  implementation "com.google.protobuf:protobuf-java"
 
-  implementation project(":today-remoting-transport-tcp")
+  implementation "cn.taketoday:today-remoting-transport-tcp"
 
 }

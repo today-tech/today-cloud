@@ -1,0 +1,26 @@
+plugins {
+  id 'java-gradle-plugin'
+}
+
+repositories {
+  mavenLocal()
+  maven { url = "https://central.sonatype.com/repository/maven-snapshots/" }
+  mavenCentral()
+  gradlePluginPortal()
+}
+
+def infraCloudVersion() {
+  Properties properties = new Properties()
+  try (def reader = new FileReader(file("../../gradle.properties"))) {
+    properties.load(reader)
+  }
+
+  return properties['version']
+}
+
+dependencies {
+  var version = infraCloudVersion()
+//  implementation(platform("cn.taketoday:today-cloud-bom:$version"))
+  implementation "cn.taketoday:today-cloud-gradle-plugin:$version"
+}
+

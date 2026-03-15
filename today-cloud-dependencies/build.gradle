@@ -7,10 +7,21 @@ javaPlatform {
   allowDependencies()
 }
 
-dependencies {
-  api(platform(project(":today-cloud-bom")))
+def infraVersion() {
+  Properties properties = new Properties()
+  file("$rootDir/buildSrc/gradle.properties").withReader {
+    properties.load(it)
+  }
+  return properties['infraVersion']
+}
 
+dependencies {
+  var version = infraVersion()
+
+  api(platform("cn.taketoday:infra-bom:$version"))
   api platform('io.micrometer:micrometer-tracing-bom:1.5.2')
+
+  api(platform(project(":today-cloud-bom")))
 
   constraints {
 
@@ -19,8 +30,11 @@ dependencies {
 
 publishing {
   publications {
-    mavenJava(MavenPublication) {
+    maven(MavenPublication) {
       from components.javaPlatform
     }
   }
 }
+
+
+apply from: "$rootDir/gradle/signing.gradle"

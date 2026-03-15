@@ -1,6 +1,7 @@
 description = "TODAY Cloud (Bill of Materials)"
 
 apply plugin: 'java-platform'
+
 apply from: "$rootDir/gradle/publications.gradle"
 
 dependencies {
@@ -19,3 +20,5 @@ publishing {
     }
   }
 }
+
+apply from: "$rootDir/gradle/signing.gradle"

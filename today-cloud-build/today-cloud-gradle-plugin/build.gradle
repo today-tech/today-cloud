@@ -7,6 +7,7 @@ description = "TODAY Cloud Applications Gradle Plugins"
 
 dependencies {
   api 'cn.taketoday:infra-core'
+  api "cn.taketoday:infra-gradle-plugin"
 
   optional "org.graalvm.buildtools:native-gradle-plugin"
   implementation 'org.apache.commons:commons-compress'

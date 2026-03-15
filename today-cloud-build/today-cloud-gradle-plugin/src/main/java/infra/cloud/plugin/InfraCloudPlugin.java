@@ -23,18 +23,31 @@ import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.TaskContainer;
 
+import infra.gradle.plugin.InfraApplicationPlugin;
+import infra.lang.VersionExtractor;
+import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2026/3/10 21:31
  */
 public class InfraCloudPlugin implements Plugin<Project> {
 
+  private static final String INFRA_CLOUD_VERSION = VersionExtractor.forClass(InfraCloudPlugin.class);
+
   public static final String GENERATE_SERVICE_METADATA_TASK_NAME = "generateServiceMetadata";
+
+  /**
+   * The coordinates {@code (group:name:version)} of the
+   * {@code infra-cloud-dependencies} bom.
+   */
+  public static final String BOM_COORDINATES = "cn.taketoday:today-cloud-dependencies:" + INFRA_CLOUD_VERSION;
 
   @Override
   public void apply(Project project) {
     project.getPlugins().apply(JavaPlugin.class);
     project.getPlugins().apply(JavaLibraryPlugin.class);
+    project.getPlugins().apply(InfraApplicationPlugin.class);
 
     TaskContainer tasks = project.getTasks();
     createExtensions(project);
@@ -46,6 +59,9 @@ public class InfraCloudPlugin implements Plugin<Project> {
 
     tasks.getByName(JavaPlugin.PROCESS_RESOURCES_TASK_NAME)
             .dependsOn(GENERATE_SERVICE_METADATA_TASK_NAME);
+
+    project.getExtensions().getByType(DependencyManagementExtension.class)
+            .imports(imports -> imports.mavenBom(BOM_COORDINATES));
   }
 
   private void createExtensions(Project project) {

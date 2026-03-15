@@ -16,3 +16,7 @@ jar {
   manifest.attributes["Specification-Vendor"] = 'TODAY Tech'
   manifest.attributes["Specification-Vendor-Id"] = 'cn.taketoday'
 }
+
+serviceMetadata {
+
+}

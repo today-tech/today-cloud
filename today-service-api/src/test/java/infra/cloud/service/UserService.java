@@ -16,24 +16,11 @@
 
 package infra.cloud.service;
 
-import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
- * @since 1.0 2025/8/11 15:20
+ * @since 1.0 2026/3/15 22:36
  */
-class MethodIdGeneratorTests {
+public interface UserService {
 
-  @Test
-  void test() {
-    Map<Method, Integer> methodIntegerMap = MethodIdGenerator.generateMethodIds(Set.of(UserService.class));
-    methodIntegerMap.forEach((key, value) -> {
-      System.out.println(value + " -> " + key);
-    });
-  }
-
+  Object getById(long id);
 }

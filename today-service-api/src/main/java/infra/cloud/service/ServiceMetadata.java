@@ -18,6 +18,7 @@ package infra.cloud.service;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -41,6 +42,8 @@ public class ServiceMetadata {
 
   private final @Nullable String version;
 
+  private final List<String> interfaces;
+
   private final Map<String, String> properties;
 
   /**
@@ -49,8 +52,8 @@ public class ServiceMetadata {
    * @param id the unique identifier of the service
    * @param version the version of the service, may be {@code null}
    */
-  public ServiceMetadata(String id, @Nullable String version) {
-    this(id, version, null);
+  public ServiceMetadata(String id, @Nullable String version, List<String> interfaces) {
+    this(id, version, interfaces, null);
   }
 
   /**
@@ -59,11 +62,14 @@ public class ServiceMetadata {
    * @param id the unique identifier of the service
    * @param version the version of the service, may be {@code null}
    * @param properties the properties
+   * @param interfaces interfaces class names
    */
-  public ServiceMetadata(String id, @Nullable String version, @Nullable Map<String, String> properties) {
+  public ServiceMetadata(String id, @Nullable String version, List<String> interfaces, @Nullable Map<String, String> properties) {
     Assert.notNull(id, "service id is required");
+    Assert.notNull(interfaces, "interfaces is required");
     this.id = id;
     this.version = version;
+    this.interfaces = interfaces;
     this.properties = properties == null ? Map.of() : Map.copyOf(properties);
   }
 
@@ -83,6 +89,19 @@ public class ServiceMetadata {
    */
   public @Nullable String getVersion() {
     return version;
+  }
+
+  /**
+   * Returns the list of service interface class names contained in this artifact.
+   * <p>
+   * The returned list is unmodifiable and represents a snapshot of the interfaces
+   * at construction time. This ensures thread-safety and prevents accidental modification.
+   * </p>
+   *
+   * @return the list of interface class names (never null)
+   */
+  public List<String> getInterfaces() {
+    return interfaces;
   }
 
   /**
@@ -111,7 +130,7 @@ public class ServiceMetadata {
    * @return a new {@code ServiceMetadata} instance with the updated properties
    */
   public ServiceMetadata withProperties(@Nullable Map<String, String> properties) {
-    return new ServiceMetadata(id, version, properties);
+    return new ServiceMetadata(id, version, interfaces, properties);
   }
 
   /**

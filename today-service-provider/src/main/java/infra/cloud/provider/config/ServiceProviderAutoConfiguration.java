@@ -28,7 +28,7 @@ import infra.cloud.provider.ServiceChannelHandler;
 import infra.cloud.provider.ServiceProviderServer;
 import infra.cloud.provider.ServiceServerProperties;
 import infra.cloud.provider.TcpServerTransportFactory;
-import infra.cloud.service.PackageInfoServiceMetadataProvider;
+import infra.cloud.service.DefaultServiceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceMetadataProvider;
 import infra.cloud.service.ServiceMethod;
@@ -64,7 +64,7 @@ public final class ServiceProviderAutoConfiguration {
   @Component
   @ConditionalOnMissingBean
   public static ServiceMetadataProvider serviceMetadataProvider() {
-    return new PackageInfoServiceMetadataProvider();
+    return new DefaultServiceMetadataProvider();
   }
 
   @Component

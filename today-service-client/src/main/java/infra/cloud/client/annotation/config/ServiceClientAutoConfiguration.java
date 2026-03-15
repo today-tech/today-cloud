@@ -24,7 +24,7 @@ import infra.cloud.service.ClientInterceptor;
 import infra.cloud.service.DefaultRemotingOperationsProvider;
 import infra.cloud.service.DefaultServiceInterfaceMetadataProvider;
 import infra.cloud.service.DefaultServiceProxyFactory;
-import infra.cloud.service.PackageInfoServiceMetadataProvider;
+import infra.cloud.service.DefaultServiceMetadataProvider;
 import infra.cloud.service.RemotingOperationsProvider;
 import infra.cloud.service.ReturnValueResolver;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
@@ -62,7 +62,7 @@ public final class ServiceClientAutoConfiguration {
   @Component
   @ConditionalOnMissingBean
   public static ServiceMetadataProvider serviceMetadataProvider() {
-    return new PackageInfoServiceMetadataProvider();
+    return new DefaultServiceMetadataProvider();
   }
 
   @Component

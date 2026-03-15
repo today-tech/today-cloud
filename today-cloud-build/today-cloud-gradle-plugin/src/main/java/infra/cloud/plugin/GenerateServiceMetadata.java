@@ -27,10 +27,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import infra.util.CollectionUtils;
+import infra.util.StringUtils;
 
 /**
  * A Gradle task that generates service metadata properties file.
@@ -63,6 +65,9 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
     properties.setProperty("service.group", serviceMetadata.getServiceGroup().get());
     properties.setProperty("service.description", serviceMetadata.getServiceDescription().get());
 
+    List<String> interfaces = ServiceClassFinder.findInterfaces(project.getRootDir());
+    properties.setProperty("service.interfaces", StringUtils.collectionToCommaDelimitedString(interfaces));
+    
     convertToStringValues(serviceMetadata.getAdditional().get())
             .forEach((name, value) -> {
               if (value != null) {

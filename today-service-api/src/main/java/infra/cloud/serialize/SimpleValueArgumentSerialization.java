@@ -21,17 +21,23 @@ import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-import infra.beans.BeanUtils;
 import infra.cloud.serialize.value.ValueSerialization;
 import infra.core.MethodParameter;
 
 import static infra.cloud.serialize.value.ValueSerialization.map;
 
 /**
+ * A simple implementation of {@link ArgumentSerialization} that handles basic value types.
+ * <p>
+ * This class provides serialization and deserialization support for primitive types
+ * and their corresponding wrapper classes, including {@code int}, {@code long}, and {@code short}.
+ * It maintains an internal map to associate each supported type with its specific
+ * {@link ValueSerialization} logic.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/3/8 21:15
  */
-public class SimpleValueArgumentSerialization implements RpcArgumentSerialization<Object> {
+public class SimpleValueArgumentSerialization implements ArgumentSerialization<Object> {
 
   private final Map<Class<?>, ValueSerialization<?>> serializationMap = new HashMap<>();
 
@@ -48,7 +54,7 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
 
   @Override
   public boolean supportsArgument(MethodParameter parameter) {
-    return BeanUtils.isSimpleProperty(parameter.getParameterType());
+    return serializationMap.containsKey(parameter.getParameterType());
   }
 
   @Override
@@ -58,9 +64,8 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
     serialization.serialize(parameter, value, writable);
   }
 
-  @Nullable
   @Override
-  public Object deserialize(MethodParameter parameter, Readable readable) {
+  public @Nullable Object deserialize(MethodParameter parameter, Readable readable) {
     var serialization = findSerialization(parameter.getParameterType());
     return serialization.deserialize(parameter, readable);
   }
@@ -71,7 +76,7 @@ public class SimpleValueArgumentSerialization implements RpcArgumentSerializatio
     if (serialization == null) {
       Class<?> superclass = type.getSuperclass();
       if (superclass == null || superclass == Object.class) {
-        throw new IllegalStateException("ValueSerialization for type %s not found".formatted(type)); // todo type
+        throw new IllegalStateException("ValueSerialization for type %s not found".formatted(type));
       }
       return findSerialization(superclass);
     }

@@ -28,27 +28,27 @@ import java.util.stream.Collectors;
 
 import infra.lang.Assert;
 import infra.util.ReflectionUtils;
-import io.netty.buffer.ByteBufAllocator;
 
 /**
+ * Default implementation of {@link ServiceProxyFactory} that creates service proxies
+ * using dynamic proxy mechanisms. This factory configures proxies with the necessary
+ * interceptors, remoting operations provider, and service interface metadata to handle
+ * remote method invocations.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 2021/7/4 22:58
  */
 public class DefaultServiceProxyFactory implements ServiceProxyFactory {
 
-  private final ClientInterceptor[] interceptors;
-
-  private final RemotingOperationsProvider remotingOperationsProvider;
-
   private final ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider;
 
-  private final ByteBufAllocator allocator = ByteBufAllocator.DEFAULT;
+  private final ServiceInvoker serviceInvoker;
 
-  public DefaultServiceProxyFactory(RemotingOperationsProvider remotingOperationsProvider,
-          ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider, List<ClientInterceptor> interceptors) {
+  public DefaultServiceProxyFactory(ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider, ServiceInvoker serviceInvoker) {
+    Assert.notNull(metadataProvider, "metadataProvider is required");
+    Assert.notNull(serviceInvoker, "serviceInvoker is required");
     this.metadataProvider = metadataProvider;
-    this.remotingOperationsProvider = remotingOperationsProvider;
-    this.interceptors = interceptors.toArray(new ClientInterceptor[0]);
+    this.serviceInvoker = serviceInvoker;
   }
 
   @Override
@@ -56,7 +56,6 @@ public class DefaultServiceProxyFactory implements ServiceProxyFactory {
   public <S> S getService(Class<S> serviceInterface) {
     Assert.isTrue(serviceInterface.isInterface(), "service must be an interface");
     var metadata = metadataProvider.getMetadata(serviceInterface);
-    ServiceInvoker serviceInvoker = new ServiceMethodInvoker(metadata, interceptors, remotingOperationsProvider, allocator);
     List<ServiceInterfaceMethod> serviceMethods = metadata.getServiceMethods();
 
     return (S) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class[] { serviceInterface },
@@ -78,9 +77,8 @@ public class DefaultServiceProxyFactory implements ServiceProxyFactory {
               .collect(Collectors.toMap(ServiceInterfaceMethod::getMethod, Function.identity()));
     }
 
-    @Nullable
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public @Nullable Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       ServiceInterfaceMethod serviceMethod = serviceMethods.get(method);
       if (serviceMethod != null) {
         var result = serviceInvoker.invoke(serviceMethod, args);

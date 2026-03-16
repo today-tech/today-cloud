@@ -40,8 +40,7 @@ public class ServiceMethod {
 
   protected final Method method;
 
-  @Nullable
-  private MethodParameter returnTypeParameter;
+  private @Nullable MethodParameter returnTypeParameter;
 
   public ServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
     this.parameters = initMethodParameters(method);

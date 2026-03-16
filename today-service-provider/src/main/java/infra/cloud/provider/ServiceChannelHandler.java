@@ -18,6 +18,7 @@ package infra.cloud.provider;
 
 import org.reactivestreams.Publisher;
 
+import infra.cloud.serialize.MessagePackReader;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import reactor.core.publisher.Flux;
@@ -41,7 +42,7 @@ public class ServiceChannelHandler implements Channel {
 
   @Override
   public Mono<Payload> requestResponse(Payload payload) {
-    RemoteRequest request = requestDeserializer.deserialize(payload.data());
+    RemoteRequest request = requestDeserializer.deserialize(new MessagePackReader(payload.data()));
     try {
       Object result = request.invoke();
       return responseSerializer.serialize(request, result);

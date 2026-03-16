@@ -18,13 +18,10 @@ package infra.cloud.service.serialize;
 
 import java.util.List;
 
-import infra.cloud.RpcRequest;
-import infra.cloud.serialize.MessagePackWriter;
+import infra.cloud.serialize.ArgumentSerialization;
 import infra.cloud.serialize.Writable;
-import infra.cloud.serialize.RpcArgumentSerialization;
-import infra.cloud.service.ServiceMethod;
+import infra.cloud.service.ServiceInterfaceMethod;
 import infra.core.MethodParameter;
-import io.netty.buffer.ByteBuf;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -33,31 +30,31 @@ import io.netty.buffer.ByteBuf;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class RequestSerializer {
 
-  private final List<RpcArgumentSerialization> argumentSerializations;
+  private final List<ArgumentSerialization> argumentSerializations;
 
-  public RequestSerializer(List<RpcArgumentSerialization> argumentSerializations) {
+  public RequestSerializer(List<ArgumentSerialization> argumentSerializations) {
     this.argumentSerializations = argumentSerializations;
   }
 
   @SuppressWarnings("unchecked")
-  public void serialize(RpcRequest request, ByteBuf payload) {
-    Writable writable = new MessagePackWriter(payload);
-    request.writeTo(writable);
-
-    ServiceMethod method = request.getMethod();
+  public void serialize(ServiceInterfaceMethod serviceMethod, Object[] arguments, Writable writable) {
+    writable.write(serviceMethod.getServiceInterface().getName());
+    writable.write(serviceMethod.getMethod().getName());
+    writable.write(serviceMethod.getParameters(), parameter -> {
+      writable.write(parameter.getParameterType().getName());
+    });
 
     int idx = 0;
-    Object[] arguments = request.getArguments();
 
     beforeSerializeArguments(writable, arguments);
-    for (MethodParameter parameter : method.getParameters()) {
+    for (MethodParameter parameter : serviceMethod.getParameters()) {
       var serialization = findArgumentSerialization(parameter);
       serialization.serialize(parameter, arguments[idx++], writable);
     }
     afterSerializeArguments(writable, arguments);
   }
 
-  private RpcArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
+  private ArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
     for (var argumentSerialization : argumentSerializations) {
       if (argumentSerialization.supportsArgument(parameter)) {
         return argumentSerialization;

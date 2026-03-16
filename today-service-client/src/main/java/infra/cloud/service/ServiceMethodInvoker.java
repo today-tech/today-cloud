@@ -21,7 +21,9 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import infra.cloud.RpcRequest;
+import java.util.List;
+
+import infra.cloud.serialize.MessagePackWriter;
 import infra.cloud.service.serialize.RequestSerializer;
 import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
@@ -37,9 +39,13 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 
 /**
- * Service Method Invoker
+ * Invokes service methods by handling different invocation types such as fire-and-forget,
+ * request-response, response streaming, and duplex streaming. This class manages the
+ * serialization of requests, deserialization of responses, and interacts with remoting
+ * operations to execute remote procedure calls (RPC).
  *
- * @author TODAY 2021/7/4 01:58
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2021/7/4 01:58
  */
 public class ServiceMethodInvoker implements ServiceInvoker {
 
@@ -47,26 +53,24 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   private final RemotingOperationsProvider remotingOperationsProvider;
 
-  private final ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata;
-
   private final ByteBufAllocator allocator;
 
-  private RequestSerializer requestSerializer;
+  private final RequestSerializer requestSerializer;
 
-  private ResponseDeserializer responseDeserializer;
+  private final ResponseDeserializer responseDeserializer;
 
-  ServiceMethodInvoker(ServiceInterfaceMetadata<ServiceInterfaceMethod> metadata,
-          ClientInterceptor[] interceptors, RemotingOperationsProvider remotingOperationsProvider, ByteBufAllocator allocator) {
-    this.metadata = metadata;
-    this.interceptors = interceptors;
+  public ServiceMethodInvoker(List<ClientInterceptor> interceptors, RemotingOperationsProvider remotingOperationsProvider,
+          ByteBufAllocator allocator, RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer) {
+    this.interceptors = interceptors.toArray(new ClientInterceptor[0]);
     this.remotingOperationsProvider = remotingOperationsProvider;
     this.allocator = allocator;
+    this.requestSerializer = requestSerializer;
+    this.responseDeserializer = responseDeserializer;
   }
 
   @Override
   public InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Throwable {
     MethodServiceInvocation invocation = new MethodServiceInvocation0(serviceMethod, args, interceptors);
-
     return invocation.proceed();
   }
 
@@ -89,14 +93,9 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     private Mono<Payload> createMonoPayload() {
       return Mono.defer(() -> {
-        RpcRequest request = new RpcRequest();
-        request.setServiceClass(serviceMethod.getServiceInterface().getName());
-        request.setMethodName(serviceMethod.getMethod().getName());
-
         ByteBuf buffer = allocator.ioBuffer();
-        Payload payload = ByteBufPayload.create(buffer);
-        requestSerializer.serialize(request, buffer);
-        return Mono.just(payload);
+        requestSerializer.serialize(serviceMethod, getArguments(), new MessagePackWriter(buffer));
+        return Mono.just(ByteBufPayload.create(buffer));
       });
     }
 

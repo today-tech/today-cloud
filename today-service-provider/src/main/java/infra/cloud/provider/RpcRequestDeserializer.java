@@ -22,10 +22,8 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
 
-import infra.cloud.RpcRequest;
+import infra.cloud.serialize.ArgumentSerialization;
 import infra.cloud.serialize.Readable;
-import infra.cloud.serialize.MessagePackReader;
-import infra.cloud.serialize.RpcArgumentSerialization;
 import infra.cloud.serialize.SerializationException;
 import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
@@ -33,7 +31,6 @@ import infra.core.MethodParameter;
 import infra.lang.Assert;
 import infra.reflect.MethodInvoker;
 import infra.util.MapCache;
-import io.netty.buffer.ByteBuf;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -42,7 +39,7 @@ import io.netty.buffer.ByteBuf;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class RpcRequestDeserializer {
 
-  private final List<RpcArgumentSerialization> argumentSerializations;
+  private final List<ArgumentSerialization> argumentSerializations;
 
   /** fast method mapping cache */
   private final MethodMapCache methodMapCache = new MethodMapCache();
@@ -51,21 +48,17 @@ public class RpcRequestDeserializer {
 
   private final LocalServiceHolder localServiceHolder;
 
-  public RpcRequestDeserializer(List<RpcArgumentSerialization> argumentSerializations,
+  public RpcRequestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder) {
     this.argumentSerializations = argumentSerializations;
     this.metadataProvider = metadataProvider;
     this.localServiceHolder = localServiceHolder;
   }
 
-  public RemoteRequest deserialize(ByteBuf payload) throws SerializationException {
-    MessagePackReader input = new MessagePackReader(payload);
-    RpcRequest request = new RpcRequest();
-    request.readFrom(input);
-
-    String serviceClass = input.readString();
-    String methodName = input.readString();
-    String[] paramTypes = input.read(String.class, Readable::readString);
+  public RemoteRequest deserialize(Readable readable) throws SerializationException {
+    String serviceClass = readable.readString();
+    String methodName = readable.readString();
+    String[] paramTypes = readable.read(String.class, Readable::readString);
 
     var serviceInterface = localServiceHolder.getServiceInterface(serviceClass);
     Assert.state(serviceInterface != null, "service interface not found");
@@ -77,13 +70,13 @@ public class RpcRequestDeserializer {
     int idx = 0;
     for (MethodParameter parameter : parameters) {
       var serialization = findArgumentSerialization(parameter);
-      args[idx++] = serialization.deserialize(parameter, input);
+      args[idx++] = serialization.deserialize(parameter, readable);
     }
 
     return new RemoteRequest(method, args, serviceInterface);
   }
 
-  private RpcArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
+  private ArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
     for (var argumentSerialization : argumentSerializations) {
       if (argumentSerialization.supportsArgument(parameter)) {
         return argumentSerialization;

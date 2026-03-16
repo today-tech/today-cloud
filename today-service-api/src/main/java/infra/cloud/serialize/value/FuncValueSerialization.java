@@ -40,8 +40,8 @@ final class FuncValueSerialization<T> implements ValueSerialization<T> {
   }
 
   @Override
-  public void serialize(MethodParameter parameter, T value, Writable payload) {
-    writer.accept(payload, value);
+  public void serialize(MethodParameter parameter, T value, Writable writable) {
+    writer.accept(writable, value);
   }
 
   @Override

@@ -33,7 +33,7 @@ import infra.util.ConcurrentReferenceHashMap;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2024/12/20 17:46
  */
-public class ProtobufArgumentSerialization implements RpcArgumentSerialization<Message>, ReturnValueSerializer<Message> {
+public class ProtobufArgumentSerialization implements ArgumentSerialization<Message>, ReturnValueSerializer<Message> {
 
   private static final ConcurrentReferenceHashMap<Class<?>, Method> methodCache = new ConcurrentReferenceHashMap<>();
 

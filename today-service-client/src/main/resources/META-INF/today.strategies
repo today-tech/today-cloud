@@ -2,7 +2,7 @@ infra.beans.factory.support.DependencyResolvingStrategy=\
     infra.cloud.client.annotation.ServiceDependencyResolvingStrategy
 
 
-infra.cloud.serialize.RpcArgumentSerialization=\
+infra.cloud.serialize.ArgumentSerialization=\
   infra.cloud.serialize.ProtobufArgumentSerialization,\
   infra.cloud.serialize.SimpleValueArgumentSerialization
 

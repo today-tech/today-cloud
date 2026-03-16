@@ -16,24 +16,36 @@
 
 package infra.cloud.client.annotation.config;
 
+import java.util.List;
+
 import infra.beans.factory.ObjectProvider;
 import infra.cloud.client.DiscoveryClient;
 import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
 import infra.cloud.client.simple.SimpleDiscoveryProperties;
+import infra.cloud.serialize.ArgumentSerialization;
+import infra.cloud.serialize.ReturnValueDeserializer;
+import infra.cloud.serialize.ThrowableSerialization;
 import infra.cloud.service.ClientInterceptor;
 import infra.cloud.service.DefaultRemotingOperationsProvider;
 import infra.cloud.service.DefaultServiceInterfaceMetadataProvider;
-import infra.cloud.service.DefaultServiceProxyFactory;
 import infra.cloud.service.DefaultServiceMetadataProvider;
+import infra.cloud.service.DefaultServiceProxyFactory;
 import infra.cloud.service.RemotingOperationsProvider;
 import infra.cloud.service.ReturnValueResolver;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMethod;
+import infra.cloud.service.ServiceInvoker;
 import infra.cloud.service.ServiceMetadataProvider;
+import infra.cloud.service.ServiceMethodInvoker;
+import infra.cloud.service.serialize.RequestSerializer;
+import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
+import infra.core.io.ResourceLoader;
+import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
+import io.netty.buffer.ByteBufAllocator;
 
 /**
  * Auto-configuration for remote service client.
@@ -41,6 +53,7 @@ import infra.stereotype.Component;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 22:14
  */
+@SuppressWarnings("rawtypes")
 @DisableDIAutoConfiguration
 @ConditionalOnDiscoveryEnabled
 @EnableConfigurationProperties(SimpleDiscoveryProperties.class)
@@ -48,9 +61,35 @@ public final class ServiceClientAutoConfiguration {
 
   @Component
   public static DefaultServiceProxyFactory serviceProxyFactory(
-          ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider,
-          RemotingOperationsProvider remotingOperationsProvider, ObjectProvider<ClientInterceptor> clientInterceptors) {
-    return new DefaultServiceProxyFactory(remotingOperationsProvider, metadataProvider, clientInterceptors.orderedList());
+          ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> metadataProvider, ServiceInvoker serviceInvoker) {
+    return new DefaultServiceProxyFactory(metadataProvider, serviceInvoker);
+  }
+
+  @Component
+  public static ServiceInvoker serviceInvoker(List<ClientInterceptor> interceptors, RemotingOperationsProvider remotingOperationsProvider,
+          RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer) {
+    return new ServiceMethodInvoker(interceptors, remotingOperationsProvider, ByteBufAllocator.DEFAULT,
+            requestSerializer, responseDeserializer);
+  }
+
+  @Component
+  public static ThrowableSerialization throwableSerialization() {
+    return new ThrowableSerialization();
+  }
+
+  @Component
+  public static ResponseDeserializer responseDeserializer(List<ReturnValueDeserializer> serializations,
+          ThrowableSerialization throwableSerialization, ResourceLoader resourceLoader) {
+    // order after ReturnValueDeserializer beans
+    serializations.addAll(TodayStrategies.find(ReturnValueDeserializer.class, resourceLoader.getClassLoader()));
+    return new ResponseDeserializer(serializations, throwableSerialization);
+  }
+
+  @Component
+  public static RequestSerializer requestSerializer(List<ArgumentSerialization> argumentSerializations, ResourceLoader resourceLoader) {
+    List<ArgumentSerialization> serializations = TodayStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
+    argumentSerializations.addAll(serializations); // order after RpcArgumentSerialization beans
+    return new RequestSerializer(argumentSerializations);
   }
 
   @Component

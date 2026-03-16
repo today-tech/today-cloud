@@ -69,7 +69,7 @@ public class ServiceMetadata {
     Assert.notNull(interfaces, "interfaces is required");
     this.id = id;
     this.version = version;
-    this.interfaces = interfaces;
+    this.interfaces = List.copyOf(interfaces);
     this.properties = properties == null ? Map.of() : Map.copyOf(properties);
   }
 

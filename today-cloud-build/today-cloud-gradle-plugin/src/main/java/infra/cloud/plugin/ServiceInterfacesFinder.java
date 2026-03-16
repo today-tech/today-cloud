@@ -50,7 +50,7 @@ import infra.lang.Constant;
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 4.0
  */
-public abstract class ServiceClassFinder {
+public abstract class ServiceInterfacesFinder {
 
   private static final String DOT_CLASS = ".class";
 
@@ -59,12 +59,12 @@ public abstract class ServiceClassFinder {
   /**
    * File filter that accepts only files ending with {@code .class}.
    */
-  private static final FileFilter CLASS_FILE_FILTER = ServiceClassFinder::isClassFile;
+  private static final FileFilter CLASS_FILE_FILTER = ServiceInterfacesFinder::isClassFile;
 
   /**
    * File filter that accepts only directories that do not start with a dot (hidden directories).
    */
-  private static final FileFilter PACKAGE_DIRECTORY_FILTER = ServiceClassFinder::isPackageDirectory;
+  private static final FileFilter PACKAGE_DIRECTORY_FILTER = ServiceInterfacesFinder::isPackageDirectory;
 
   /**
    * Checks if the given file is a valid Java class file.
@@ -99,7 +99,7 @@ public abstract class ServiceClassFinder {
    */
   public static List<String> findInterfaces(File rootDirectory, @Nullable String annotationName) throws IOException {
     InterfacesCallback callback = new InterfacesCallback(annotationName);
-    ServiceClassFinder.doWithInterface(rootDirectory, callback);
+    ServiceInterfacesFinder.doWithInterface(rootDirectory, callback);
     return callback.getInterfaces();
   }
 

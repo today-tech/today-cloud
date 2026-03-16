@@ -52,6 +52,11 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
   @TaskAction
   public void generate() throws IOException {
     Project project = getProject();
+    List<String> interfaces = ServiceInterfacesFinder.findInterfaces(project.getProjectDir());
+    if (interfaces.isEmpty()) {
+      return;
+    }
+
     ServiceMetadataExtension serviceMetadata = project.getExtensions().getByType(ServiceMetadataExtension.class);
 
     var outputDir = project.getLayout().getBuildDirectory().dir("resources/main/META-INF").get().getAsFile();
@@ -64,8 +69,6 @@ public abstract class GenerateServiceMetadata extends DefaultTask {
     properties.setProperty("service.version", serviceMetadata.getServiceVersion().get());
     properties.setProperty("service.group", serviceMetadata.getServiceGroup().get());
     properties.setProperty("service.description", serviceMetadata.getServiceDescription().get());
-
-    List<String> interfaces = ServiceClassFinder.findInterfaces(project.getProjectDir());
     properties.setProperty("service.interfaces", StringUtils.collectionToCommaDelimitedString(interfaces));
 
     convertToStringValues(serviceMetadata.getAdditional().get())

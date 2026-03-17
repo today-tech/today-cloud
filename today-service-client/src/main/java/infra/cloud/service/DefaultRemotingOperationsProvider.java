@@ -64,7 +64,7 @@ public class DefaultRemotingOperationsProvider implements RemotingOperationsProv
   }
 
   public RemotingOperations getRemotingOperations(String serviceId) {
-    return remotingClientMap.computeIfAbsent(serviceId, name -> RemotingClient.forLoadBalance(Flux.interval(discoveryPeriod)
+    return remotingClientMap.computeIfAbsent(serviceId, name -> RemotingClient.forLoadBalance(Flux.interval(Duration.ZERO, discoveryPeriod)
                     .map(i -> discoveryClient.getInstances(name))
                     .map(instances -> {
                       var targets = new ArrayList<LoadBalanceTarget>(instances.size());

@@ -1,2 +1,5 @@
-infra.cloud.serialize.ReturnValueSerializer=\
-    infra.cloud.serialize.ProtobufArgumentSerialization
+
+infra.cloud.serialize.ArgumentSerialization=\
+  infra.cloud.serialize.SimpleValueArgumentSerialization
+
+

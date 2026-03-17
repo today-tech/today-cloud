@@ -41,7 +41,7 @@ public class InvocableMethod extends ServiceMethod {
   }
 
   @Nullable
-  public Object invoke(Object[] args) {
+  public Object invoke(@Nullable Object @Nullable [] args) {
     return invoker.invoke(instance, args);
   }
 

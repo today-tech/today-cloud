@@ -33,6 +33,8 @@ import infra.reflect.MethodInvoker;
 import infra.util.MapCache;
 
 /**
+ * Deserializes incoming remote requests
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/3/8 22:43
  */
@@ -65,7 +67,7 @@ public class RequestDeserializer {
     InvocableMethod method = methodMapCache.get(new MethodKey(serviceClass, methodName, paramTypes), serviceInterface);
 
     MethodParameter[] parameters = method.getParameters();
-    Object[] args = new Object[parameters.length];
+    @Nullable Object[] args = new Object[parameters.length];
 
     int idx = 0;
     for (MethodParameter parameter : parameters) {
@@ -82,7 +84,7 @@ public class RequestDeserializer {
         return argumentSerialization;
       }
     }
-    throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
+    throw new IllegalStateException("ArgumentSerialization for parameter %s not found".formatted(parameter));
   }
 
   private final class MethodMapCache extends MapCache<MethodKey, InvocableMethod, ServiceObject> {

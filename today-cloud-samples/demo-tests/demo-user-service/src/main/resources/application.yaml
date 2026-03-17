@@ -1,6 +1,9 @@
 infra:
   profiles:
     active: dev
+  cloud:
+    inet:
+      use-only-site-local-interfaces: true
 
 
 today:
@@ -13,6 +16,7 @@ today:
   service-registry:
     simple:
       uri: http://localhost:9000
+
 
 logging:
   level:

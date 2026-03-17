@@ -26,11 +26,11 @@ public class RemoteRequest {
 
   private final InvocableMethod method;
 
-  private final Object[] args;
+  private final @Nullable Object @Nullable [] args;
 
   private final ServiceObject serviceObject;
 
-  public RemoteRequest(InvocableMethod method, Object[] args, ServiceObject serviceObject) {
+  public RemoteRequest(InvocableMethod method, @Nullable Object @Nullable [] args, ServiceObject serviceObject) {
     this.method = method;
     this.args = args;
     this.serviceObject = serviceObject;

@@ -48,18 +48,18 @@ public class ResponseDeserializer {
     RpcResponse response = new RpcResponse();
     response.setMethod(method);
 
-    boolean hasError = body.readBoolean();
-    if (hasError) {
-      Throwable deserialize = throwableSerialization.deserialize(body);
-      response.setException(deserialize);
-    }
-    else {
+//    boolean hasError = body.readBoolean();
+//    if (hasError) {
+//      Throwable deserialize = throwableSerialization.deserialize(body);
+//      response.setException(deserialize);
+//    }
+//    else {
       Object result = input.readNullable(in -> {
         var deserializer = findDeserializer(method);
         return deserializer.deserialize(method, input);
       });
       response.setResult(result);
-    }
+//    }
     return response;
   }
 

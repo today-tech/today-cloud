@@ -62,7 +62,7 @@ public class RequestSerializer {
         return argumentSerialization;
       }
     }
-    throw new IllegalStateException("RpcArgumentSerialization for parameter %s not found".formatted(parameter));
+    throw new IllegalStateException("ArgumentSerialization for parameter %s not found".formatted(parameter));
   }
 
   protected void afterSerializeArguments(Writable writable, Object[] arguments) {

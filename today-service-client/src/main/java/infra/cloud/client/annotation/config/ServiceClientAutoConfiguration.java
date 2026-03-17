@@ -88,7 +88,7 @@ public final class ServiceClientAutoConfiguration {
   @Component
   public static RequestSerializer requestSerializer(List<ArgumentSerialization> argumentSerializations, ResourceLoader resourceLoader) {
     List<ArgumentSerialization> serializations = TodayStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
-    argumentSerializations.addAll(serializations); // order after RpcArgumentSerialization beans
+    argumentSerializations.addAll(serializations); // order after ArgumentSerialization beans
     return new RequestSerializer(argumentSerializations);
   }
 

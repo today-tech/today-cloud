@@ -24,6 +24,8 @@ import infra.cloud.service.ServiceInterfaceMethod;
 import infra.core.MethodParameter;
 
 /**
+ * Serializer for RPC request.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2024/12/20 15:59
  */

@@ -37,7 +37,7 @@ import infra.util.MapCache;
  * @since 1.0 2025/3/8 22:43
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
-public class RpcRequestDeserializer {
+public class RequestDeserializer {
 
   private final List<ArgumentSerialization> argumentSerializations;
 
@@ -48,7 +48,7 @@ public class RpcRequestDeserializer {
 
   private final LocalServiceHolder localServiceHolder;
 
-  public RpcRequestDeserializer(List<ArgumentSerialization> argumentSerializations,
+  public RequestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder) {
     this.argumentSerializations = argumentSerializations;
     this.metadataProvider = metadataProvider;

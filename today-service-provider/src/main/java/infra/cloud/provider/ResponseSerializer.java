@@ -21,8 +21,8 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 import infra.cloud.serialize.MessagePackWriter;
-import infra.cloud.serialize.Writable;
 import infra.cloud.serialize.ReturnValueSerializer;
+import infra.cloud.serialize.Writable;
 import infra.cloud.service.ServiceMethod;
 import infra.remoting.Payload;
 import infra.remoting.util.ByteBufPayload;
@@ -34,13 +34,14 @@ import reactor.core.publisher.Mono;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/31 16:21
  */
+@SuppressWarnings("rawtypes")
 public class ResponseSerializer {
 
-  private final List<ReturnValueSerializer<?>> returnValueSerializers;
+  private final List<ReturnValueSerializer> returnValueSerializers;
 
   private final ByteBufAllocator allocator = ByteBufAllocator.DEFAULT;
 
-  public ResponseSerializer(List<ReturnValueSerializer<?>> returnValueSerializers) {
+  public ResponseSerializer(List<ReturnValueSerializer> returnValueSerializers) {
     this.returnValueSerializers = returnValueSerializers;
   }
 

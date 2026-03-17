@@ -30,14 +30,17 @@ import reactor.core.publisher.Mono;
  */
 public class ServiceChannelHandler implements Channel {
 
-  private RpcRequestDeserializer requestDeserializer;
-
-  private ResponseSerializer responseSerializer;
-
   private final LocalServiceHolder localServiceHolder;
 
-  public ServiceChannelHandler(LocalServiceHolder localServiceHolder) {
+  private final RequestDeserializer requestDeserializer;
+
+  private final ResponseSerializer responseSerializer;
+
+  public ServiceChannelHandler(LocalServiceHolder localServiceHolder,
+          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
     this.localServiceHolder = localServiceHolder;
+    this.requestDeserializer = requestDeserializer;
+    this.responseSerializer = responseSerializer;
   }
 
   @Override

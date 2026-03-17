@@ -18,16 +18,22 @@ package infra.cloud.provider.config;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
+
 import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
 import infra.cloud.net.InetProperties;
 import infra.cloud.net.InetService;
 import infra.cloud.provider.DefaultServiceInterfaceMetadataProvider;
 import infra.cloud.provider.LocalServiceHolder;
+import infra.cloud.provider.RequestDeserializer;
+import infra.cloud.provider.ResponseSerializer;
 import infra.cloud.provider.ServerTransportFactory;
 import infra.cloud.provider.ServiceChannelHandler;
 import infra.cloud.provider.ServiceProviderServer;
 import infra.cloud.provider.ServiceServerProperties;
 import infra.cloud.provider.TcpServerTransportFactory;
+import infra.cloud.serialize.ArgumentSerialization;
+import infra.cloud.serialize.ReturnValueSerializer;
 import infra.cloud.service.DefaultServiceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceMetadataProvider;
@@ -37,6 +43,8 @@ import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.context.condition.ConditionalOnBooleanProperty;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
+import infra.core.io.ResourceLoader;
+import infra.lang.TodayStrategies;
 import infra.remoting.Closeable;
 import infra.remoting.core.Resume;
 import infra.remoting.resume.InMemoryResumableFramesStoreFactory;
@@ -51,6 +59,7 @@ import infra.stereotype.Component;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 22:31
  */
+@SuppressWarnings("rawtypes")
 @DisableDIAutoConfiguration
 @ConditionalOnDiscoveryEnabled
 @EnableConfigurationProperties({ InetProperties.class, ServiceServerProperties.class })
@@ -79,8 +88,25 @@ public final class ServiceProviderAutoConfiguration {
   }
 
   @Component
-  public static ServiceChannelHandler serviceChannelHandler(LocalServiceHolder localServiceHolder) {
-    return new ServiceChannelHandler(localServiceHolder);
+  public static RequestDeserializer requestDeserializer(List<ArgumentSerialization> argumentSerializations,
+          ServiceInterfaceMetadataProvider<ServiceMethod> serviceInterfaceMetadataProvider,
+          ResourceLoader resourceLoader, LocalServiceHolder localServiceHolder) {
+    List<ArgumentSerialization> serializations = TodayStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
+    argumentSerializations.addAll(serializations); // order after ArgumentSerialization beans
+    return new RequestDeserializer(argumentSerializations, serviceInterfaceMetadataProvider, localServiceHolder);
+  }
+
+  @Component
+  public static ResponseSerializer responseSerializer(List<ReturnValueSerializer> returnValueSerializers, ResourceLoader resourceLoader) {
+    List<ReturnValueSerializer> serializations = TodayStrategies.find(ReturnValueSerializer.class, resourceLoader.getClassLoader());
+    returnValueSerializers.addAll(serializations); // order after ReturnValueSerializer beans
+    return new ResponseSerializer(returnValueSerializers);
+  }
+
+  @Component
+  public static ServiceChannelHandler serviceChannelHandler(LocalServiceHolder localServiceHolder,
+          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
+    return new ServiceChannelHandler(localServiceHolder, requestDeserializer, responseSerializer);
   }
 
   @Component

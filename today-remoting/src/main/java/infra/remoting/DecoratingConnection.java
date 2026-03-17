@@ -25,14 +25,19 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
+ * A decorator for {@link Connection} that delegates all method calls to the underlying connection.
+ * <p>
+ * This class can be extended to add additional behavior or monitoring to a connection without
+ * modifying the original implementation.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/3 11:25
  */
-public class ConnectionWrapper implements Connection {
+public class DecoratingConnection implements Connection {
 
   protected final Connection delegate;
 
-  public ConnectionWrapper(Connection delegate) {
+  public DecoratingConnection(Connection delegate) {
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
   }
 

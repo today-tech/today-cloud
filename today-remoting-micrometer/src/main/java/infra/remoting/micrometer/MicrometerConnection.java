@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Connection;
-import infra.remoting.ConnectionWrapper;
+import infra.remoting.DecoratingConnection;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.plugins.ConnectionDecorator.Type;
@@ -66,7 +66,7 @@ import static infra.remoting.frame.FrameType.SETUP;
  *
  * @see <a href="https://micrometer.io">Micrometer</a>
  */
-final class MicrometerConnection extends ConnectionWrapper {
+final class MicrometerConnection extends DecoratingConnection {
 
   private final Counter close;
 

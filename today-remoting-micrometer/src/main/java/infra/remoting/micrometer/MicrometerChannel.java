@@ -23,7 +23,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
@@ -50,7 +50,7 @@ import static reactor.core.publisher.SignalType.ON_ERROR;
  *
  * @see <a href="https://micrometer.io">Micrometer</a>
  */
-final class MicrometerChannel extends ChannelWrapper {
+final class MicrometerChannel extends DecoratingChannel {
 
   private final InteractionCounters metadataPush;
 

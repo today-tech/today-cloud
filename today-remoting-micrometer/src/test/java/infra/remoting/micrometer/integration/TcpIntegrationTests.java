@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
@@ -48,7 +48,7 @@ public class TcpIntegrationTests {
 
   @BeforeEach
   public void startup() {
-    server = RemotingServer.create((setup, channel) -> Mono.just(new ChannelWrapper(handler)))
+    server = RemotingServer.create((setup, channel) -> Mono.just(new DecoratingChannel(handler)))
             .bind(TcpServerTransport.create("localhost", 0))
             .block();
   }

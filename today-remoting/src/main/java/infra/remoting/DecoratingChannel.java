@@ -26,11 +26,11 @@ import reactor.core.publisher.Mono;
 /**
  * Wrapper for a Channel. This is useful when we want to override a specific method.
  */
-public class ChannelWrapper implements Channel {
+public class DecoratingChannel implements Channel {
 
   protected final Channel delegate;
 
-  public ChannelWrapper(Channel delegate) {
+  public DecoratingChannel(Channel delegate) {
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
   }
 

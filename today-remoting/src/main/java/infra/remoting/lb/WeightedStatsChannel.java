@@ -17,13 +17,13 @@
 package infra.remoting.lb;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 
 /**
  * Package private {@code ChannelWrapper} used from {@link WeightedStats#wrap(Channel)} to attach a
  * {@link WeightedStats} instance to an {@code Channel}.
  */
-final class WeightedStatsChannel extends ChannelWrapper implements WeightedStats {
+final class WeightedStatsChannel extends DecoratingChannel implements WeightedStats {
 
   private final WeightedStats weightedStats;
 

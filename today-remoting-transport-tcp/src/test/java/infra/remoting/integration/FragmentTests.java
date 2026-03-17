@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
@@ -65,7 +65,7 @@ public class FragmentTests {
 
     TcpServerTransport serverTransport = TcpServerTransport.create("localhost", randomPort);
     server =
-            RemotingServer.create((setup, channel) -> Mono.just(new ChannelWrapper(handler)))
+            RemotingServer.create((setup, channel) -> Mono.just(new DecoratingChannel(handler)))
                     .fragment(frameSize)
                     .bind(serverTransport)
                     .block();

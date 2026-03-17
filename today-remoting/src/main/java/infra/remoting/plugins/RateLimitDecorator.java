@@ -19,7 +19,7 @@ package infra.remoting.plugins;
 import org.reactivestreams.Publisher;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import reactor.core.publisher.Flux;
 
@@ -107,7 +107,7 @@ public class RateLimitDecorator implements ChannelDecorator {
   /**
    * Responder side proxy, limits response streams.
    */
-  private class ResponderChannel extends ChannelWrapper {
+  private class ResponderChannel extends DecoratingChannel {
 
     ResponderChannel(Channel source) {
       super(source);
@@ -127,7 +127,7 @@ public class RateLimitDecorator implements ChannelDecorator {
   /**
    * Requester side proxy, limits channel request stream.
    */
-  private class RequesterChannel extends ChannelWrapper {
+  private class RequesterChannel extends DecoratingChannel {
 
     RequesterChannel(Channel source) {
       super(source);

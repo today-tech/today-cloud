@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.core.RemotingServer;
@@ -64,7 +64,7 @@ public class IntegrationTests {
 
   static {
     requesterInterceptor = channel ->
-            new ChannelWrapper(channel) {
+            new DecoratingChannel(channel) {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
                 calledRequester = true;
@@ -73,7 +73,7 @@ public class IntegrationTests {
             };
 
     responderInterceptor = channel ->
-            new ChannelWrapper(channel) {
+            new DecoratingChannel(channel) {
               @Override
               public Mono<Payload> requestResponse(Payload payload) {
                 calledResponder = true;

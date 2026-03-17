@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import infra.remoting.RaceTestConstants;
 import infra.remoting.core.ChannelConnector;
@@ -404,7 +404,7 @@ public class LoadbalanceTests {
     Assertions.assertThat(counter.get()).isOne();
   }
 
-  static class TestChannel extends ChannelWrapper {
+  static class TestChannel extends DecoratingChannel {
 
     final Sinks.Empty<Void> sink = Sinks.empty();
 

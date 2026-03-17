@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.FrameAssert;
 import infra.remoting.Payload;
 import infra.remoting.RaceTestConstants;
@@ -512,7 +512,7 @@ public class DefaultChannelClientTests {
             new ClientChannelRule() {
               @Override
               protected Channel newChannel() {
-                return new ChannelWrapper(super.newChannel()) {
+                return new DecoratingChannel(super.newChannel()) {
                   @Override
                   public Mono<Void> onClose() {
                     return super.onClose().and(onCloseDelayer.asMono());

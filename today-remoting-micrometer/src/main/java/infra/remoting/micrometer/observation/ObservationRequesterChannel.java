@@ -22,7 +22,7 @@ import org.reactivestreams.Publisher;
 import java.util.function.Function;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
 import io.micrometer.common.util.StringUtils;
@@ -34,13 +34,13 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 /**
- * Tracing representation of a {@link ChannelWrapper} for the requester.
+ * Tracing representation of a {@link DecoratingChannel} for the requester.
  *
  * @author Marcin Grzejszczak
  * @author Oleh Dokuka
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  */
-public class ObservationRequesterChannel extends ChannelWrapper {
+public class ObservationRequesterChannel extends DecoratingChannel {
 
   /**
    * Aligned with ObservationThreadLocalAccessor#KEY

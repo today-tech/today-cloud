@@ -20,7 +20,7 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
 import infra.remoting.Channel;
-import infra.remoting.ChannelWrapper;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
 import io.micrometer.common.util.StringUtils;
@@ -31,12 +31,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Tracing representation of a {@link ChannelWrapper} for the responder.
+ * Tracing representation of a {@link DecoratingChannel} for the responder.
  *
  * @author Marcin Grzejszczak
  * @author Oleh Dokuka
  */
-public class ObservationResponderChannel extends ChannelWrapper {
+public class ObservationResponderChannel extends DecoratingChannel {
   /** Aligned with ObservationThreadLocalAccessor#KEY */
   private static final String MICROMETER_OBSERVATION_KEY = "micrometer.observation";
 

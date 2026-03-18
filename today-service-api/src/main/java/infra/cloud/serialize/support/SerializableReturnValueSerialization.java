@@ -29,12 +29,13 @@ import infra.cloud.serialize.ReturnValueSerializer;
 import infra.cloud.serialize.SerializationException;
 import infra.cloud.serialize.Writable;
 import infra.cloud.service.ServiceMethod;
+import infra.core.Ordered;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2026/3/18 11:42
  */
-public class SerializableReturnValueSerialization implements ReturnValueDeserializer<Serializable>, ReturnValueSerializer<Serializable> {
+public class SerializableReturnValueSerialization implements ReturnValueDeserializer<Serializable>, ReturnValueSerializer<Serializable>, Ordered {
 
   @Override
   public boolean supportsReturnValue(ServiceMethod method) {
@@ -64,6 +65,11 @@ public class SerializableReturnValueSerialization implements ReturnValueDeserial
     catch (Exception e) {
       throw new SerializationException(method + " return value deserialize failed", e);
     }
+  }
+
+  @Override
+  public int getOrder() {
+    return LOWEST_PRECEDENCE;
   }
 
 }

@@ -16,6 +16,8 @@
 
 package infra.cloud.service;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,9 +86,8 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
     }
 
     @Override
-    public Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
-      result.future().syncUninterruptibly();
-      return result.future().getNow();
+    public @Nullable Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
+      return result.getBlockingValue();
     }
 
     @Override

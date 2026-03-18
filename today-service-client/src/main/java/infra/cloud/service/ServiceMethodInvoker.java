@@ -133,7 +133,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
     @Nullable
     @Override
-    public Object getValue() {
+    public Object getBlockingValue() {
       return future().join();
     }
 

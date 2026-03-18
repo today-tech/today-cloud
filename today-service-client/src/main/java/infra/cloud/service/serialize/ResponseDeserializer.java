@@ -16,9 +16,10 @@
 
 package infra.cloud.service.serialize;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
-import infra.cloud.RpcResponse;
 import infra.cloud.serialize.MessagePackReader;
 import infra.cloud.serialize.ReturnValueDeserializer;
 import infra.cloud.serialize.SerializationException;
@@ -43,17 +44,12 @@ public class ResponseDeserializer {
     this.throwableSerialization = throwableSerialization;
   }
 
-  public RpcResponse deserialize(ServiceInterfaceMethod method, ByteBuf body) throws SerializationException {
+  public @Nullable Object deserialize(ServiceInterfaceMethod method, ByteBuf body) throws SerializationException {
     MessagePackReader input = new MessagePackReader(body);
-    RpcResponse response = new RpcResponse();
-    response.setMethod(method);
-
-    Object result = input.readNullable(in -> {
+    return input.readNullable(in -> {
       var deserializer = findDeserializer(method);
-      return deserializer.deserialize(method, input);
+      return deserializer.deserialize(method, in);
     });
-    response.setResult(result);
-    return response;
   }
 
   private ReturnValueDeserializer findDeserializer(ServiceMethod method) {

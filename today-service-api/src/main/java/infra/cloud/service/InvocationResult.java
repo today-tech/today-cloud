@@ -31,7 +31,7 @@ import infra.util.concurrent.Future;
 public interface InvocationResult extends AttributeAccessor {
 
   @Nullable
-  Object getValue();
+  Object getBlockingValue();
 
   boolean isFailed();
 

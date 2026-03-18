@@ -35,7 +35,7 @@ class DuplexStreamingResult extends AbstractInvocationResult {
   }
 
   @Override
-  public Object getValue() {
+  public Object getBlockingValue() {
     return null;
   }
 

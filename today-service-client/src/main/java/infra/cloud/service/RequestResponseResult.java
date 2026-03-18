@@ -38,15 +38,16 @@ final class RequestResponseResult extends AbstractInvocationResult implements Fu
 
   private final ResponseDeserializer responseDeserializer;
 
+  private Future<Object> future;
+
   RequestResponseResult(ServiceInterfaceMethod method, Mono<Payload> resultPublisher, ResponseDeserializer responseDeserializer) {
     this.resultPublisher = resultPublisher;
     this.method = method;
     this.responseDeserializer = responseDeserializer;
   }
 
-  @Nullable
   @Override
-  public Object getValue() {
+  public @Nullable Object getBlockingValue() {
     return publisher().block();
   }
 
@@ -82,7 +83,10 @@ final class RequestResponseResult extends AbstractInvocationResult implements Fu
 
   @Override
   public Future<Object> future() {
-    return PublisherFuture.of(publisher());
+    if (future == null) {
+      future = PublisherFuture.of(publisher());
+    }
+    return future;
   }
 
   @Override

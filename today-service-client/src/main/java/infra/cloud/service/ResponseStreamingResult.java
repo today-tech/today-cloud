@@ -44,7 +44,7 @@ final class ResponseStreamingResult extends AbstractInvocationResult implements 
   }
 
   @Override
-  public Object getValue() {
+  public Object getBlockingValue() {
     return null;
   }
 

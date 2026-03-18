@@ -3,7 +3,7 @@ infra.beans.factory.support.DependencyResolvingStrategy=\
 
 
 infra.cloud.serialize.ArgumentSerialization=\
-  infra.cloud.serialize.ProtobufArgumentSerialization,\
-  infra.cloud.serialize.SimpleValueArgumentSerialization
+  infra.cloud.serialize.support.ProtobufArgumentSerialization,\
+  infra.cloud.serialize.support.SimpleValueArgumentSerialization
 
 

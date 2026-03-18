@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package infra.cloud.serialize;
+package infra.cloud.serialize.support;
 
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import infra.cloud.serialize.ArgumentSerialization;
+import infra.cloud.serialize.Readable;
+import infra.cloud.serialize.Writable;
 import infra.cloud.serialize.value.ValueSerialization;
 import infra.core.MethodParameter;
 
@@ -42,14 +45,14 @@ public class SimpleValueArgumentSerialization implements ArgumentSerialization<O
   private final Map<Class<?>, ValueSerialization<?>> serializationMap = new HashMap<>();
 
   public SimpleValueArgumentSerialization() {
-    serializationMap.put(int.class, map(Readable::readInt, Writable::write));
-    serializationMap.put(Integer.class, map(Readable::readInt, Writable::write));
+    serializationMap.put(int.class, map(infra.cloud.serialize.Readable::readInt, Writable::write));
+    serializationMap.put(Integer.class, map(infra.cloud.serialize.Readable::readInt, Writable::write));
 
-    serializationMap.put(long.class, map(Readable::readLong, Writable::write));
-    serializationMap.put(Long.class, map(Readable::readLong, Writable::write));
+    serializationMap.put(long.class, map(infra.cloud.serialize.Readable::readLong, Writable::write));
+    serializationMap.put(Long.class, map(infra.cloud.serialize.Readable::readLong, Writable::write));
 
-    serializationMap.put(short.class, map(Readable::readShort, Writable::write));
-    serializationMap.put(Short.class, map(Readable::readShort, Writable::write));
+    serializationMap.put(short.class, map(infra.cloud.serialize.Readable::readShort, Writable::write));
+    serializationMap.put(Short.class, map(infra.cloud.serialize.Readable::readShort, Writable::write));
   }
 
   @Override

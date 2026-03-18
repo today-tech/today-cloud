@@ -16,11 +16,9 @@
 
 package infra.cloud.service;
 
-import org.jspecify.annotations.Nullable;
-
 import java.lang.reflect.Method;
 
-import infra.core.MethodParameter;
+import infra.core.annotation.AnnotatedMethod;
 
 /**
  * Represents a method within a service, encapsulating metadata such as the service interface,
@@ -30,23 +28,16 @@ import infra.core.MethodParameter;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/10 08:20
  */
-public class ServiceMethod {
+public class ServiceMethod extends AnnotatedMethod {
 
   protected final ServiceMetadata serviceMetadata;
 
-  protected final MethodParameter[] parameters;
-
   protected final Class<?> serviceInterface;
 
-  protected final Method method;
-
-  private @Nullable MethodParameter returnTypeParameter;
-
   public ServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
-    this.parameters = initMethodParameters(method);
+    super(method);
     this.serviceInterface = serviceInterface;
     this.serviceMetadata = serviceMetadata;
-    this.method = method;
   }
 
   public String getServiceId() {
@@ -59,36 +50,6 @@ public class ServiceMethod {
 
   public Class<?> getServiceInterface() {
     return serviceInterface;
-  }
-
-  public Method getMethod() {
-    return method;
-  }
-
-  public MethodParameter[] getParameters() {
-    return parameters;
-  }
-
-  public MethodParameter getReturnType() {
-    MethodParameter returnType = returnTypeParameter;
-    if (returnType == null) {
-      returnType = MethodParameter.forExecutable(method, -1);
-      this.returnTypeParameter = returnType;
-    }
-    return returnType;
-  }
-
-  private MethodParameter[] initMethodParameters(Method method) {
-    int count = method.getParameterCount();
-    if (count == 0) {
-      return MethodParameter.EMPTY_ARRAY;
-    }
-
-    MethodParameter[] result = new MethodParameter[count];
-    for (int i = 0; i < count; i++) {
-      result[i] = new MethodParameter(method, i);
-    }
-    return result;
   }
 
 }

@@ -32,14 +32,14 @@ import reactor.core.publisher.Mono;
  */
 final class RequestResponseResult extends AbstractInvocationResult implements Function<Payload, Object> {
 
-  private final Mono<Payload> payloadMono;
+  private final Mono<Payload> resultPublisher;
 
   private final ServiceInterfaceMethod method;
 
   private final ResponseDeserializer responseDeserializer;
 
-  RequestResponseResult(ServiceInterfaceMethod method, Mono<Payload> payloadMono, ResponseDeserializer responseDeserializer) {
-    this.payloadMono = payloadMono;
+  RequestResponseResult(ServiceInterfaceMethod method, Mono<Payload> resultPublisher, ResponseDeserializer responseDeserializer) {
+    this.resultPublisher = resultPublisher;
     this.method = method;
     this.responseDeserializer = responseDeserializer;
   }
@@ -87,7 +87,7 @@ final class RequestResponseResult extends AbstractInvocationResult implements Fu
 
   @Override
   public Mono<Object> publisher() {
-    return payloadMono.map(this);
+    return resultPublisher.map(this);
   }
 
 }

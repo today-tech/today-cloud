@@ -175,7 +175,7 @@ public interface Writable {
    * @param v the value to be written.
    * @throws SerializationException if a serialization error occurs.
    */
-  <V> void writeNullable(@Nullable V v, BiConsumer<Writable, V> valueMapper);
+  <V> boolean writeNullable(@Nullable V v, BiConsumer<Writable, V> valueMapper);
 
   /**
    * Writes a {@code array} value.

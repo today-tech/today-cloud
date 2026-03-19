@@ -300,12 +300,14 @@ public class MessagePackWriter implements Writable {
   }
 
   @Override
-  public <V> void writeNullable(@Nullable V v, BiConsumer<Writable, V> valueMapper) {
+  public <V> boolean writeNullable(@Nullable V v, BiConsumer<Writable, V> valueMapper) {
     if (v == null) {
       writeNull();
+      return true;
     }
     else {
       valueMapper.accept(this, v);
+      return false;
     }
   }
 

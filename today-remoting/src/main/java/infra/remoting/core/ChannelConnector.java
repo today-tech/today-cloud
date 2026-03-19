@@ -84,6 +84,8 @@ public class ChannelConnector {
   private static final BiConsumer<Channel, Invalidatable> INVALIDATE_FUNCTION =
           (r, i) -> r.onClose().subscribe(null, __ -> i.invalidate(), i::invalidate);
 
+  private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
+
   private Mono<Payload> setupPayloadMono = Mono.empty();
 
   @Deprecated
@@ -96,19 +98,13 @@ public class ChannelConnector {
 
   private Duration keepAliveMaxLifeTime = Duration.ofSeconds(90);
 
-  @Nullable
-  private ChannelAcceptor acceptor;
+  private @Nullable ChannelAcceptor acceptor;
 
-  private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
+  private @Nullable Retry retrySpec;
 
-  @Nullable
-  private Retry retrySpec;
+  private @Nullable Resume resume;
 
-  @Nullable
-  private Resume resume;
-
-  @Nullable
-  private Consumer<LeaseSpec> leaseConfigurer;
+  private @Nullable Consumer<LeaseSpec> leaseConfigurer;
 
   private int mtu = 0;
 

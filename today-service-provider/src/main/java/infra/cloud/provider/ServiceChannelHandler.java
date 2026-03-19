@@ -45,12 +45,16 @@ public class ServiceChannelHandler implements Channel {
 
   @Override
   public Mono<Payload> requestResponse(Payload payload) {
-    RemoteRequest request = requestDeserializer.deserialize(new MessagePackReader(payload.data()));
+    RemoteRequest request = null;
     try {
+      request = requestDeserializer.deserialize(new MessagePackReader(payload.data()));
       Object result = request.invoke();
       return responseSerializer.serialize(request, result);
     }
     catch (Throwable e) {
+      if (request == null) {
+        return Mono.error(e);
+      }
       return responseSerializer.serialize(request, e);
     }
   }

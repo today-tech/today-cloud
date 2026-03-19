@@ -30,8 +30,7 @@ import infra.remoting.Connection;
  */
 public class InitializingInterceptorRegistry extends InterceptorRegistry {
 
-  @Nullable
-  public RequestInterceptor initRequesterRequestInterceptor(Channel channelRequester) {
+  public @Nullable RequestInterceptor initRequesterRequestInterceptor(Channel channelRequester) {
     return CompositeRequestInterceptor.create(
             requesterRequestInterceptors
                     .stream()
@@ -39,8 +38,7 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
                     .collect(Collectors.toList()));
   }
 
-  @Nullable
-  public RequestInterceptor initResponderRequestInterceptor(Channel channelResponder, RequestInterceptor... perConnectionInterceptors) {
+  public @Nullable RequestInterceptor initResponderRequestInterceptor(Channel channelResponder, RequestInterceptor... perConnectionInterceptors) {
     return CompositeRequestInterceptor.create(
             Stream.concat(Stream.of(perConnectionInterceptors), responderRequestInterceptors.stream()
                             .map(inteptorFactory -> inteptorFactory.apply(channelResponder)))

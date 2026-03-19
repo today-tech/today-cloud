@@ -64,7 +64,7 @@ public class LocalServiceHolder extends ApplicationObjectSupport implements Smar
   }
 
   @Nullable
-  public ServiceObject getServiceInterface(String serviceClass) {
+  public ServiceObject getServiceObject(String serviceClass) {
     return classNameMap.get(serviceClass);
   }
 

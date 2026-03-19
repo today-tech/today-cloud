@@ -61,16 +61,16 @@ class ResponderChannel extends ChannelSupport implements Channel {
 
   private final Sinks.Empty<Void> onThisSideClosedSink;
 
-  @Nullable
-  private final ResponderLeaseTracker leaseHandler;
+  private final @Nullable ResponderLeaseTracker leaseHandler;
 
-  private volatile Throwable terminationError;
+  private volatile @Nullable Throwable terminationError;
+
   private static final AtomicReferenceFieldUpdater<ResponderChannel, Throwable> TERMINATION_ERROR =
           AtomicReferenceFieldUpdater.newUpdater(
                   ResponderChannel.class, Throwable.class, "terminationError");
 
   ResponderChannel(Connection connection, Channel requestHandler, PayloadDecoder payloadDecoder, @Nullable ResponderLeaseTracker leaseHandler,
-          int mtu, int maxFrameLength, int maxInboundPayloadSize, Function<Channel, ? extends RequestInterceptor> requestInterceptorFunction,
+          int mtu, int maxFrameLength, int maxInboundPayloadSize, Function<Channel, ? extends @Nullable RequestInterceptor> requestInterceptorFunction,
           Sinks.Empty<Void> onThisSideClosedSink) {
     super(mtu, maxFrameLength, maxInboundPayloadSize, payloadDecoder, connection, null, requestInterceptorFunction);
     this.leaseHandler = leaseHandler;

@@ -74,11 +74,9 @@ public final class RemotingServer {
 
   private final InitializingInterceptorRegistry interceptors = new InitializingInterceptorRegistry();
 
-  @Nullable
-  private Resume resume;
+  private @Nullable Resume resume;
 
-  @Nullable
-  private Consumer<LeaseSpec> leaseConfigurer = null;
+  private @Nullable Consumer<LeaseSpec> leaseConfigurer = null;
 
   private int mtu = 0;
 

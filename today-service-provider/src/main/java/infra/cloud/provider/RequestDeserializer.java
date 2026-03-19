@@ -62,7 +62,7 @@ public class RequestDeserializer {
     String methodName = readable.readString();
     String[] paramTypes = readable.read(String.class, Readable::readString);
 
-    var serviceInterface = localServiceHolder.getServiceInterface(serviceClass);
+    var serviceInterface = localServiceHolder.getServiceObject(serviceClass);
     Assert.state(serviceInterface != null, "service interface not found");
     InvocableMethod method = methodMapCache.get(new MethodKey(serviceClass, methodName, paramTypes), serviceInterface);
 

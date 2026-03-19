@@ -62,22 +62,22 @@ class RequesterChannel extends ChannelSupport implements Channel {
     CLOSED_CHANNEL_EXCEPTION.setStackTrace(new StackTraceElement[0]);
   }
 
-  private volatile Throwable terminationError;
+  private volatile @Nullable Throwable terminationError;
+
   private static final AtomicReferenceFieldUpdater<RequesterChannel, Throwable> TERMINATION_ERROR =
           AtomicReferenceFieldUpdater.newUpdater(RequesterChannel.class, Throwable.class, "terminationError");
 
-  @Nullable
-  private final RequesterLeaseTracker requesterLeaseTracker;
+  private final @Nullable RequesterLeaseTracker requesterLeaseTracker;
+
+  private final @Nullable KeepAliveFramesAcceptor keepAliveFramesAcceptor;
 
   private final Sinks.Empty<Void> onThisSideClosedSink;
-
-  private final KeepAliveFramesAcceptor keepAliveFramesAcceptor;
 
   private final Mono<Void> onAllClosed;
 
   RequesterChannel(Connection connection, PayloadDecoder payloadDecoder, StreamIdProvider streamIdProvider,
           int mtu, int maxFrameLength, int maxInboundPayloadSize, int keepAliveTickPeriod, int keepAliveAckTimeout,
-          @Nullable KeepAliveHandler keepAliveHandler, Function<Channel, RequestInterceptor> requestInterceptorFunction,
+          @Nullable KeepAliveHandler keepAliveHandler, Function<Channel, @Nullable RequestInterceptor> requestInterceptorFunction,
           @Nullable RequesterLeaseTracker requesterLeaseTracker, Sinks.Empty<Void> onThisSideClosedSink, Mono<Void> onAllClosed) {
     super(mtu, maxFrameLength, maxInboundPayloadSize, payloadDecoder, connection, streamIdProvider, requestInterceptorFunction);
 
@@ -96,7 +96,7 @@ class RequesterChannel extends ChannelSupport implements Channel {
               keepAliveFrame -> connection.sendFrame(0, keepAliveFrame), this::tryTerminateOnKeepAlive);
     }
     else {
-      keepAliveFramesAcceptor = null;
+      this.keepAliveFramesAcceptor = null;
     }
   }
 
@@ -136,9 +136,8 @@ class RequesterChannel extends ChannelSupport implements Channel {
     return new MetadataPushRequesterMono(payload, this);
   }
 
-  @Nullable
   @Override
-  public RequesterLeaseTracker getRequesterLeaseTracker() {
+  public @Nullable RequesterLeaseTracker getRequesterLeaseTracker() {
     return this.requesterLeaseTracker;
   }
 
@@ -221,7 +220,9 @@ class RequesterChannel extends ChannelSupport implements Channel {
         tryTerminateOnZeroError(frame);
         break;
       case LEASE:
-        requesterLeaseTracker.handleLeaseFrame(frame);
+        if (requesterLeaseTracker != null) {
+          requesterLeaseTracker.handleLeaseFrame(frame);
+        }
         break;
       case KEEPALIVE:
         if (keepAliveFramesAcceptor != null) {

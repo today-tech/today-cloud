@@ -99,12 +99,6 @@ public final class WebsocketConnection extends BaseConnection {
 
   @Override
   public String toString() {
-    return "WebsocketConnection{"
-            + "side='"
-            + side
-            + '\''
-            + ", connection="
-            + connection
-            + '}';
+    return "WebsocketConnection{side='%s', connection=%s}".formatted(side, connection);
   }
 }

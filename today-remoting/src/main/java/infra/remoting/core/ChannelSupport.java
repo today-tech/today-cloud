@@ -43,17 +43,15 @@ class ChannelSupport implements Channel {
 
   public final Connection connection;
 
-  @Nullable
-  public final RequestInterceptor requestInterceptor;
+  public final @Nullable RequestInterceptor requestInterceptor;
 
-  @Nullable
-  protected final StreamIdProvider streamIdProvider;
+  protected final @Nullable StreamIdProvider streamIdProvider;
 
   protected final IntObjectMap<FrameHandler> activeStreams;
 
   public ChannelSupport(int mtu, int maxFrameLength, int maxInboundPayloadSize,
           PayloadDecoder payloadDecoder, Connection connection, @Nullable StreamIdProvider streamIdProvider,
-          Function<Channel, ? extends RequestInterceptor> requestInterceptorFunction) {
+          Function<Channel, ? extends @Nullable RequestInterceptor> requestInterceptorFunction) {
 
     this.activeStreams = new IntObjectHashMap<>();
     this.mtu = mtu;
@@ -157,8 +155,7 @@ class ChannelSupport implements Channel {
    * @param streamId used to resolve {@link FrameHandler}
    * @return {@link FrameHandler} or {@code null}
    */
-  @Nullable
-  public synchronized FrameHandler get(int streamId) {
+  public synchronized @Nullable FrameHandler get(int streamId) {
     return this.activeStreams.get(streamId);
   }
 

@@ -22,7 +22,6 @@ import java.util.List;
 
 import infra.cloud.serialize.MessagePackWriter;
 import infra.cloud.serialize.ReturnValueSerializer;
-import infra.cloud.serialize.Writable;
 import infra.cloud.service.ServiceMethod;
 import infra.remoting.Payload;
 import infra.remoting.util.ByteBufPayload;
@@ -45,26 +44,24 @@ public class ResponseSerializer {
     this.returnValueSerializers = returnValueSerializers;
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @SuppressWarnings({ "unchecked" })
   public Mono<Payload> serialize(RemoteRequest request, @Nullable Object result) {
-    ByteBuf buffer = allocator.ioBuffer();
-    Writable writable = new MessagePackWriter(buffer);
+    return Mono.create(sink -> {
+      ByteBuf buffer = allocator.ioBuffer();
+      if (new MessagePackWriter(buffer).writeNullable(result, (out, v) -> {
+        InvocableMethod invocableMethod = request.getMethod();
+        findSerializer(invocableMethod)
+                .serialize(invocableMethod, v, out);
 
-    writable.writeNullable(result, (out, v) -> {
-      InvocableMethod invocableMethod = request.getMethod();
-      ReturnValueSerializer serializer = findSerializer(invocableMethod);
-      serializer.serialize(invocableMethod, v, out);
+        sink.success(ByteBufPayload.create(buffer));
+      })) {
+        sink.success(ByteBufPayload.create(buffer));
+      }
     });
-
-    Payload payload = ByteBufPayload.create(buffer);
-    return Mono.just(payload);
   }
 
   public Mono<Payload> serialize(RemoteRequest request, Throwable throwable) {
-    ByteBuf buffer = allocator.ioBuffer();
-
-    Payload payload = ByteBufPayload.create(buffer);
-    return Mono.just(payload);
+    return Mono.error(throwable);
   }
 
   @SuppressWarnings("rawtypes")

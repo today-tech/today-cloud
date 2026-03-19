@@ -58,7 +58,8 @@ abstract class ServerSetup {
 
   abstract Mono<Void> acceptChannelResume(ByteBuf frame, Connection connection);
 
-  void dispose() { }
+  void dispose() {
+  }
 
   void sendError(Connection connection, ProtocolErrorException exception) {
     connection.sendErrorAndClose(exception);

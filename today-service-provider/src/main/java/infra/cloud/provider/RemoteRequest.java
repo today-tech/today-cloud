@@ -45,7 +45,7 @@ public class RemoteRequest {
     return method;
   }
 
-  public ServiceObject getServiceInterface() {
+  public ServiceObject getServiceObject() {
     return serviceObject;
   }
 

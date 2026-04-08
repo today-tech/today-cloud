@@ -29,3 +29,7 @@ dependencies {
   testFixturesApi 'org.hdrhistogram:HdrHistogram:2.1.12'
 
 }
+
+compileJava {
+  options.compilerArgs << "-Xlint:-sunapi"
+}

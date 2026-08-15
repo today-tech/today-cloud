@@ -16,6 +16,8 @@
 
 package infra.cloud.client;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -147,7 +149,7 @@ public class DefaultServiceInstance implements ServiceInstance {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(@Nullable Object o) {
     if (this == o) {
       return true;
     }

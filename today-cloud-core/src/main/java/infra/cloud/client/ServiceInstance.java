@@ -16,6 +16,8 @@
 
 package infra.cloud.client;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Map;
 
 /**
@@ -27,6 +29,21 @@ import java.util.Map;
  * @since 1.0 2023/11/19 20:52
  */
 public interface ServiceInstance {
+
+  /**
+   * Constant to represent the group of the service contained with {@link #getMetadata()}.
+   */
+  String GROUP = "group";
+
+  /**
+   * Constant to represent the zone of the service contained with {@link #getMetadata()}.
+   */
+  String ZONE = "zone";
+
+  /**
+   * Constant to represent the region of the service contained with {@link #getMetadata()}.
+   */
+  String REGION = "region";
 
   /**
    * @return The unique instance ID as registered.
@@ -59,5 +76,9 @@ public interface ServiceInstance {
    * @return The key / value pair metadata associated with the service instance.
    */
   Map<String, String> getMetadata();
+
+  default @Nullable String getMetadata(String name) {
+    return getMetadata().get(name);
+  }
 
 }

@@ -3,6 +3,7 @@
     <option name="ACTIVE_PROFILES" />
     <option name="MAIN_CLASS_NAME" value="cn.taketoday.demo.ClientApplication" />
     <module name="today-cloud-samples.demo-tests.demo-user-rest.main" />
+    <option name="VM_PARAMETERS" value="--enable-native-access=ALL-UNNAMED" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

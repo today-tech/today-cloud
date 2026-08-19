@@ -20,7 +20,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-import infra.lang.Assert;
+import infra.util.Assert;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>

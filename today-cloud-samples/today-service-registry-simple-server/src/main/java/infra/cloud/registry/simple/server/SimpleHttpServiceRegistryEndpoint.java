@@ -24,7 +24,7 @@ import infra.cloud.registry.simple.HttpRegistration;
 import infra.cloud.registry.simple.api.SimpleHttpServiceRegistryAPI;
 import infra.http.HttpStatus;
 import infra.http.MediaType;
-import infra.lang.Assert;
+import infra.util.Assert;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.util.CollectionUtils;

@@ -23,7 +23,7 @@ import infra.cloud.serialize.Readable;
 import infra.cloud.serialize.SerializationException;
 import infra.cloud.serialize.Writable;
 import infra.core.MethodParameter;
-import infra.lang.Assert;
+import infra.util.Assert;
 
 /**
  * Defines a strategy for serializing and deserializing values of type {@code T}.

@@ -43,8 +43,8 @@ import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
 import infra.core.io.ResourceLoader;
-import infra.lang.TodayStrategies;
 import infra.stereotype.Component;
+import infra.util.TodayStrategies;
 import io.netty.buffer.ByteBufAllocator;
 
 /**

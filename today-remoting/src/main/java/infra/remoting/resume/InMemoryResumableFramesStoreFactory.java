@@ -16,7 +16,7 @@
 
 package infra.remoting.resume;
 
-import infra.lang.Assert;
+import infra.util.Assert;
 import io.netty.buffer.ByteBuf;
 
 /**

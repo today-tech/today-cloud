@@ -16,7 +16,7 @@
 
 package infra.cloud.serialize.format;
 
-import infra.lang.Assert;
+import infra.util.Assert;
 
 public class ExtensionTypeHeader {
 

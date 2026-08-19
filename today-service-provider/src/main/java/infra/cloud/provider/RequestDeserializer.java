@@ -28,7 +28,7 @@ import infra.cloud.serialize.SerializationException;
 import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.core.MethodParameter;
-import infra.lang.Assert;
+import infra.util.Assert;
 import infra.reflect.MethodInvoker;
 import infra.util.MapCache;
 

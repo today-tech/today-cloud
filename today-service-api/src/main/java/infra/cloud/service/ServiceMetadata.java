@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import infra.core.style.ToStringBuilder;
-import infra.lang.Assert;
+import infra.util.Assert;
 
 /**
  * Represents metadata for a service artifact (e.g., a JAR file) that may contain

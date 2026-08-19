@@ -20,7 +20,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-import infra.lang.Assert;
+import infra.util.Assert;
 
 /**
  * Host information.

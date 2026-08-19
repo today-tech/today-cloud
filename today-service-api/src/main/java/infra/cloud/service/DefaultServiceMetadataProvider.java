@@ -29,15 +29,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import infra.lang.Assert;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
+import infra.util.Assert;
 import infra.util.ClassUtils;
 import infra.util.CollectionUtils;
 import infra.util.MultiValueMap;
 import infra.util.StringUtils;
 
-import static infra.lang.TodayStrategies.readStrategies;
+import static infra.util.TodayStrategies.readStrategies;
 
 /**
  * Default implementation of {@link ServiceMetadataProvider} that loads service metadata

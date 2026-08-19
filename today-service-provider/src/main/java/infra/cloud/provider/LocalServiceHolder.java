@@ -27,7 +27,7 @@ import infra.beans.factory.SmartInitializingSingleton;
 import infra.cloud.service.ServiceMetadata;
 import infra.cloud.service.ServiceMetadataProvider;
 import infra.context.support.ApplicationObjectSupport;
-import infra.lang.Assert;
+import infra.util.Assert;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
 import infra.util.MultiValueMap;

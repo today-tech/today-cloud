@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import infra.core.MethodIntrospector;
-import infra.lang.Assert;
+import infra.util.Assert;
 import infra.util.ReflectionUtils;
 
 /**

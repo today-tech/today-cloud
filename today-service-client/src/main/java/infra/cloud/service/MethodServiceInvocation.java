@@ -16,13 +16,13 @@
 
 package infra.cloud.service;
 
-import infra.core.AttributeAccessorSupport;
+import infra.core.DefaultAttributeAccessor;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 14:11
  */
-public abstract class MethodServiceInvocation extends AttributeAccessorSupport implements ServiceInvocation {
+public abstract class MethodServiceInvocation extends DefaultAttributeAccessor implements ServiceInvocation {
 
   protected final ServiceInterfaceMethod serviceMethod;
 

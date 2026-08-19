@@ -44,7 +44,6 @@ import infra.context.condition.ConditionalOnBooleanProperty;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
 import infra.core.io.ResourceLoader;
-import infra.lang.TodayStrategies;
 import infra.remoting.Closeable;
 import infra.remoting.core.Resume;
 import infra.remoting.resume.InMemoryResumableFramesStoreFactory;
@@ -52,6 +51,7 @@ import infra.remoting.resume.RandomUUIDResumeTokenGenerator;
 import infra.remoting.resume.ResumableFramesStoreFactory;
 import infra.remoting.resume.ResumeTokenGenerator;
 import infra.stereotype.Component;
+import infra.util.TodayStrategies;
 
 /**
  * Auto-configuration for the Service Provider.

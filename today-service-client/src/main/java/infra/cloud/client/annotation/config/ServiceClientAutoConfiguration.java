@@ -44,7 +44,7 @@ import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
 import infra.core.io.ResourceLoader;
 import infra.stereotype.Component;
-import infra.util.TodayStrategies;
+import infra.util.InfraStrategies;
 import io.netty.buffer.ByteBufAllocator;
 
 /**
@@ -81,13 +81,13 @@ public final class ServiceClientAutoConfiguration {
   public static ResponseDeserializer responseDeserializer(List<ReturnValueDeserializer> serializations,
           ThrowableSerialization throwableSerialization, ResourceLoader resourceLoader) {
     // order after ReturnValueDeserializer beans
-    serializations.addAll(TodayStrategies.find(ReturnValueDeserializer.class, resourceLoader.getClassLoader()));
+    serializations.addAll(InfraStrategies.find(ReturnValueDeserializer.class, resourceLoader.getClassLoader()));
     return new ResponseDeserializer(serializations, throwableSerialization);
   }
 
   @Component
   public static RequestSerializer requestSerializer(List<ArgumentSerialization> argumentSerializations, ResourceLoader resourceLoader) {
-    List<ArgumentSerialization> serializations = TodayStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
+    List<ArgumentSerialization> serializations = InfraStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
     argumentSerializations.addAll(serializations); // order after ArgumentSerialization beans
     return new RequestSerializer(argumentSerializations);
   }

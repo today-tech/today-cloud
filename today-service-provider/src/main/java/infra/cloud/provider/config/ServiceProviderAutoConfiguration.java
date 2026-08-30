@@ -51,7 +51,7 @@ import infra.remoting.resume.RandomUUIDResumeTokenGenerator;
 import infra.remoting.resume.ResumableFramesStoreFactory;
 import infra.remoting.resume.ResumeTokenGenerator;
 import infra.stereotype.Component;
-import infra.util.TodayStrategies;
+import infra.util.InfraStrategies;
 
 /**
  * Auto-configuration for the Service Provider.
@@ -91,14 +91,14 @@ public final class ServiceProviderAutoConfiguration {
   public static RequestDeserializer requestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider<ServiceMethod> serviceInterfaceMetadataProvider,
           ResourceLoader resourceLoader, LocalServiceHolder localServiceHolder) {
-    List<ArgumentSerialization> serializations = TodayStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
+    List<ArgumentSerialization> serializations = InfraStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
     argumentSerializations.addAll(serializations); // order after ArgumentSerialization beans
     return new RequestDeserializer(argumentSerializations, serviceInterfaceMetadataProvider, localServiceHolder);
   }
 
   @Component
   public static ResponseSerializer responseSerializer(List<ReturnValueSerializer> returnValueSerializers, ResourceLoader resourceLoader) {
-    List<ReturnValueSerializer> serializations = TodayStrategies.find(ReturnValueSerializer.class, resourceLoader.getClassLoader());
+    List<ReturnValueSerializer> serializations = InfraStrategies.find(ReturnValueSerializer.class, resourceLoader.getClassLoader());
     returnValueSerializers.addAll(serializations); // order after ReturnValueSerializer beans
     return new ResponseSerializer(returnValueSerializers);
   }

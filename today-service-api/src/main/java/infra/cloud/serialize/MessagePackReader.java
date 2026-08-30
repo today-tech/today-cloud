@@ -41,7 +41,7 @@ import infra.cloud.serialize.format.MessageTypeException;
 import infra.lang.Constant;
 import infra.lang.Enumerable;
 import infra.util.CollectionUtils;
-import infra.util.TodayStrategies;
+import infra.util.InfraStrategies;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 
@@ -90,10 +90,10 @@ import static infra.cloud.serialize.format.MessagePackCode.isFixedRaw;
  */
 public class MessagePackReader implements Readable {
 
-  private static final int stringSizeLimit = TodayStrategies.getInt(
+  private static final int stringSizeLimit = InfraStrategies.getInt(
           "infra.cloud.serialize.stringSizeLimit", Integer.MAX_VALUE / 2);
 
-  private static final Charset stringCharset = Charset.forName(TodayStrategies.getProperty(
+  private static final Charset stringCharset = Charset.forName(InfraStrategies.getProperty(
           "infra.cloud.serialize.stringCharset", "UTF-8"));
 
   private final ByteBuf buffer;

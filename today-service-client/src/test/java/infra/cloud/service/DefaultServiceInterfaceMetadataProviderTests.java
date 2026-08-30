@@ -39,7 +39,8 @@ class DefaultServiceInterfaceMetadataProviderTests {
   void getMetadata() {
 
     ServiceMetadataProvider serviceMetadataProvider = serviceInterface -> {
-      return new ServiceMetadata("demo-user-service", "1.0");
+      return new ServiceMetadata("demo-user-service", "1.0",
+              List.of("infra.cloud.service.DefaultServiceInterfaceMetadataProviderTests.DemoUserService"));
     };
 
     var metadataProvider = new DefaultServiceInterfaceMetadataProvider(serviceMetadataProvider, List.of());

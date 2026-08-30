@@ -37,7 +37,7 @@ import infra.util.CollectionUtils;
 import infra.util.MultiValueMap;
 import infra.util.StringUtils;
 
-import static infra.util.TodayStrategies.readStrategies;
+import static infra.util.InfraStrategies.readStrategies;
 
 /**
  * Default implementation of {@link ServiceMetadataProvider} that loads service metadata

@@ -1,0 +1,26 @@
+description = "TODAY Remoting Transport Websocket based on netty"
+
+
+dependencies {
+  api(project(":today-remoting"))
+
+  api "io.projectreactor.netty:reactor-netty-core"
+  api "io.projectreactor.netty:reactor-netty-http"
+
+  optional 'io.netty:netty-transport'
+  optional 'io.netty:netty-codec'
+  optional 'io.netty:netty-handler'
+  optional 'io.netty:netty-transport-classes-epoll'
+
+  testImplementation 'io.projectreactor:reactor-test'
+  testImplementation project(":today-remoting-transport-tcp")
+
+  testRuntimeOnly 'org.bouncycastle:bcpkix-jdk15on:1.70'
+  testRuntimeOnly 'ch.qos.logback:logback-classic'
+//  testRuntimeOnly 'io.netty:netty-tcnative-boringssl-static' + os_suffix
+
+  testImplementation testFixtures(project(":today-remoting"))
+
+
+}
+

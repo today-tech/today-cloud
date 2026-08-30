@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.core;
 
@@ -31,58 +30,58 @@ import reactor.core.publisher.Mono;
  */
 class RemotingClientAdapter implements RemotingClient {
 
-  private final Channel rsocket;
+  private final Channel channel;
 
-  public RemotingClientAdapter(Channel rsocket) {
-    this.rsocket = rsocket;
+  public RemotingClientAdapter(Channel channel) {
+    this.channel = channel;
   }
 
-  public Channel rsocket() {
-    return rsocket;
+  public Channel channel() {
+    return channel;
   }
 
   @Override
   public boolean connect() {
-    throw new UnsupportedOperationException("Connect does not apply to a server side RSocket");
+    throw new UnsupportedOperationException("Connect does not apply to a server side Channel");
   }
 
   @Override
   public Mono<Channel> source() {
-    return Mono.just(rsocket);
+    return Mono.just(channel);
   }
 
   @Override
   public Mono<Void> onClose() {
-    return rsocket.onClose();
+    return channel.onClose();
   }
 
   @Override
   public Mono<Void> fireAndForget(Mono<Payload> payloadMono) {
-    return payloadMono.flatMap(rsocket::fireAndForget);
+    return payloadMono.flatMap(channel::fireAndForget);
   }
 
   @Override
   public Mono<Payload> requestResponse(Mono<Payload> payloadMono) {
-    return payloadMono.flatMap(rsocket::requestResponse);
+    return payloadMono.flatMap(channel::requestResponse);
   }
 
   @Override
   public Flux<Payload> requestStream(Mono<Payload> payloadMono) {
-    return payloadMono.flatMapMany(rsocket::requestStream);
+    return payloadMono.flatMapMany(channel::requestStream);
   }
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return rsocket.requestChannel(payloads);
+    return channel.requestChannel(payloads);
   }
 
   @Override
   public Mono<Void> metadataPush(Mono<Payload> payloadMono) {
-    return payloadMono.flatMap(rsocket::metadataPush);
+    return payloadMono.flatMap(channel::metadataPush);
   }
 
   @Override
   public void dispose() {
-    rsocket.dispose();
+    channel.dispose();
   }
 }

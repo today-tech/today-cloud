@@ -1,28 +1,28 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.plugins;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.ChannelAcceptor;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 
 /**
  * Extends {@link InterceptorRegistry} with methods for building a chain of registered interceptors.
@@ -30,8 +30,7 @@ import infra.remoting.DuplexConnection;
  */
 public class InitializingInterceptorRegistry extends InterceptorRegistry {
 
-  @Nullable
-  public RequestInterceptor initRequesterRequestInterceptor(Channel channelRequester) {
+  public @Nullable RequestInterceptor initRequesterRequestInterceptor(Channel channelRequester) {
     return CompositeRequestInterceptor.create(
             requesterRequestInterceptors
                     .stream()
@@ -39,37 +38,36 @@ public class InitializingInterceptorRegistry extends InterceptorRegistry {
                     .collect(Collectors.toList()));
   }
 
-  @Nullable
-  public RequestInterceptor initResponderRequestInterceptor(Channel channelResponder, RequestInterceptor... perConnectionInterceptors) {
+  public @Nullable RequestInterceptor initResponderRequestInterceptor(Channel channelResponder, RequestInterceptor... perConnectionInterceptors) {
     return CompositeRequestInterceptor.create(
             Stream.concat(Stream.of(perConnectionInterceptors), responderRequestInterceptors.stream()
                             .map(inteptorFactory -> inteptorFactory.apply(channelResponder)))
                     .collect(Collectors.toList()));
   }
 
-  public DuplexConnection initConnection(ConnectionInterceptor.Type type, DuplexConnection connection) {
-    for (ConnectionInterceptor interceptor : connectionInterceptors) {
-      connection = interceptor.intercept(type, connection);
+  public Connection initConnection(ConnectionDecorator.Type type, Connection connection) {
+    for (ConnectionDecorator interceptor : connectionDecorators) {
+      connection = interceptor.decorate(type, connection);
     }
     return connection;
   }
 
-  public Channel decorateRequester(Channel rsocket) {
-    for (ChannelInterceptor interceptor : requesterChannelInterceptors) {
-      rsocket = interceptor.decorate(rsocket);
+  public Channel decorateRequester(Channel channel) {
+    for (ChannelDecorator interceptor : requesterChannelDecorators) {
+      channel = interceptor.decorate(channel);
     }
-    return rsocket;
+    return channel;
   }
 
-  public Channel decorateResponder(Channel rsocket) {
-    for (ChannelInterceptor interceptor : responderChannelInterceptors) {
-      rsocket = interceptor.decorate(rsocket);
+  public Channel decorateResponder(Channel channel) {
+    for (ChannelDecorator interceptor : responderChannelDecorators) {
+      channel = interceptor.decorate(channel);
     }
-    return rsocket;
+    return channel;
   }
 
   public ChannelAcceptor decorateAcceptor(ChannelAcceptor acceptor) {
-    for (ChannelAcceptorInterceptor interceptor : channelAcceptorInterceptors) {
+    for (ChannelAcceptorDecorator interceptor : channelAcceptorDecorators) {
       acceptor = interceptor.decorate(acceptor);
     }
     return acceptor;

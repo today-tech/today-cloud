@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "infra.cloud.discovery.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Service discovery enabled.",
+      "defaultValue": "true"
+    }
+  ]
+}

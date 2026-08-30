@@ -1,19 +1,19 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package infra.remoting.core;
 
 import org.reactivestreams.Subscription;
@@ -40,8 +40,8 @@ import static infra.remoting.core.StateUtils.markReassembling;
 import static infra.remoting.frame.FrameLengthCodec.FRAME_LENGTH_MASK;
 
 class ReassemblyUtils {
-  static final String ILLEGAL_REASSEMBLED_PAYLOAD_SIZE =
-          "Reassembled payload size went out of allowed %s bytes";
+
+  static final String ILLEGAL_REASSEMBLED_PAYLOAD_SIZE = "Reassembled payload size went out of allowed %s bytes";
 
   @SuppressWarnings("ConstantConditions")
   static void release(RequesterFrameHandler framesHolder, long state) {
@@ -52,7 +52,7 @@ class ReassemblyUtils {
     }
   }
 
-  @SuppressWarnings({ "ConstantConditions", "SynchronizationOnLocalVariableOrMethodParameter" })
+  @SuppressWarnings({ "ConstantConditions" })
   static void synchronizedRelease(RequesterFrameHandler framesHolder, long state) {
     if (isReassembling(state)) {
       final CompositeByteBuf frames = framesHolder.getFrames();
@@ -64,17 +64,9 @@ class ReassemblyUtils {
     }
   }
 
-  static <T extends RequesterFrameHandler> void handleNextSupport(
-          AtomicLongFieldUpdater<T> updater,
-          T instance,
-          Subscription subscription,
-          CoreSubscriber<? super Payload> inboundSubscriber,
-          PayloadDecoder payloadDecoder,
-          ByteBufAllocator allocator,
-          int maxInboundPayloadSize,
-          ByteBuf frame,
-          boolean hasFollows,
-          boolean isLastPayload) {
+  static <T extends RequesterFrameHandler> void handleNextSupport(AtomicLongFieldUpdater<T> updater,
+          T instance, Subscription subscription, CoreSubscriber<? super Payload> inboundSubscriber, PayloadDecoder payloadDecoder,
+          ByteBufAllocator allocator, int maxInboundPayloadSize, ByteBuf frame, boolean hasFollows, boolean isLastPayload) {
 
     long state = updater.get(instance);
     if (isTerminated(state)) {
@@ -84,7 +76,7 @@ class ReassemblyUtils {
     if (!hasFollows && !isReassembling(state)) {
       Payload payload;
       try {
-        payload = payloadDecoder.apply(frame);
+        payload = payloadDecoder.decode(frame);
       }
       catch (Throwable t) {
         // sends cancel frame to prevent any further frames
@@ -104,9 +96,7 @@ class ReassemblyUtils {
 
     CompositeByteBuf frames = instance.getFrames();
     if (frames == null) {
-      frames =
-              ReassemblyUtils.addFollowingFrame(
-                      allocator.compositeBuffer(), frame, hasFollows, maxInboundPayloadSize);
+      frames = ReassemblyUtils.addFollowingFrame(allocator.compositeBuffer(), frame, hasFollows, maxInboundPayloadSize);
       instance.setFrames(frames);
 
       long previousState = markReassembling(updater, instance);
@@ -118,8 +108,7 @@ class ReassemblyUtils {
     }
     else {
       try {
-        frames =
-                ReassemblyUtils.addFollowingFrame(frames, frame, hasFollows, maxInboundPayloadSize);
+        frames = ReassemblyUtils.addFollowingFrame(frames, frame, hasFollows, maxInboundPayloadSize);
       }
       catch (IllegalStateException t) {
         if (isTerminated(updater.get(instance))) {
@@ -145,7 +134,7 @@ class ReassemblyUtils {
 
       Payload payload;
       try {
-        payload = payloadDecoder.apply(frames);
+        payload = payloadDecoder.decode(frames);
         frames.release();
       }
       catch (Throwable t) {
@@ -167,18 +156,13 @@ class ReassemblyUtils {
     }
   }
 
-  static CompositeByteBuf addFollowingFrame(
-          CompositeByteBuf frames,
-          ByteBuf followingFrame,
-          boolean hasFollows,
-          int maxInboundPayloadSize) {
+  static CompositeByteBuf addFollowingFrame(CompositeByteBuf frames, ByteBuf followingFrame, boolean hasFollows, int maxInboundPayloadSize) {
     int readableBytes = frames.readableBytes();
     if (readableBytes == 0) {
       return frames.addComponent(true, followingFrame.retain());
     }
     else if (maxInboundPayloadSize != Integer.MAX_VALUE
-            && readableBytes + followingFrame.readableBytes() - FrameHeaderCodec.size()
-            > maxInboundPayloadSize) {
+            && readableBytes + followingFrame.readableBytes() - FrameHeaderCodec.size() > maxInboundPayloadSize) {
       throw new IllegalStateException(
               String.format(ILLEGAL_REASSEMBLED_PAYLOAD_SIZE, maxInboundPayloadSize));
     }
@@ -196,8 +180,7 @@ class ReassemblyUtils {
     // CompositeByteBuf
     if (hasMetadata) {
       final FrameType frameType = FrameHeaderCodec.frameType(frames);
-      final int lengthFieldPosition =
-              FrameHeaderCodec.size() + (frameType.hasInitialRequestN() ? Integer.BYTES : 0);
+      final int lengthFieldPosition = FrameHeaderCodec.size() + (frameType.hasInitialRequestN() ? Integer.BYTES : 0);
 
       frames.markReaderIndex();
       frames.skipBytes(lengthFieldPosition);
@@ -245,11 +228,8 @@ class ReassemblyUtils {
 
   static int assertInboundPayloadSize(int inboundPayloadSize) {
     if (inboundPayloadSize < MIN_MTU_SIZE) {
-      String msg =
-              String.format(
-                      "The min allowed inboundPayloadSize size is %d bytes, provided: %d",
-                      FrameLengthCodec.FRAME_LENGTH_MASK, inboundPayloadSize);
-      throw new IllegalArgumentException(msg);
+      throw new IllegalArgumentException("The min allowed inboundPayloadSize size is %d bytes, provided: %d"
+              .formatted(FrameLengthCodec.FRAME_LENGTH_MASK, inboundPayloadSize));
     }
     else {
       return inboundPayloadSize;

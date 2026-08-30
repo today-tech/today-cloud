@@ -1,0 +1,15 @@
+description = "TODAY Service API"
+
+
+dependencies {
+  api project(":today-remoting")
+  api project(":today-cloud-core")
+  api project(":today-service-serialization")
+
+  implementation 'cn.taketoday:infra-beans'
+  implementation 'cn.taketoday:infra-context'
+
+  optional "com.google.protobuf:protobuf-java"
+
+//  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
+}

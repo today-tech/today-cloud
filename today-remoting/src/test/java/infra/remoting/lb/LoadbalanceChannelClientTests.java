@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.lb;
@@ -26,10 +25,10 @@ import org.reactivestreams.Publisher;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import infra.remoting.Payload;
 import infra.remoting.Channel;
-import infra.remoting.core.RemotingClient;
+import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
+import infra.remoting.core.RemotingClient;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.util.DefaultPayload;
 import reactor.core.publisher.Flux;
@@ -78,17 +77,14 @@ class LoadbalanceChannelClientTests {
   void testChannelReconnection() {
     when(channelConnector.connect(clientTransport)).thenReturn(PROGRESSING_HANDLER);
 
-    RemotingClient client =
-            LoadBalanceRemotingClient.create(
-                    channelConnector,
-                    Mono.just(singletonList(LoadBalanceTarget.of("key", clientTransport))));
+    RemotingClient client = RemotingClient.forLoadBalance(channelConnector,
+            Mono.just(singletonList(LoadBalanceTarget.of("key", clientTransport))));
 
-    Publisher<String> result =
-            client
-                    .requestChannel(SOURCE)
-                    .repeatWhen(longFlux -> longFlux.delayElements(LONG_DURATION).take(5))
-                    .map(Payload::getDataUtf8)
-                    .log();
+    Publisher<String> result = client
+            .requestChannel(SOURCE)
+            .repeatWhen(longFlux -> longFlux.delayElements(LONG_DURATION).take(5))
+            .map(Payload::getDataUtf8)
+            .log();
 
     StepVerifier.create(result)
             .expectSubscription()

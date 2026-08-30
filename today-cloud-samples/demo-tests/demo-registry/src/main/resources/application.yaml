@@ -1,19 +1,21 @@
 server:
-  port: 5000
-
-#registry:
-#  services:
-#    uri: '/services'
+  port: 9000
 
 web:
   resources:
     add-default-mappings: false
+  error:
+    include-message: always
 
 infra:
   profiles:
     active: dev
+  cloud:
+    discovery:
+      enabled: false
 
-configq:
+
+config:
   server:
     etcd:
       endpoints: "http://localhost:2379"
@@ -23,3 +25,8 @@ configq:
 
 app:
   name: demo
+
+logging:
+  level:
+    root: info
+    web: trace

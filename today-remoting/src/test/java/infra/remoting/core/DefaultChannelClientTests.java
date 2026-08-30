@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.core;
@@ -39,13 +38,10 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
+import infra.remoting.Channel;
+import infra.remoting.DecoratingChannel;
 import infra.remoting.FrameAssert;
 import infra.remoting.Payload;
-import infra.remoting.Channel;
 import infra.remoting.RaceTestConstants;
 import infra.remoting.frame.ErrorFrameCodec;
 import infra.remoting.frame.FrameHeaderCodec;
@@ -53,9 +49,12 @@ import infra.remoting.frame.FrameType;
 import infra.remoting.frame.PayloadFrameCodec;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.internal.subscriber.AssertSubscriber;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.util.ByteBufPayload;
-import infra.remoting.util.ChannelDecorator;
+import io.netty.buffer.ByteBuf;
+import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
@@ -71,13 +70,13 @@ import reactor.util.retry.Retry;
 
 public class DefaultChannelClientTests {
 
-  ClientSocketRule rule;
+  ClientChannelRule rule;
 
   @BeforeEach
   public void setUp() throws Throwable {
     Hooks.onNextDropped(ReferenceCountUtil::safeRelease);
     Hooks.onErrorDropped((t) -> { });
-    rule = new ClientSocketRule();
+    rule = new ClientChannelRule();
     rule.init();
   }
 
@@ -201,7 +200,7 @@ public class DefaultChannelClientTests {
     Assumptions.assumeThat(requestType).isNotEqualTo(FrameType.REQUEST_CHANNEL);
 
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-      ClientSocketRule rule = new ClientSocketRule();
+      ClientChannelRule rule = new ClientChannelRule();
       rule.init();
       Payload payload = ByteBufPayload.create("test", "testMetadata");
       TestPublisher<Payload> testPublisher =
@@ -258,7 +257,7 @@ public class DefaultChannelClientTests {
     Assumptions.assumeThat(requestType).isNotEqualTo(FrameType.REQUEST_CHANNEL);
 
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-      ClientSocketRule rule = new ClientSocketRule();
+      ClientChannelRule rule = new ClientChannelRule();
       rule.init();
       ByteBuf dataBuffer = rule.allocator.buffer();
       dataBuffer.writeCharSequence("test", CharsetUtil.UTF_8);
@@ -496,7 +495,7 @@ public class DefaultChannelClientTests {
             .assertError(CancellationException.class)
             .assertErrorMessage("Disposed");
 
-    Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+    Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
     FrameAssert.assertThat(rule.connection.awaitFrame())
             .hasStreamIdZero()
@@ -509,11 +508,11 @@ public class DefaultChannelClientTests {
   @Test
   public void shouldReceiveOnCloseNotificationOnDisposeOriginalSource() {
     Sinks.Empty<Void> onCloseDelayer = Sinks.empty();
-    ClientSocketRule rule =
-            new ClientSocketRule() {
+    ClientChannelRule rule =
+            new ClientChannelRule() {
               @Override
-              protected Channel newRSocket() {
-                return new ChannelDecorator(super.newRSocket()) {
+              protected Channel newChannel() {
+                return new DecoratingChannel(super.newChannel()) {
                   @Override
                   public Mono<Void> onClose() {
                     return super.onClose().and(onCloseDelayer.asMono());
@@ -540,7 +539,7 @@ public class DefaultChannelClientTests {
 
     onCloseSubscriber.assertTerminated().assertComplete();
 
-    Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+    Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
     FrameAssert.assertThat(rule.connection.awaitFrame())
             .hasStreamIdZero()
@@ -568,7 +567,7 @@ public class DefaultChannelClientTests {
 
     assertSubscriber1.assertTerminated().assertComplete();
 
-    Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+    Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
     FrameAssert.assertThat(rule.connection.awaitFrame())
             .hasStreamIdZero()
@@ -596,7 +595,7 @@ public class DefaultChannelClientTests {
 
     assertSubscriber1.assertTerminated().assertComplete();
 
-    Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+    Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
     FrameAssert.assertThat(rule.connection.awaitFrame())
             .hasStreamIdZero()
@@ -619,7 +618,7 @@ public class DefaultChannelClientTests {
 
     assertSubscriber.assertTerminated().assertValueCount(1);
 
-    rule.socket.dispose();
+    rule.channel.dispose();
 
     FrameAssert.assertThat(rule.connection.awaitFrame())
             .hasStreamIdZero()
@@ -629,8 +628,8 @@ public class DefaultChannelClientTests {
     terminateSubscriber.assertNotTerminated();
     Assertions.assertThat(rule.client.isDisposed()).isFalse();
 
-    rule.connection = new TestDuplexConnection(rule.allocator);
-    rule.socket = rule.newRSocket();
+    rule.connection = new TestConnection(rule.allocator);
+    rule.channel = rule.newChannel();
     rule.producer = Sinks.one();
 
     AssertSubscriber<Channel> assertSubscriber2 = AssertSubscriber.create();
@@ -648,7 +647,7 @@ public class DefaultChannelClientTests {
 
     Assertions.assertThat(rule.client.connect()).isFalse();
 
-    Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+    Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
     FrameAssert.assertThat(rule.connection.awaitFrame())
             .hasStreamIdZero()
@@ -661,7 +660,7 @@ public class DefaultChannelClientTests {
   @Test
   public void shouldDisposeOriginalSourceIfRacing() {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-      ClientSocketRule rule = new ClientSocketRule();
+      ClientChannelRule rule = new ClientChannelRule();
 
       rule.init();
 
@@ -673,7 +672,7 @@ public class DefaultChannelClientTests {
       assertSubscriber.assertTerminated();
 
       Assertions.assertThat(rule.client.isDisposed()).isTrue();
-      Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+      Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
       AssertSubscriber<Channel> assertSubscriber1 = AssertSubscriber.create();
 
@@ -696,7 +695,7 @@ public class DefaultChannelClientTests {
   @Test
   public void shouldStartOriginalSourceOnceIfRacing() {
     for (int i = 0; i < RaceTestConstants.REPEATS; i++) {
-      ClientSocketRule rule = new ClientSocketRule();
+      ClientChannelRule rule = new ClientChannelRule();
 
       rule.init();
 
@@ -714,7 +713,7 @@ public class DefaultChannelClientTests {
       rule.client.dispose();
 
       Assertions.assertThat(rule.client.isDisposed()).isTrue();
-      Assertions.assertThat(rule.socket.isDisposed()).isTrue();
+      Assertions.assertThat(rule.channel.isDisposed()).isTrue();
 
       AssertSubscriber<Void> assertSubscriber1 = AssertSubscriber.create();
 
@@ -730,7 +729,7 @@ public class DefaultChannelClientTests {
     }
   }
 
-  public static class ClientSocketRule extends AbstractSocketRule<Channel> {
+  public static class ClientChannelRule extends AbstractChannelRule<Channel> {
 
     protected RemotingClient client;
     protected Runnable delayer;
@@ -741,7 +740,7 @@ public class DefaultChannelClientTests {
     @Override
     protected void doInit() {
       super.doInit();
-      delayer = () -> producer.tryEmitValue(socket);
+      delayer = () -> producer.tryEmitValue(channel);
       producer = Sinks.one();
       client =
               new DefaultRemotingClient(
@@ -749,14 +748,14 @@ public class DefaultChannelClientTests {
                               () ->
                                       producer
                                               .asMono()
-                                              .doOnCancel(() -> socket.dispose())
+                                              .doOnCancel(() -> channel.dispose())
                                               .doOnDiscard(Disposable.class, Disposable::dispose)));
     }
 
     @Override
-    protected Channel newRSocket() {
+    protected Channel newChannel() {
       this.thisClosedSink = Sinks.empty();
-      return new ChannelRequester(
+      return new RequesterChannel(
               connection,
               PayloadDecoder.ZERO_COPY,
               StreamIdProvider.forClient(),

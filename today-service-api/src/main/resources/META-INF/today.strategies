@@ -1,0 +1,5 @@
+infra.cloud.serialize.ReturnValueDeserializer=\
+  infra.cloud.serialize.support.SerializableReturnValueSerialization
+
+infra.cloud.serialize.ReturnValueSerializer=\
+  infra.cloud.serialize.support.SerializableReturnValueSerialization

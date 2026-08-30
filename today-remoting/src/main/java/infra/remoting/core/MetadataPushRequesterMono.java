@@ -1,31 +1,28 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.core;
+
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
-import infra.lang.Nullable;
-import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
 import infra.remoting.frame.MetadataPushFrameCodec;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.IllegalReferenceCountException;
 import reactor.core.CoreSubscriber;
 import reactor.core.Scannable;
@@ -44,16 +41,13 @@ final class MetadataPushRequesterMono extends Mono<Void> implements Scannable {
   static final AtomicLongFieldUpdater<MetadataPushRequesterMono> STATE =
           AtomicLongFieldUpdater.newUpdater(MetadataPushRequesterMono.class, "state");
 
-  final ByteBufAllocator allocator;
   final Payload payload;
-  final int maxFrameLength;
-  final DuplexConnection connection;
 
-  MetadataPushRequesterMono(Payload payload, RequesterResponderSupport requesterResponderSupport) {
-    this.allocator = requesterResponderSupport.getAllocator();
+  private final ChannelSupport channel;
+
+  MetadataPushRequesterMono(Payload payload, ChannelSupport channel) {
     this.payload = payload;
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.connection = requesterResponderSupport.getDuplexConnection();
+    this.channel = channel;
   }
 
   @Override
@@ -78,13 +72,13 @@ final class MetadataPushRequesterMono extends Mono<Void> implements Scannable {
                 new IllegalArgumentException("Metadata push should have metadata field present"));
         return;
       }
-      if (!isValidMetadata(this.maxFrameLength, metadata)) {
+      if (!isValidMetadata(channel.maxFrameLength, metadata)) {
         lazyTerminate(STATE, this);
         p.release();
         Operators.error(
                 actual,
                 new IllegalArgumentException(
-                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, this.maxFrameLength)));
+                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, channel.maxFrameLength)));
         return;
       }
     }
@@ -115,8 +109,8 @@ final class MetadataPushRequesterMono extends Mono<Void> implements Scannable {
     }
 
     final ByteBuf requestFrame =
-            MetadataPushFrameCodec.encode(this.allocator, metadataRetainedSlice);
-    this.connection.sendFrame(0, requestFrame);
+            MetadataPushFrameCodec.encode(channel.allocator, metadataRetainedSlice);
+    channel.connection.sendFrame(0, requestFrame);
 
     Operators.complete(actual);
   }
@@ -150,11 +144,11 @@ final class MetadataPushRequesterMono extends Mono<Void> implements Scannable {
         p.release();
         throw new IllegalArgumentException("Metadata push should have metadata field present");
       }
-      if (!isValidMetadata(this.maxFrameLength, metadata)) {
+      if (!isValidMetadata(channel.maxFrameLength, metadata)) {
         lazyTerminate(STATE, this);
         p.release();
         throw new IllegalArgumentException(
-                String.format(INVALID_PAYLOAD_ERROR_MESSAGE, this.maxFrameLength));
+                String.format(INVALID_PAYLOAD_ERROR_MESSAGE, channel.maxFrameLength));
       }
     }
     catch (IllegalReferenceCountException e) {
@@ -180,20 +174,19 @@ final class MetadataPushRequesterMono extends Mono<Void> implements Scannable {
       throw e;
     }
 
-    final ByteBuf requestFrame =
-            MetadataPushFrameCodec.encode(this.allocator, metadataRetainedSlice);
-    this.connection.sendFrame(0, requestFrame);
+    final ByteBuf requestFrame = MetadataPushFrameCodec.encode(channel.allocator, metadataRetainedSlice);
+    channel.connection.sendFrame(0, requestFrame);
 
     return null;
   }
 
+  @Nullable
   @Override
   public Object scanUnsafe(Attr key) {
     return null; // no particular key to be represented, still useful in hooks
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(MetadataPushMono)";
   }

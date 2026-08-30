@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.frame.decoder;
@@ -35,40 +34,39 @@ import io.netty.buffer.Unpooled;
  * for releasing the payload to free memory when they no long need it.
  */
 public class ZeroCopyPayloadDecoder implements PayloadDecoder {
+
   @Override
-  public Payload apply(ByteBuf byteBuf) {
-    ByteBuf m;
-    ByteBuf d;
+  public Payload decode(ByteBuf byteBuf) {
     FrameType type = FrameHeaderCodec.frameType(byteBuf);
-    switch (type) {
-      case REQUEST_FNF:
+
+    ByteBuf d;
+    ByteBuf m = switch (type) {
+      case REQUEST_FNF -> {
         d = RequestFireAndForgetFrameCodec.data(byteBuf);
-        m = RequestFireAndForgetFrameCodec.metadata(byteBuf);
-        break;
-      case REQUEST_RESPONSE:
+        yield RequestFireAndForgetFrameCodec.metadata(byteBuf);
+      }
+      case REQUEST_RESPONSE -> {
         d = RequestResponseFrameCodec.data(byteBuf);
-        m = RequestResponseFrameCodec.metadata(byteBuf);
-        break;
-      case REQUEST_STREAM:
+        yield RequestResponseFrameCodec.metadata(byteBuf);
+      }
+      case REQUEST_STREAM -> {
         d = RequestStreamFrameCodec.data(byteBuf);
-        m = RequestStreamFrameCodec.metadata(byteBuf);
-        break;
-      case REQUEST_CHANNEL:
+        yield RequestStreamFrameCodec.metadata(byteBuf);
+      }
+      case REQUEST_CHANNEL -> {
         d = RequestChannelFrameCodec.data(byteBuf);
-        m = RequestChannelFrameCodec.metadata(byteBuf);
-        break;
-      case NEXT:
-      case NEXT_COMPLETE:
+        yield RequestChannelFrameCodec.metadata(byteBuf);
+      }
+      case NEXT, NEXT_COMPLETE -> {
         d = PayloadFrameCodec.data(byteBuf);
-        m = PayloadFrameCodec.metadata(byteBuf);
-        break;
-      case METADATA_PUSH:
+        yield PayloadFrameCodec.metadata(byteBuf);
+      }
+      case METADATA_PUSH -> {
         d = Unpooled.EMPTY_BUFFER;
-        m = MetadataPushFrameCodec.metadata(byteBuf);
-        break;
-      default:
-        throw new IllegalArgumentException("unsupported frame type: " + type);
-    }
+        yield MetadataPushFrameCodec.metadata(byteBuf);
+      }
+      default -> throw new IllegalArgumentException("unsupported frame type: " + type);
+    };
 
     return ByteBufPayload.create(d.retain(), m != null ? m.retain() : null);
   }

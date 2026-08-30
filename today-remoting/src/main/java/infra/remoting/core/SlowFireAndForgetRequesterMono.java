@@ -1,32 +1,28 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
-import infra.lang.Nullable;
-import infra.remoting.DuplexConnection;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
 import infra.remoting.plugins.RequestInterceptor;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.IllegalReferenceCountException;
 import reactor.core.CoreSubscriber;
 import reactor.core.Exceptions;
@@ -55,29 +51,17 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
 
   final Payload payload;
 
-  final ByteBufAllocator allocator;
-  final int mtu;
-  final int maxFrameLength;
-  final RequesterResponderSupport requesterResponderSupport;
-  final DuplexConnection connection;
+  final ChannelSupport channel;
 
   @Nullable
   final RequesterLeaseTracker requesterLeaseTracker;
-  @Nullable
-  final RequestInterceptor requestInterceptor;
 
   CoreSubscriber<? super Void> actual;
 
-  SlowFireAndForgetRequesterMono(
-          Payload payload, RequesterResponderSupport requesterResponderSupport) {
-    this.allocator = requesterResponderSupport.getAllocator();
+  SlowFireAndForgetRequesterMono(Payload payload, ChannelSupport channel) {
     this.payload = payload;
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
-    this.requesterLeaseTracker = requesterResponderSupport.getRequesterLeaseTracker();
+    this.channel = channel;
+    this.requesterLeaseTracker = channel.getRequesterLeaseTracker();
   }
 
   @Override
@@ -89,7 +73,7 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
       final IllegalStateException e =
               new IllegalStateException("FireAndForgetMono allows only a single Subscriber");
 
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(e, FrameType.REQUEST_FNF, null);
       }
@@ -99,15 +83,14 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
     }
 
     final Payload p = this.payload;
-    int mtu = this.mtu;
     try {
-      if (!isValid(mtu, this.maxFrameLength, p, false)) {
+      if (!isValid(channel.mtu, channel.maxFrameLength, p, false)) {
         lazyTerminate(STATE, this);
 
         final IllegalArgumentException e =
                 new IllegalArgumentException(
-                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, this.maxFrameLength));
-        final RequestInterceptor requestInterceptor = this.requestInterceptor;
+                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, channel.maxFrameLength));
+        final RequestInterceptor requestInterceptor = channel.requestInterceptor;
         if (requestInterceptor != null) {
           requestInterceptor.onReject(e, FrameType.REQUEST_FNF, p.metadata());
         }
@@ -121,7 +104,7 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
     catch (IllegalReferenceCountException e) {
       lazyTerminate(STATE, this);
 
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(e, FrameType.REQUEST_FNF, null);
       }
@@ -157,13 +140,13 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
     final CoreSubscriber<? super Void> actual = this.actual;
     final int streamId;
     try {
-      streamId = this.requesterResponderSupport.getNextStreamId();
+      streamId = this.channel.getNextStreamId();
     }
     catch (Throwable t) {
       lazyTerminate(STATE, this);
 
       final Throwable ut = Exceptions.unwrap(t);
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(ut, FrameType.REQUEST_FNF, p.metadata());
       }
@@ -174,7 +157,7 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
       return;
     }
 
-    final RequestInterceptor interceptor = this.requestInterceptor;
+    final RequestInterceptor interceptor = channel.requestInterceptor;
     if (interceptor != null) {
       interceptor.onStart(streamId, FrameType.REQUEST_FNF, p.metadata());
     }
@@ -191,7 +174,7 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
       }
 
       sendReleasingPayload(
-              streamId, FrameType.REQUEST_FNF, mtu, p, this.connection, this.allocator, true);
+              streamId, FrameType.REQUEST_FNF, channel.mtu, p, channel.connection, channel.allocator, true);
     }
     catch (Throwable e) {
       lazyTerminate(STATE, this);
@@ -240,7 +223,7 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
     }
 
     final Payload p = this.payload;
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onReject(cause, FrameType.REQUEST_RESPONSE, p.metadata());
     }
@@ -250,13 +233,13 @@ final class SlowFireAndForgetRequesterMono extends Mono<Void>
     this.actual.onError(cause);
   }
 
+  @Nullable
   @Override
   public Object scanUnsafe(Attr key) {
     return null; // no particular key to be represented, still useful in hooks
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(FireAndForgetMono)";
   }

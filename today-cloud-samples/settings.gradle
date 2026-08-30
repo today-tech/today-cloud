@@ -1,0 +1,12 @@
+rootProject.name = 'today-cloud-samples'
+
+include 'demo-tests:demo-registry'
+include 'demo-tests:demo-user-api'
+include 'demo-tests:demo-user-rest'
+include 'demo-tests:demo-user-service'
+include 'today-petclinic'
+
+include 'today-service-registry-simple-api'
+include 'today-service-registry-simple-server'
+include 'today-service-registry-simple-discovery'
+include 'today-service-registry-simple-registration'

@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.test;
@@ -23,8 +22,8 @@ import org.reactivestreams.Publisher;
 import java.time.Duration;
 import java.util.function.BiFunction;
 
-import infra.remoting.Payload;
 import infra.remoting.Channel;
+import infra.remoting.Payload;
 import infra.remoting.util.ByteBufPayload;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -68,12 +67,12 @@ public class PingClient {
           final Recorder histogram) {
     return Flux.usingWhen(
                     client,
-                    rsocket ->
+                    channel ->
                             Flux.range(1, count)
                                     .flatMap(
                                             i -> {
                                               long start = System.nanoTime();
-                                              return Flux.from(interaction.apply(rsocket, payload.retain()))
+                                              return Flux.from(interaction.apply(channel, payload.retain()))
                                                       .doOnNext(Payload::release)
                                                       .doFinally(
                                                               signalType -> {
@@ -82,9 +81,9 @@ public class PingClient {
                                                               });
                                             },
                                             64),
-                    rsocket -> {
-                      rsocket.dispose();
-                      return rsocket.onClose();
+                    channel -> {
+                      channel.dispose();
+                      return channel.onClose();
                     })
             .doOnError(Throwable::printStackTrace);
   }

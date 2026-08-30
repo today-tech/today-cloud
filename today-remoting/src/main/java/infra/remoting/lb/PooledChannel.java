@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.lb;
@@ -40,7 +39,7 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
   final ChannelPool parent;
 
-  final Mono<Channel> rSocketSource;
+  final Mono<Channel> channelSource;
 
   final LoadBalanceTarget loadbalanceTarget;
 
@@ -51,9 +50,9 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
   static final AtomicReferenceFieldUpdater<PooledChannel, Subscription> S =
           AtomicReferenceFieldUpdater.newUpdater(PooledChannel.class, Subscription.class, "s");
 
-  PooledChannel(ChannelPool parent, Mono<Channel> rSocketSource, LoadBalanceTarget loadbalanceTarget) {
+  PooledChannel(ChannelPool parent, Mono<Channel> channelSource, LoadBalanceTarget loadbalanceTarget) {
     this.parent = parent;
-    this.rSocketSource = rSocketSource;
+    this.channelSource = channelSource;
     this.loadbalanceTarget = loadbalanceTarget;
     this.onCloseSink = Sinks.unsafe().empty();
   }
@@ -114,7 +113,7 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
   @Override
   protected void doSubscribe() {
-    this.rSocketSource.subscribe(this);
+    this.channelSource.subscribe(this);
   }
 
   @Override
@@ -131,12 +130,12 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
     final ChannelPool parent = this.parent;
     for (; ; ) {
-      final PooledChannel[] sockets = parent.activeSockets;
-      final int activeSocketsCount = sockets.length;
+      final PooledChannel[] channels = parent.activeChannels;
+      final int activeChannelsCount = channels.length;
 
       int index = -1;
-      for (int i = 0; i < activeSocketsCount; i++) {
-        if (sockets[i] == this) {
+      for (int i = 0; i < activeChannelsCount; i++) {
+        if (channels[i] == this) {
           index = i;
           break;
         }
@@ -146,24 +145,24 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
         break;
       }
 
-      final PooledChannel[] newSockets;
-      if (activeSocketsCount == 1) {
-        newSockets = ChannelPool.EMPTY;
+      final PooledChannel[] newChannels;
+      if (activeChannelsCount == 1) {
+        newChannels = ChannelPool.EMPTY;
       }
       else {
-        final int lastIndex = activeSocketsCount - 1;
+        final int lastIndex = activeChannelsCount - 1;
 
-        newSockets = new PooledChannel[lastIndex];
+        newChannels = new PooledChannel[lastIndex];
         if (index != 0) {
-          System.arraycopy(sockets, 0, newSockets, 0, index);
+          System.arraycopy(channels, 0, newChannels, 0, index);
         }
 
         if (index != lastIndex) {
-          System.arraycopy(sockets, index + 1, newSockets, index, lastIndex - index);
+          System.arraycopy(channels, index + 1, newChannels, index, lastIndex - index);
         }
       }
 
-      if (ChannelPool.ACTIVE_SOCKETS.compareAndSet(parent, sockets, newSockets)) {
+      if (ChannelPool.ACTIVE_CHANNELS.compareAndSet(parent, channels, newChannels)) {
         break;
       }
     }
@@ -230,8 +229,8 @@ final class PooledChannel extends ResolvingOperator<Channel> implements CoreSubs
 
   @Override
   public double availability() {
-    final Channel socket = valueIfResolved();
-    return socket != null ? socket.availability() : 0.0d;
+    final Channel channel = valueIfResolved();
+    return channel != null ? channel.availability() : 0.0d;
   }
 
   static final class MonoInner<RESULT> extends MonoDeferredResolution<RESULT, Channel> {

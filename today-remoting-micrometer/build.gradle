@@ -1,0 +1,31 @@
+plugins {
+  id 'java-library'
+  id 'maven-publish'
+  id 'signing'
+}
+
+description = 'Transparent Metrics exposure to Micrometer'
+
+dependencies {
+  api project(':today-remoting')
+  api 'io.micrometer:micrometer-observation'
+  api 'io.micrometer:micrometer-core'
+  api 'io.micrometer:micrometer-tracing'
+
+  testImplementation testFixtures(project(':today-remoting'))
+  testImplementation project(':today-remoting-transport-tcp')
+  testImplementation project(':today-remoting-transport-local')
+  testImplementation 'org.awaitility:awaitility'
+  testImplementation 'io.projectreactor:reactor-test'
+  testImplementation "io.micrometer:micrometer-test"
+  testImplementation "io.micrometer:micrometer-tracing-integration-test"
+
+  testRuntimeOnly 'ch.qos.logback:logback-classic'
+}
+
+jar {
+  manifest {
+    attributes("Automatic-Module-Name": "infra.remoting.micrometer")
+  }
+}
+

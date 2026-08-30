@@ -1,0 +1,11 @@
+description = "TODAY Service Simple Registry"
+
+
+dependencies {
+  api "cn.taketoday:today-service-registration"
+  api project(":today-service-registry-simple-api")
+
+  implementation 'cn.taketoday:infra-starter-webmvc'
+
+  annotationProcessor 'cn.taketoday:infra-configuration-processor'
+}

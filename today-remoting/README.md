@@ -2,7 +2,7 @@
 
 使用 RSocket 协议
 
-原始代码来自 https://github.com/rsocket/rsocket-java.git cff5cdbb16da6393efc04d8f0b80793e54f79026
+原始代码来自 https://github.com/channel/rsocket-java.git cff5cdbb16da6393efc04d8f0b80793e54f79026
 1.1.5 版本
 
 It enables the following symmetric interaction models via async message passing over a single connection:

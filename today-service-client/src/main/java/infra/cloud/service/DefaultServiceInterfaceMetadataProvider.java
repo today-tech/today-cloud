@@ -22,9 +22,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import infra.util.concurrent.Future;
+import infra.core.ReactiveAdapter;
+import infra.core.ReactiveAdapterRegistry;
+import infra.util.Assert;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -34,37 +35,51 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
 
   private final ArrayList<ReturnValueResolver> resolvers = new ArrayList<>();
 
+  private final ReactiveAdapterRegistry adapterRegistry;
+
   public DefaultServiceInterfaceMetadataProvider(ServiceMetadataProvider serviceMetadataProvider,
           List<ReturnValueResolver> returnValueResolvers) {
+    this(serviceMetadataProvider, returnValueResolvers, ReactiveAdapterRegistry.getSharedInstance());
+  }
+
+  public DefaultServiceInterfaceMetadataProvider(ServiceMetadataProvider serviceMetadataProvider,
+          List<ReturnValueResolver> returnValueResolvers, ReactiveAdapterRegistry adapterRegistry) {
     super(serviceMetadataProvider);
+    Assert.notNull(adapterRegistry, "adapterRegistry is required");
+    this.adapterRegistry = adapterRegistry;
     resolvers.addAll(returnValueResolvers);
 
-    resolvers.add(new MonoReturnValueResolver());
-    resolvers.add(new FluxReturnValueResolver());
+    resolvers.add(new ReactiveReturnValueResolver());
     resolvers.add(new BlockReturnValueResolver());
-    resolvers.add(new FutureReturnValueResolver());
   }
 
   @Override
   protected ServiceInterfaceMethod createServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
-    return new ServiceInterfaceMethod(serviceMetadata, serviceInterface, method, resolvers);
+    return new ServiceInterfaceMethod(serviceMetadata, serviceInterface, method, resolvers, adapterRegistry);
   }
 
-  static class FutureReturnValueResolver implements ReturnValueResolver {
+  static class ReactiveReturnValueResolver implements ReturnValueResolver {
 
     @Override
-    public boolean supportsMethod(ServiceInterfaceMethod invocation) {
-      return invocation.getMethod().getReturnType() == Future.class;
+    public boolean supportsMethod(ServiceInterfaceMethod method) {
+      return method.getResponseAdapter() != null;
     }
 
     @Override
     public InvocationType getInvocationType(ServiceInterfaceMethod method) {
-      return InvocationType.REQUEST_RESPONSE;
+      ReactiveAdapter adapter = method.getResponseAdapter();
+      if (!adapter.isMultiValue()) {
+        return InvocationType.REQUEST_RESPONSE;
+      }
+      if (method.getParameters().length == 1 && method.getParameters()[0].getParameterType() == Flux.class) {
+        return InvocationType.DUPLEX_STREAMING;
+      }
+      return InvocationType.RESPONSE_STREAMING;
     }
 
     @Override
-    public Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
-      return result.future();
+    public Object resolve(ServiceInterfaceMethod method, InvocationResult result) {
+      return method.getResponseAdapter().fromPublisher(result.publisher());
     }
 
     @Override
@@ -97,54 +112,4 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
 
   }
 
-  static class MonoReturnValueResolver implements ReturnValueResolver {
-
-    @Override
-    public boolean supportsMethod(ServiceInterfaceMethod method) {
-      return method.getMethod().getReturnType() == Mono.class;
-    }
-
-    @Override
-    public InvocationType getInvocationType(ServiceInterfaceMethod method) {
-      return InvocationType.REQUEST_RESPONSE;
-    }
-
-    @Override
-    public Mono<?> resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
-      return Mono.from(result.publisher());
-    }
-
-    @Override
-    public boolean isBlocking() {
-      return false;
-    }
-
-  }
-
-  static class FluxReturnValueResolver implements ReturnValueResolver {
-
-    @Override
-    public boolean supportsMethod(ServiceInterfaceMethod method) {
-      return method.getMethod().getReturnType() == Flux.class;
-    }
-
-    @Override
-    public InvocationType getInvocationType(ServiceInterfaceMethod method) {
-      if (method.getParameters().length == 1 && method.getParameters()[0].getParameterType() == Flux.class) {
-        return InvocationType.DUPLEX_STREAMING;
-      }
-      return InvocationType.RESPONSE_STREAMING;
-    }
-
-    @Override
-    public Flux<?> resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
-      return Flux.from(result.publisher());
-    }
-
-    @Override
-    public boolean isBlocking() {
-      return false;
-    }
-
-  }
 }

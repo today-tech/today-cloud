@@ -90,7 +90,7 @@ public class ProtobufArgumentSerialization implements ArgumentSerialization<Mess
 
   @Override
   public boolean supportsReturnValue(ServiceMethod method) {
-    return Message.class.isAssignableFrom(method.getReturnType().getParameterType());
+    return Message.class.isAssignableFrom(method.getResponseType());
   }
 
   @Override

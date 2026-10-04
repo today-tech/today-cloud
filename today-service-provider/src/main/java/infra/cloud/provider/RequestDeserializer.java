@@ -28,8 +28,9 @@ import infra.cloud.serialize.SerializationException;
 import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.core.MethodParameter;
-import infra.util.Assert;
+import infra.core.ReactiveAdapterRegistry;
 import infra.reflect.MethodInvoker;
+import infra.util.Assert;
 import infra.util.MapCache;
 
 /**
@@ -50,11 +51,21 @@ public class RequestDeserializer {
 
   private final LocalServiceHolder localServiceHolder;
 
+  private final ReactiveAdapterRegistry adapterRegistry;
+
   public RequestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder) {
+    this(argumentSerializations, metadataProvider, localServiceHolder, ReactiveAdapterRegistry.getSharedInstance());
+  }
+
+  public RequestDeserializer(List<ArgumentSerialization> argumentSerializations,
+          ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder,
+          ReactiveAdapterRegistry adapterRegistry) {
+    Assert.notNull(adapterRegistry, "adapterRegistry is required");
     this.argumentSerializations = argumentSerializations;
     this.metadataProvider = metadataProvider;
     this.localServiceHolder = localServiceHolder;
+    this.adapterRegistry = adapterRegistry;
   }
 
   public RemoteRequest deserialize(Readable readable) throws SerializationException {
@@ -97,7 +108,7 @@ public class RequestDeserializer {
       }
       MethodInvoker methodInvoker = MethodInvoker.forMethod(methodToUse);
       ServiceInterfaceMetadata metadata = metadataProvider.getMetadata(serviceObject.getInterface());
-      return new InvocableMethod(metadata, serviceObject, methodToUse, methodInvoker);
+      return new InvocableMethod(metadata, serviceObject, methodToUse, methodInvoker, adapterRegistry);
     }
 
     @Nullable

@@ -21,6 +21,8 @@ import org.jspecify.annotations.Nullable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import infra.core.ReactiveAdapterRegistry;
+
 /**
  * Represents a method defined in a service interface, extending {@link ServiceMethod}
  * with specific invocation logic and return value resolution strategies.
@@ -41,8 +43,9 @@ public class ServiceInterfaceMethod extends ServiceMethod {
 
   private final boolean blocking;
 
-  ServiceInterfaceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method, ArrayList<ReturnValueResolver> resolvers) {
-    super(serviceMetadata, serviceInterface, method);
+  ServiceInterfaceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method,
+          ArrayList<ReturnValueResolver> resolvers, ReactiveAdapterRegistry adapterRegistry) {
+    super(serviceMetadata, serviceInterface, method, adapterRegistry);
     this.returnValueResolver = findReturnValueResolver(resolvers);
     this.blocking = returnValueResolver.isBlocking();
     this.invocationType = returnValueResolver.getInvocationType(this);

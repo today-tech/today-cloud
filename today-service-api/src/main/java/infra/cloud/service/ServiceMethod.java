@@ -16,9 +16,15 @@
 
 package infra.cloud.service;
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Method;
 
+import infra.core.ReactiveAdapter;
+import infra.core.ReactiveAdapterRegistry;
+import infra.core.ResolvableType;
 import infra.core.annotation.AnnotatedMethod;
+import infra.util.Assert;
 
 /**
  * Represents a method within a service, encapsulating metadata such as the service interface,
@@ -34,10 +40,19 @@ public class ServiceMethod extends AnnotatedMethod {
 
   protected final Class<?> serviceInterface;
 
+  private final ReactiveAdapterRegistry adapterRegistry;
+
   public ServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method) {
+    this(serviceMetadata, serviceInterface, method, ReactiveAdapterRegistry.getSharedInstance());
+  }
+
+  public ServiceMethod(ServiceMetadata serviceMetadata, Class<?> serviceInterface, Method method,
+          ReactiveAdapterRegistry adapterRegistry) {
     super(method);
+    Assert.notNull(adapterRegistry, "adapterRegistry is required");
     this.serviceInterface = serviceInterface;
     this.serviceMetadata = serviceMetadata;
+    this.adapterRegistry = adapterRegistry;
   }
 
   public String getServiceId() {
@@ -50,6 +65,26 @@ public class ServiceMethod extends AnnotatedMethod {
 
   public Class<?> getServiceInterface() {
     return serviceInterface;
+  }
+
+  /**
+   * Return the wire value type, unwrapping a single-value asynchronous result.
+   */
+  public Class<?> getResponseType() {
+    ResolvableType type = ResolvableType.forMethodParameter(getReturnType());
+    ReactiveAdapter adapter = getResponseAdapter();
+    if (adapter != null) {
+      if (adapter.isNoValue()) {
+        return Void.class;
+      }
+      type = type.as(adapter.getReactiveType()).getGeneric();
+    }
+    return type.resolve(Object.class);
+  }
+
+  @Nullable
+  public ReactiveAdapter getResponseAdapter() {
+    return adapterRegistry.getAdapter(getReturnType().getParameterType());
   }
 
 }

@@ -21,14 +21,18 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
+import infra.cloud.ServiceTimeoutException;
 import infra.cloud.serialize.MessagePackWriter;
 import infra.cloud.service.serialize.RequestSerializer;
 import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
 import infra.remoting.util.ByteBufPayload;
+import infra.util.Assert;
 import infra.util.concurrent.Future;
 import infra.util.concurrent.FutureListener;
 import infra.util.concurrent.Promise;
@@ -59,6 +63,15 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   private final ResponseDeserializer responseDeserializer;
 
+  private Duration requestTimeout = Duration.ofSeconds(30);
+
+  /** Set the deadline for a request-response subscription, including connection acquisition. */
+  public void setRequestTimeout(Duration requestTimeout) {
+    Assert.notNull(requestTimeout, "requestTimeout is required");
+    Assert.isTrue(!requestTimeout.isZero() && !requestTimeout.isNegative(), "requestTimeout must be positive");
+    this.requestTimeout = requestTimeout;
+  }
+
   public ServiceMethodInvoker(List<ClientInterceptor> interceptors, RemotingOperationsProvider remotingOperationsProvider,
           ByteBufAllocator allocator, RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer) {
     this.interceptors = interceptors.toArray(new ClientInterceptor[0]);
@@ -85,7 +98,9 @@ public class ServiceMethodInvoker implements ServiceInvoker {
       RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceMethod());
       return switch (getType()) {
         case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload()));
-        case REQUEST_RESPONSE -> new RequestResponseResult(getServiceMethod(), operations.requestResponse(createMonoPayload()), responseDeserializer);
+        case REQUEST_RESPONSE -> new RequestResponseResult(getServiceMethod(), operations.requestResponse(createMonoPayload()).timeout(requestTimeout)
+                .onErrorMap(TimeoutException.class, error -> new ServiceTimeoutException("Service request timed out: " + serviceMethod.getMethod(), error)), responseDeserializer);
+
         case RESPONSE_STREAMING -> new ResponseStreamingResult(getServiceMethod(), operations.requestStream(createMonoPayload()), responseDeserializer);
         case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload()));
       };
@@ -94,8 +109,14 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     private Mono<Payload> createMonoPayload() {
       return Mono.defer(() -> {
         ByteBuf buffer = allocator.ioBuffer();
-        requestSerializer.serialize(serviceMethod, getArguments(), new MessagePackWriter(buffer));
-        return Mono.just(ByteBufPayload.create(buffer));
+        try {
+          requestSerializer.serialize(serviceMethod, getArguments(), new MessagePackWriter(buffer));
+          return Mono.just(ByteBufPayload.create(buffer));
+        }
+        catch (Throwable ex) {
+          buffer.release();
+          return Mono.error(ex);
+        }
       });
     }
 

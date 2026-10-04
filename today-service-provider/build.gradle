@@ -11,6 +11,9 @@ dependencies {
   optional project(":today-remoting-transport-tcp")
 
   annotationProcessor 'cn.taketoday:infra-configuration-processor'
+  testImplementation "io.projectreactor:reactor-test"
+  testImplementation project(":today-service-client")
+  testImplementation project(":today-remoting-transport-local")
 }
 
 // --add-opens=java.base/java.nio=ALL-UNNAMED

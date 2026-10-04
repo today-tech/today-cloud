@@ -32,6 +32,7 @@ import infra.cloud.service.DefaultServiceMetadataProvider;
 import infra.cloud.service.DefaultServiceProxyFactory;
 import infra.cloud.service.RemotingOperationsProvider;
 import infra.cloud.service.ReturnValueResolver;
+import infra.cloud.service.ServiceClientProperties;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceInterfaceMethod;
 import infra.cloud.service.ServiceInvoker;
@@ -43,6 +44,7 @@ import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
 import infra.core.io.ResourceLoader;
+import infra.core.ReactiveAdapterRegistry;
 import infra.stereotype.Component;
 import infra.util.InfraStrategies;
 import io.netty.buffer.ByteBufAllocator;
@@ -56,7 +58,7 @@ import io.netty.buffer.ByteBufAllocator;
 @SuppressWarnings("rawtypes")
 @DisableDIAutoConfiguration
 @ConditionalOnDiscoveryEnabled
-@EnableConfigurationProperties(SimpleDiscoveryProperties.class)
+@EnableConfigurationProperties({ SimpleDiscoveryProperties.class, ServiceClientProperties.class })
 public final class ServiceClientAutoConfiguration {
 
   @Component
@@ -67,9 +69,11 @@ public final class ServiceClientAutoConfiguration {
 
   @Component
   public static ServiceInvoker serviceInvoker(List<ClientInterceptor> interceptors, RemotingOperationsProvider remotingOperationsProvider,
-          RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer) {
-    return new ServiceMethodInvoker(interceptors, remotingOperationsProvider, ByteBufAllocator.DEFAULT,
+          RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer, ServiceClientProperties properties) {
+    var invoker = new ServiceMethodInvoker(interceptors, remotingOperationsProvider, ByteBufAllocator.DEFAULT,
             requestSerializer, responseDeserializer);
+    invoker.setRequestTimeout(properties.getRequestTimeout());
+    return invoker;
   }
 
   @Component
@@ -107,8 +111,10 @@ public final class ServiceClientAutoConfiguration {
   @Component
   @ConditionalOnMissingBean
   public static ServiceInterfaceMetadataProvider<ServiceInterfaceMethod> serviceInterfaceMetadataProvider(
-          ServiceMetadataProvider serviceMetadataProvider, ObjectProvider<ReturnValueResolver> resolvers) {
-    return new DefaultServiceInterfaceMetadataProvider(serviceMetadataProvider, resolvers.orderedList());
+          ServiceMetadataProvider serviceMetadataProvider, ObjectProvider<ReturnValueResolver> resolvers,
+          ObjectProvider<ReactiveAdapterRegistry> adapterRegistry) {
+    return new DefaultServiceInterfaceMetadataProvider(serviceMetadataProvider, resolvers.orderedList(),
+            adapterRegistry.getIfAvailable(ReactiveAdapterRegistry::getSharedInstance));
   }
 
 }

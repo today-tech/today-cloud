@@ -72,6 +72,8 @@ class DefaultServiceInterfaceMetadataProviderTests {
 
     ServiceInterfaceMethod listUsersFuture = methodMap.get("listUsersFuture");
     assertThat(listUsersFuture.getInvocationType()).isEqualTo(InvocationType.REQUEST_RESPONSE);
+    assertThat(listUsersFuture.isBlocking()).isFalse();
+    assertThat(listUsersFuture.getResponseType()).isEqualTo(List.class);
     assertThat(listUsersFuture.getParameters().length).isEqualTo(0);
     assertThat(listUsersFuture.getReturnType().getParameterType()).isEqualTo(Future.class);
 

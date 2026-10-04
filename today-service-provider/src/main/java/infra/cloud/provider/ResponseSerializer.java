@@ -46,16 +46,18 @@ public class ResponseSerializer {
 
   @SuppressWarnings({ "unchecked" })
   public Mono<Payload> serialize(RemoteRequest request, @Nullable Object result) {
-    return Mono.create(sink -> {
+    return Mono.fromCallable(() -> {
       ByteBuf buffer = allocator.ioBuffer();
-      if (new MessagePackWriter(buffer).writeNullable(result, (out, v) -> {
-        InvocableMethod invocableMethod = request.getMethod();
-        findSerializer(invocableMethod)
-                .serialize(invocableMethod, v, out);
-
-        sink.success(ByteBufPayload.create(buffer));
-      })) {
-        sink.success(ByteBufPayload.create(buffer));
+      try {
+        new MessagePackWriter(buffer).writeNullable(result, (out, v) -> {
+          InvocableMethod invocableMethod = request.getMethod();
+          findSerializer(invocableMethod).serialize(invocableMethod, v, out);
+        });
+        return ByteBufPayload.create(buffer);
+      }
+      catch (Throwable ex) {
+        buffer.release();
+        throw ex;
       }
     });
   }

@@ -18,8 +18,6 @@ package infra.cloud.service;
 
 import org.jspecify.annotations.Nullable;
 
-import java.util.function.Function;
-
 import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
 import infra.util.concurrent.Future;
@@ -30,7 +28,7 @@ import reactor.core.publisher.Mono;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 19:55
  */
-final class RequestResponseResult extends AbstractInvocationResult implements Function<Payload, Object> {
+final class RequestResponseResult extends AbstractInvocationResult {
 
   private final Mono<Payload> resultPublisher;
 
@@ -39,6 +37,8 @@ final class RequestResponseResult extends AbstractInvocationResult implements Fu
   private final ResponseDeserializer responseDeserializer;
 
   private Future<Object> future;
+
+  private volatile @Nullable Throwable exception;
 
   RequestResponseResult(ServiceInterfaceMethod method, Mono<Payload> resultPublisher, ResponseDeserializer responseDeserializer) {
     this.resultPublisher = resultPublisher;
@@ -52,18 +52,13 @@ final class RequestResponseResult extends AbstractInvocationResult implements Fu
   }
 
   @Override
-  public Object apply(Payload payload) {
-    return responseDeserializer.deserialize(method, payload.data());
-  }
-
-  @Override
   public boolean isFailed() {
-    return false;
+    return exception != null;
   }
 
   @Override
-  public Throwable getException() {
-    return null;
+  public @Nullable Throwable getException() {
+    return exception;
   }
 
   @Override
@@ -91,7 +86,21 @@ final class RequestResponseResult extends AbstractInvocationResult implements Fu
 
   @Override
   public Mono<Object> publisher() {
-    return resultPublisher.map(this);
+    return resultPublisher.handle((payload, sink) -> {
+      Object value = apply(payload);
+      if (value != null) {
+        sink.next(value);
+      }
+    }).doOnError(error -> exception = error);
+  }
+
+  private Object apply(Payload payload) {
+    try {
+      return responseDeserializer.deserialize(method, payload.data());
+    }
+    finally {
+      payload.release();
+    }
   }
 
 }

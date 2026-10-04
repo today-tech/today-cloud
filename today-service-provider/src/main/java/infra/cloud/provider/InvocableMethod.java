@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceMethod;
 import infra.reflect.MethodInvoker;
+import infra.core.ReactiveAdapterRegistry;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -35,7 +36,12 @@ public class InvocableMethod extends ServiceMethod {
   private final MethodInvoker invoker;
 
   public InvocableMethod(ServiceInterfaceMetadata<?> metadata, ServiceObject service, Method method, MethodInvoker invoker) {
-    super(metadata.getServiceMetadata(), service.getInterface(), method);
+    this(metadata, service, method, invoker, ReactiveAdapterRegistry.getSharedInstance());
+  }
+
+  public InvocableMethod(ServiceInterfaceMetadata<?> metadata, ServiceObject service, Method method, MethodInvoker invoker,
+          ReactiveAdapterRegistry adapterRegistry) {
+    super(metadata.getServiceMetadata(), service.getInterface(), method, adapterRegistry);
     this.invoker = invoker;
     this.instance = service.getInstance();
   }

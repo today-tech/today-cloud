@@ -20,6 +20,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
+import infra.beans.factory.ObjectProvider;
 import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
 import infra.cloud.net.InetProperties;
 import infra.cloud.net.InetService;
@@ -27,6 +28,7 @@ import infra.cloud.provider.DefaultServiceInterfaceMetadataProvider;
 import infra.cloud.provider.LocalServiceHolder;
 import infra.cloud.provider.RequestDeserializer;
 import infra.cloud.provider.ResponseSerializer;
+import infra.cloud.provider.ReturnValueHandler;
 import infra.cloud.provider.ServerTransportFactory;
 import infra.cloud.provider.ServiceChannelHandler;
 import infra.cloud.provider.ServiceProviderServer;
@@ -43,6 +45,7 @@ import infra.context.annotation.config.DisableDIAutoConfiguration;
 import infra.context.condition.ConditionalOnBooleanProperty;
 import infra.context.condition.ConditionalOnMissingBean;
 import infra.context.properties.EnableConfigurationProperties;
+import infra.core.ReactiveAdapterRegistry;
 import infra.core.io.ResourceLoader;
 import infra.remoting.Closeable;
 import infra.remoting.core.Resume;
@@ -90,10 +93,12 @@ public final class ServiceProviderAutoConfiguration {
   @Component
   public static RequestDeserializer requestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider<ServiceMethod> serviceInterfaceMetadataProvider,
-          ResourceLoader resourceLoader, LocalServiceHolder localServiceHolder) {
+          ResourceLoader resourceLoader, LocalServiceHolder localServiceHolder,
+          ObjectProvider<ReactiveAdapterRegistry> adapterRegistry) {
     List<ArgumentSerialization> serializations = InfraStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
     argumentSerializations.addAll(serializations); // order after ArgumentSerialization beans
-    return new RequestDeserializer(argumentSerializations, serviceInterfaceMetadataProvider, localServiceHolder);
+    return new RequestDeserializer(argumentSerializations, serviceInterfaceMetadataProvider, localServiceHolder,
+            adapterRegistry.getIfAvailable(ReactiveAdapterRegistry::getSharedInstance));
   }
 
   @Component
@@ -105,8 +110,10 @@ public final class ServiceProviderAutoConfiguration {
 
   @Component
   public static ServiceChannelHandler serviceChannelHandler(LocalServiceHolder localServiceHolder,
-          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
-    return new ServiceChannelHandler(localServiceHolder, requestDeserializer, responseSerializer);
+          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer,
+          ObjectProvider<ReturnValueHandler> returnValueHandlers) {
+    return new ServiceChannelHandler(localServiceHolder, requestDeserializer, responseSerializer,
+            returnValueHandlers.orderedList());
   }
 
   @Component

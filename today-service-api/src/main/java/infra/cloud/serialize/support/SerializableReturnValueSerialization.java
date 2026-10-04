@@ -30,6 +30,7 @@ import infra.cloud.serialize.SerializationException;
 import infra.cloud.serialize.Writable;
 import infra.cloud.service.ServiceMethod;
 import infra.core.Ordered;
+import infra.util.ClassUtils;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -39,7 +40,7 @@ public class SerializableReturnValueSerialization implements ReturnValueDeserial
 
   @Override
   public boolean supportsReturnValue(ServiceMethod method) {
-    return method.isReturnTypeAssignableTo(Serializable.class);
+    return Serializable.class.isAssignableFrom(ClassUtils.resolvePrimitiveIfNecessary(method.getResponseType()));
   }
 
   @Override

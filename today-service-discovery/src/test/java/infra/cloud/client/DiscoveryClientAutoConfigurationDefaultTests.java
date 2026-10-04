@@ -18,11 +18,11 @@ package infra.cloud.client;
 
 import org.junit.jupiter.api.Test;
 
-import infra.app.test.context.InfraTest;
 import infra.beans.factory.annotation.Autowired;
 import infra.cloud.client.simple.SimpleDiscoveryClient;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.config.EnableAutoConfiguration;
+import infra.test.app.context.InfraTest;
 
 import static org.assertj.core.api.BDDAssertions.then;
 

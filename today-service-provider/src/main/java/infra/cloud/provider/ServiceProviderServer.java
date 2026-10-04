@@ -83,6 +83,7 @@ public class ServiceProviderServer implements SmartLifecycle, ChannelAcceptor {
   public void stop() {
     if (serverCloseable != null) {
       serverCloseable.dispose();
+      serverCloseable = null;
     }
   }
 

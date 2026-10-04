@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import infra.app.test.context.InfraTest;
 import infra.beans.factory.annotation.Autowired;
+import infra.test.app.context.InfraTest;
 
 import static infra.cloud.client.CompositeDiscoveryClientTestsConfig.CUSTOM_DISCOVERY_CLIENT;
 import static infra.cloud.client.CompositeDiscoveryClientTestsConfig.CUSTOM_SERVICE_ID;

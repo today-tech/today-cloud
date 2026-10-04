@@ -18,13 +18,11 @@ package infra.cloud.client.annotation.config;
 
 import org.junit.jupiter.api.Test;
 
-import infra.app.test.context.InfraTest;
 import infra.beans.factory.annotation.Autowired;
 import infra.cloud.service.ServiceProxyFactory;
 import infra.context.annotation.Configuration;
 import infra.context.annotation.config.EnableAutoConfiguration;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import infra.test.app.context.InfraTest;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>

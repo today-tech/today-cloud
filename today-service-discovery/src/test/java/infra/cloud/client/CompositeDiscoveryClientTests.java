@@ -18,8 +18,8 @@ package infra.cloud.client;
 
 import org.junit.jupiter.api.Test;
 
-import infra.app.test.context.InfraTest;
 import infra.beans.factory.annotation.Autowired;
+import infra.test.app.context.InfraTest;
 
 import static infra.cloud.client.CompositeDiscoveryClientTestsConfig.CUSTOM_SERVICE_ID;
 import static org.assertj.core.api.BDDAssertions.then;

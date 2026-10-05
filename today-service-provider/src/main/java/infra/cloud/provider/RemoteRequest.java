@@ -45,6 +45,10 @@ public class RemoteRequest {
     return method;
   }
 
+  public @Nullable Object @Nullable [] getArguments() {
+    return args;
+  }
+
   public ServiceObject getServiceObject() {
     return serviceObject;
   }

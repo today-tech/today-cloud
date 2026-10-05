@@ -16,27 +16,18 @@
 
 package infra.cloud.provider;
 
-import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
-import infra.cloud.service.ServiceMethod;
-
 /**
- * Strategy for handling a service return value in a request-response invocation.
- * Custom handlers are considered before built-in handlers; the first supporting
- * handler wins. Implementations must propagate cancellation to asynchronous work.
- * Response encoding is performed by the caller.
+ * Transport-independent execution of a decoded service request.
+ * Each subscription invokes the service anew, producing at most one non-null
+ * value. Empty completion represents null or void; errors represent invocation
+ * failures. Cancellation must propagate to the underlying invocation.
  *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2026/10/4
+ * @since 1.0 2026/10/5
  */
-public interface ReturnValueHandler {
+public interface ServiceRequestExecutor {
 
-  boolean supportsReturnValue(ServiceMethod method);
-
-  /**
-   * Adapt a return value to a single-value publisher. Null and void results
-   * complete without a value. Failures must be emitted as error signals.
-   */
-  Publisher<Object> handleReturnValue(RemoteRequest request, @Nullable Object returnValue);
+  Publisher<Object> execute(RemoteRequest request);
 }

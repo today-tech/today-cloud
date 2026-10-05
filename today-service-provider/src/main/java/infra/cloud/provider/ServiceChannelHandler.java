@@ -18,15 +18,11 @@ package infra.cloud.provider;
 
 import org.reactivestreams.Publisher;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import infra.cloud.serialize.MessagePackReader;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -34,29 +30,22 @@ import reactor.core.scheduler.Schedulers;
  */
 public class ServiceChannelHandler implements Channel {
 
-  private final LocalServiceHolder localServiceHolder;
-
   private final RequestDeserializer requestDeserializer;
 
   private final ResponseSerializer responseSerializer;
 
-  private final List<ReturnValueHandler> returnValueHandlers;
+  private final ServiceRequestExecutor requestExecutor;
 
   public ServiceChannelHandler(LocalServiceHolder localServiceHolder,
           RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
-    this(localServiceHolder, requestDeserializer, responseSerializer, List.of());
+    this(requestDeserializer, responseSerializer, new DefaultServiceRequestExecutor());
   }
 
-  public ServiceChannelHandler(LocalServiceHolder localServiceHolder,
-          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer,
-          List<ReturnValueHandler> returnValueHandlers) {
-    this.localServiceHolder = localServiceHolder;
+  public ServiceChannelHandler(RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer,
+          ServiceRequestExecutor requestExecutor) {
     this.requestDeserializer = requestDeserializer;
     this.responseSerializer = responseSerializer;
-    var handlers = new ArrayList<>(returnValueHandlers);
-    handlers.add(new ReactiveReturnValueHandler());
-    handlers.add(new SimpleReturnValueHandler());
-    this.returnValueHandlers = List.copyOf(handlers);
+    this.requestExecutor = requestExecutor;
   }
 
   @Override
@@ -71,23 +60,10 @@ public class ServiceChannelHandler implements Channel {
     finally {
       payload.release();
     }
-    return Mono.defer(() -> {
-              try {
-                Object result = request.invoke();
-                for (ReturnValueHandler handler : returnValueHandlers) {
-                  if (handler.supportsReturnValue(request.getMethod())) {
-                    return handler.handleReturnValue(request, result)
-                            .flatMap(value -> responseSerializer.serialize(request, value))
-                            .switchIfEmpty(Mono.defer(() -> responseSerializer.serialize(request, (Object) null)))
-                            .onErrorResume(error -> responseSerializer.serialize(request, error));
-                  }
-                }
-                return Mono.error(new IllegalStateException("No ReturnValueHandler for " + request.getMethod()));
-              }
-              catch (Throwable e) {
-                return responseSerializer.serialize(request, e);
-              }
-            }).subscribeOn(Schedulers.boundedElastic())
+    return Mono.defer(() -> Mono.from(requestExecutor.execute(request)))
+            .flatMap(value -> responseSerializer.serialize(request, value))
+            .switchIfEmpty(Mono.defer(() -> responseSerializer.serialize(request, (Object) null)))
+            .onErrorResume(error -> responseSerializer.serialize(request, error))
             .doOnDiscard(Payload.class, Payload::release);
   }
 

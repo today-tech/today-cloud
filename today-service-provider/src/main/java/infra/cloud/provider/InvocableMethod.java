@@ -17,13 +17,15 @@
 package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
+import org.reactivestreams.Publisher;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceMethod;
-import infra.reflect.MethodInvoker;
 import infra.core.ReactiveAdapterRegistry;
+import infra.reflect.MethodInvoker;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
@@ -33,7 +35,11 @@ public class InvocableMethod extends ServiceMethod {
 
   private final Object instance;
 
+  private final ServiceObject serviceObject;
+
   private final MethodInvoker invoker;
+
+  private final ReturnValueHandler returnValueHandler;
 
   public InvocableMethod(ServiceInterfaceMetadata<?> metadata, ServiceObject service, Method method, MethodInvoker invoker) {
     this(metadata, service, method, invoker, ReactiveAdapterRegistry.getSharedInstance());
@@ -41,9 +47,28 @@ public class InvocableMethod extends ServiceMethod {
 
   public InvocableMethod(ServiceInterfaceMetadata<?> metadata, ServiceObject service, Method method, MethodInvoker invoker,
           ReactiveAdapterRegistry adapterRegistry) {
+    this(metadata, service, method, invoker, adapterRegistry, new ReturnValueHandlerComposite(List.of()));
+  }
+
+  public InvocableMethod(ServiceInterfaceMetadata<?> metadata, ServiceObject service, Method method, MethodInvoker invoker,
+          ReactiveAdapterRegistry adapterRegistry, ReturnValueHandlerComposite handlers) {
     super(metadata.getServiceMetadata(), service.getInterface(), method, adapterRegistry);
     this.invoker = invoker;
     this.instance = service.getInstance();
+    this.serviceObject = service;
+    this.returnValueHandler = handlers.select(this);
+  }
+
+  public ReturnValueHandler getReturnValueHandler() {
+    return returnValueHandler;
+  }
+
+  public Publisher<Object> handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
+    return returnValueHandler.handleReturnValue(request, returnValue);
+  }
+
+  public ServiceObject getServiceObject() {
+    return serviceObject;
   }
 
   @Nullable

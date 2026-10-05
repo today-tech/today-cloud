@@ -52,7 +52,8 @@ class RequestResponseResourceTests {
         return Mono.just("adapted");
       }
     };
-    var handler = new ServiceChannelHandler(mock(LocalServiceHolder.class), deserializer, serializer, List.of(custom));
+    when(method.handleReturnValue(request, value)).thenAnswer(invocation -> custom.handleReturnValue(request, value));
+    var handler = new ServiceChannelHandler(deserializer, serializer, new DefaultServiceRequestExecutor());
     Payload payload = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
     StepVerifier.create(handler.requestResponse(payload)).assertNext(response -> {
       try {
@@ -63,6 +64,31 @@ class RequestResponseResourceTests {
       }
     }).expectComplete().verify(Duration.ofSeconds(5));
     assertThat(seen.get()).isSameAs(value);
+    assertThat(payload.refCnt()).isZero();
+  }
+
+  @Test
+  void transportCanDelegateToAnIndependentExecutor() {
+    var deserializer = mock(RequestDeserializer.class);
+    var request = mock(RemoteRequest.class);
+    var serializer = mock(ResponseSerializer.class);
+    when(deserializer.deserialize(any())).thenReturn(request);
+    when(serializer.serialize(request, "external"))
+            .thenAnswer(invocation -> Mono.just(ByteBufPayload.create(Unpooled.buffer().writeByte(7))));
+    ServiceRequestExecutor executor = candidate -> {
+      assertThat(candidate).isSameAs(request);
+      return Mono.just("external");
+    };
+    var handler = new ServiceChannelHandler(deserializer, serializer, executor);
+    Payload payload = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
+    StepVerifier.create(handler.requestResponse(payload)).assertNext(response -> {
+      try {
+        assertThat(response.data().readByte()).isEqualTo((byte) 7);
+      }
+      finally {
+        response.release();
+      }
+    }).verifyComplete();
     assertThat(payload.refCnt()).isZero();
   }
 

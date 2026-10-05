@@ -25,13 +25,18 @@ import infra.cloud.client.annotation.ConditionalOnDiscoveryEnabled;
 import infra.cloud.net.InetProperties;
 import infra.cloud.net.InetService;
 import infra.cloud.provider.DefaultServiceInterfaceMetadataProvider;
+import infra.cloud.provider.DefaultServiceMethodResolver;
+import infra.cloud.provider.DefaultServiceRequestExecutor;
 import infra.cloud.provider.LocalServiceHolder;
 import infra.cloud.provider.RequestDeserializer;
 import infra.cloud.provider.ResponseSerializer;
 import infra.cloud.provider.ReturnValueHandler;
+import infra.cloud.provider.ReturnValueHandlerComposite;
 import infra.cloud.provider.ServerTransportFactory;
 import infra.cloud.provider.ServiceChannelHandler;
+import infra.cloud.provider.ServiceMethodResolver;
 import infra.cloud.provider.ServiceProviderServer;
+import infra.cloud.provider.ServiceRequestExecutor;
 import infra.cloud.provider.ServiceServerProperties;
 import infra.cloud.provider.TcpServerTransportFactory;
 import infra.cloud.serialize.ArgumentSerialization;
@@ -91,14 +96,21 @@ public final class ServiceProviderAutoConfiguration {
   }
 
   @Component
+  @ConditionalOnMissingBean
+  public static ServiceMethodResolver serviceMethodResolver(
+          ServiceInterfaceMetadataProvider<ServiceMethod> metadataProvider,
+          ObjectProvider<ReactiveAdapterRegistry> adapterRegistry, LocalServiceHolder localServiceHolder,
+          ReturnValueHandlerComposite returnValueHandlers) {
+    return new DefaultServiceMethodResolver(metadataProvider,
+            adapterRegistry.getIfAvailable(ReactiveAdapterRegistry::getSharedInstance), localServiceHolder, returnValueHandlers);
+  }
+
+  @Component
   public static RequestDeserializer requestDeserializer(List<ArgumentSerialization> argumentSerializations,
-          ServiceInterfaceMetadataProvider<ServiceMethod> serviceInterfaceMetadataProvider,
-          ResourceLoader resourceLoader, LocalServiceHolder localServiceHolder,
-          ObjectProvider<ReactiveAdapterRegistry> adapterRegistry) {
+          ResourceLoader resourceLoader, ServiceMethodResolver methodResolver) {
     List<ArgumentSerialization> serializations = InfraStrategies.find(ArgumentSerialization.class, resourceLoader.getClassLoader());
     argumentSerializations.addAll(serializations); // order after ArgumentSerialization beans
-    return new RequestDeserializer(argumentSerializations, serviceInterfaceMetadataProvider, localServiceHolder,
-            adapterRegistry.getIfAvailable(ReactiveAdapterRegistry::getSharedInstance));
+    return new RequestDeserializer(argumentSerializations, methodResolver);
   }
 
   @Component
@@ -109,11 +121,21 @@ public final class ServiceProviderAutoConfiguration {
   }
 
   @Component
-  public static ServiceChannelHandler serviceChannelHandler(LocalServiceHolder localServiceHolder,
-          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer,
-          ObjectProvider<ReturnValueHandler> returnValueHandlers) {
-    return new ServiceChannelHandler(localServiceHolder, requestDeserializer, responseSerializer,
-            returnValueHandlers.orderedList());
+  @ConditionalOnMissingBean
+  public static ReturnValueHandlerComposite returnValueHandlerComposite(ObjectProvider<ReturnValueHandler> handlers) {
+    return new ReturnValueHandlerComposite(handlers.orderedList());
+  }
+
+  @Component
+  @ConditionalOnMissingBean
+  public static ServiceRequestExecutor serviceRequestExecutor() {
+    return new DefaultServiceRequestExecutor();
+  }
+
+  @Component
+  public static ServiceChannelHandler serviceChannelHandler(RequestDeserializer requestDeserializer,
+          ResponseSerializer responseSerializer, ServiceRequestExecutor requestExecutor) {
+    return new ServiceChannelHandler(requestDeserializer, responseSerializer, requestExecutor);
   }
 
   @Component

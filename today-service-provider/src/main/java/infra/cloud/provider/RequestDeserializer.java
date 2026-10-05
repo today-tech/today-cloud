@@ -18,20 +18,15 @@ package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
 
-import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Objects;
 
 import infra.cloud.serialize.ArgumentSerialization;
 import infra.cloud.serialize.Readable;
 import infra.cloud.serialize.SerializationException;
-import infra.cloud.service.ServiceInterfaceMetadata;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.core.MethodParameter;
 import infra.core.ReactiveAdapterRegistry;
-import infra.reflect.MethodInvoker;
 import infra.util.Assert;
-import infra.util.MapCache;
 
 /**
  * Deserializes incoming remote requests
@@ -44,14 +39,7 @@ public class RequestDeserializer {
 
   private final List<ArgumentSerialization> argumentSerializations;
 
-  /** fast method mapping cache */
-  private final MethodMapCache methodMapCache = new MethodMapCache();
-
-  private final ServiceInterfaceMetadataProvider metadataProvider;
-
-  private final LocalServiceHolder localServiceHolder;
-
-  private final ReactiveAdapterRegistry adapterRegistry;
+  private final ServiceMethodResolver methodResolver;
 
   public RequestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder) {
@@ -61,11 +49,14 @@ public class RequestDeserializer {
   public RequestDeserializer(List<ArgumentSerialization> argumentSerializations,
           ServiceInterfaceMetadataProvider metadataProvider, LocalServiceHolder localServiceHolder,
           ReactiveAdapterRegistry adapterRegistry) {
-    Assert.notNull(adapterRegistry, "adapterRegistry is required");
-    this.argumentSerializations = argumentSerializations;
-    this.metadataProvider = metadataProvider;
-    this.localServiceHolder = localServiceHolder;
-    this.adapterRegistry = adapterRegistry;
+    this(argumentSerializations, new DefaultServiceMethodResolver(metadataProvider, adapterRegistry, localServiceHolder));
+  }
+
+  public RequestDeserializer(List<ArgumentSerialization> argumentSerializations,
+          ServiceMethodResolver methodResolver) {
+    Assert.notNull(methodResolver, "methodResolver is required");
+    this.argumentSerializations = List.copyOf(argumentSerializations);
+    this.methodResolver = methodResolver;
   }
 
   public RemoteRequest deserialize(Readable readable) throws SerializationException {
@@ -73,9 +64,7 @@ public class RequestDeserializer {
     String methodName = readable.readString();
     String[] paramTypes = readable.read(String.class, Readable::readString);
 
-    var serviceInterface = localServiceHolder.getServiceObject(serviceClass);
-    Assert.state(serviceInterface != null, "service interface not found");
-    InvocableMethod method = methodMapCache.get(new MethodKey(serviceClass, methodName, paramTypes), serviceInterface);
+    InvocableMethod method = methodResolver.resolve(serviceClass, methodName, paramTypes);
 
     MethodParameter[] parameters = method.getParameters();
     @Nullable Object[] args = new Object[parameters.length];
@@ -86,7 +75,7 @@ public class RequestDeserializer {
       args[idx++] = serialization.deserialize(parameter, readable);
     }
 
-    return new RemoteRequest(method, args, serviceInterface);
+    return new RemoteRequest(method, args, method.getServiceObject());
   }
 
   private ArgumentSerialization findArgumentSerialization(MethodParameter parameter) {
@@ -96,50 +85,6 @@ public class RequestDeserializer {
       }
     }
     throw new IllegalStateException("ArgumentSerialization for parameter %s not found".formatted(parameter));
-  }
-
-  private final class MethodMapCache extends MapCache<MethodKey, InvocableMethod, ServiceObject> {
-
-    @Override
-    protected InvocableMethod createValue(MethodKey key, ServiceObject serviceObject) {
-      Method methodToUse = getMethod(key, serviceObject.getInterface());
-      if (methodToUse == null) {
-        throw new IllegalStateException("No method found for method: " + key.method);
-      }
-      MethodInvoker methodInvoker = MethodInvoker.forMethod(methodToUse);
-      ServiceInterfaceMetadata metadata = metadataProvider.getMetadata(serviceObject.getInterface());
-      return new InvocableMethod(metadata, serviceObject, methodToUse, methodInvoker, adapterRegistry);
-    }
-
-    @Nullable
-    private static Method getMethod(MethodKey key, Class<?> serviceInterface) {
-      String method = key.method;
-      String[] paramTypes = key.paramTypes;
-      int parameterLength = paramTypes.length;
-
-      for (Method serviceMethod : serviceInterface.getMethods()) {
-        if (Objects.equals(serviceMethod.getName(), method)
-                && parameterLength == serviceMethod.getParameterCount()) {
-          int current = 0;
-          boolean equals = true;
-          for (Class<?> parameterType : serviceMethod.getParameterTypes()) {
-            if (!parameterType.getName().equals(paramTypes[current++])) {
-              // not target method
-              equals = false;
-              break;
-            }
-          }
-          if (equals) {
-            return serviceMethod;
-          }
-        }
-      }
-      return null;
-    }
-  }
-
-  private record MethodKey(String serviceClass, String method, String[] paramTypes) {
-
   }
 
 }

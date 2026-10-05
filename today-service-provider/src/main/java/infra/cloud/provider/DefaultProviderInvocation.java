@@ -99,7 +99,7 @@ public final class DefaultProviderInvocation extends DefaultAttributeAccessor im
       }
       try {
         if (index < interceptors.size()) {
-          ProviderInvocation next = new DefaultProviderInvocation(request, interceptors, index + 1, getAttributes());
+          var next = new DefaultProviderInvocation(request, interceptors, index + 1, getAttributes());
           return Mono.from(interceptors.get(index).intercept(next));
         }
         Object value = request.invoke();

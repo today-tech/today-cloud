@@ -97,7 +97,7 @@ public class DefaultServiceRequestExecutor implements ServiceRequestExecutor {
               try {
                 Object[] arguments = request.getArguments();
                 RemoteRequest call = interceptors.isEmpty() ? request : new RemoteRequest(request.getMethod(),
-                        arguments == null ? null : arguments.clone(), request.getServiceObject());
+                        arguments == null ? null : arguments.clone(), request.getServiceObject(), request.getMetadata());
                 return Mono.from(new DefaultProviderInvocation(call, interceptors).proceed());
               }
               catch (Throwable error) {

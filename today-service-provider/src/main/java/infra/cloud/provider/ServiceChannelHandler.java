@@ -19,8 +19,12 @@ package infra.cloud.provider;
 import org.reactivestreams.Publisher;
 
 import infra.cloud.serialize.MessagePackReader;
+import infra.cloud.service.DefaultMetadataCodec;
+import infra.cloud.service.Metadata;
+import infra.cloud.service.MetadataCodec;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
+import infra.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +40,8 @@ public class ServiceChannelHandler implements Channel {
 
   private final ServiceRequestExecutor requestExecutor;
 
+  private final MetadataCodec metadataCodec;
+
   public ServiceChannelHandler(LocalServiceHolder localServiceHolder,
           RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
     this(requestDeserializer, responseSerializer, new DefaultServiceRequestExecutor());
@@ -43,16 +49,26 @@ public class ServiceChannelHandler implements Channel {
 
   public ServiceChannelHandler(RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer,
           ServiceRequestExecutor requestExecutor) {
+    this(requestDeserializer, responseSerializer, requestExecutor, new DefaultMetadataCodec());
+  }
+
+  public ServiceChannelHandler(RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer,
+          ServiceRequestExecutor requestExecutor, MetadataCodec metadataCodec) {
+    Assert.notNull(metadataCodec, "metadataCodec is required");
     this.requestDeserializer = requestDeserializer;
     this.responseSerializer = responseSerializer;
     this.requestExecutor = requestExecutor;
+    this.metadataCodec = metadataCodec;
   }
 
   @Override
   public Mono<Payload> requestResponse(Payload payload) {
     final RemoteRequest request;
     try {
-      request = requestDeserializer.deserialize(new MessagePackReader(payload.data()));
+      Metadata metadata = payload.hasMetadata() ? metadataCodec.decode(payload.metadata()) : Metadata.empty();
+      RemoteRequest decoded = requestDeserializer.deserialize(new MessagePackReader(payload.data()));
+      request = metadata.isEmpty() ? decoded : new RemoteRequest(decoded.getMethod(), decoded.getArguments(),
+              decoded.getServiceObject(), metadata);
     }
     catch (Throwable e) {
       return Mono.error(e);

@@ -26,6 +26,8 @@ import infra.cloud.serialize.ArgumentSerialization;
 import infra.cloud.serialize.ReturnValueDeserializer;
 import infra.cloud.serialize.ThrowableSerialization;
 import infra.cloud.service.ClientInterceptor;
+import infra.cloud.service.MetadataCodec;
+import infra.cloud.service.DefaultMetadataCodec;
 import infra.cloud.service.DefaultRemotingOperationsProvider;
 import infra.cloud.service.DefaultServiceInterfaceMetadataProvider;
 import infra.cloud.service.DefaultServiceMetadataProvider;
@@ -69,10 +71,12 @@ public final class ServiceClientAutoConfiguration {
 
   @Component
   public static ServiceInvoker serviceInvoker(List<ClientInterceptor> interceptors, RemotingOperationsProvider remotingOperationsProvider,
-          RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer, ServiceClientProperties properties) {
+          RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer, ServiceClientProperties properties,
+          ObjectProvider<MetadataCodec> metadataCodec) {
     var invoker = new ServiceMethodInvoker(interceptors, remotingOperationsProvider, ByteBufAllocator.DEFAULT,
             requestSerializer, responseDeserializer);
     invoker.setRequestTimeout(properties.getRequestTimeout());
+    invoker.setMetadataCodec(metadataCodec.getIfAvailable(DefaultMetadataCodec::new));
     return invoker;
   }
 

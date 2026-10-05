@@ -38,6 +38,8 @@ import infra.cloud.serialize.ThrowableSerialization;
 import infra.cloud.serialize.support.SerializableReturnValueSerialization;
 import infra.cloud.service.serialize.RequestSerializer;
 import infra.cloud.service.serialize.ResponseDeserializer;
+import infra.core.ReactiveAdapterRegistry;
+import infra.core.ReactiveTypeDescriptor;
 import infra.remoting.ChannelAcceptor;
 import infra.remoting.Closeable;
 import infra.remoting.core.ChannelConnector;
@@ -46,11 +48,9 @@ import infra.remoting.core.RemotingServer;
 import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.transport.local.LocalClientTransport;
 import infra.remoting.transport.local.LocalServerTransport;
-import io.netty.buffer.ByteBufAllocator;
 import infra.util.concurrent.Future;
 import infra.util.concurrent.Promise;
-import infra.core.ReactiveAdapterRegistry;
-import infra.core.ReactiveTypeDescriptor;
+import io.netty.buffer.ByteBufAllocator;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -73,6 +73,9 @@ class RequestResponseIntegrationTests {
   private TestService service;
   private final TestServiceImpl implementation = new TestServiceImpl();
 
+  private final java.util.concurrent.atomic.AtomicReference<Metadata> received = new java.util.concurrent.atomic.AtomicReference<>();
+  private final java.util.concurrent.atomic.AtomicReference<Metadata> outgoing = new java.util.concurrent.atomic.AtomicReference<>(Metadata.empty());
+
   @BeforeEach
   void setUp() {
     ServiceMetadataProvider metadata = type -> new ServiceMetadata("test", "1", List.of(type.getName()));
@@ -87,13 +90,31 @@ class RequestResponseIntegrationTests {
             .thenReturn(new ServiceObject(TestService.class, implementation));
     var requests = new RequestDeserializer(List.of(),
             new infra.cloud.provider.DefaultServiceInterfaceMetadataProvider(metadata), holder, adapters);
-    var handler = new ServiceChannelHandler(holder, requests, new ResponseSerializer(List.of(serialization)));
+    infra.cloud.provider.ServiceInterceptor capture = invocation -> {
+      received.set(invocation.getRequest().getMetadata());
+      assertThat(invocation.getAttribute("local-only")).isNull();
+      return invocation.proceed();
+    };
+    var handler = new ServiceChannelHandler(requests, new ResponseSerializer(List.of(serialization)),
+            new infra.cloud.provider.DefaultServiceRequestExecutor(List.of(capture)));
     String name = UUID.randomUUID().toString();
     server = RemotingServer.create(ChannelAcceptor.with(handler)).payloadDecoder(PayloadDecoder.ZERO_COPY)
             .bindNow(LocalServerTransport.create(name));
     client = RemotingClient.from(ChannelConnector.create().payloadDecoder(PayloadDecoder.ZERO_COPY)
             .connect(LocalClientTransport.create(name)));
-    invoker = new ServiceMethodInvoker(List.of(), method -> client, ByteBufAllocator.DEFAULT,
+    ClientInterceptor inject = invocation -> {
+      invocation.setAttribute("local-only", "not transmitted");
+      for (var entry : outgoing.get().entries()) {
+        if (entry.binary()) {
+          invocation.getMetadata().addBinary(entry.name(), entry.value());
+        }
+        else {
+          invocation.getMetadata().add(entry.name(), new String(entry.value(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+      }
+      return invocation.proceed();
+    };
+    invoker = new ServiceMethodInvoker(List.of(inject), method -> client, ByteBufAllocator.DEFAULT,
             new RequestSerializer(List.of()), new ResponseDeserializer(List.of(serialization), new ThrowableSerialization()));
     service = new DefaultServiceProxyFactory(new DefaultServiceInterfaceMetadataProvider(metadata, List.of(), adapters), invoker)
             .getService(TestService.class);
@@ -107,6 +128,21 @@ class RequestResponseIntegrationTests {
     if (server != null) {
       server.dispose();
     }
+  }
+
+  @Test
+  void metadataCrossesWireAndRemainsReadableAfterPayloadRelease() {
+    outgoing.set(new Metadata().add("traceparent", "00-0123456789abcdef0123456789abcdef-0123456789abcdef-01")
+            .add("tenant-id", "tenant").addBinary("custom-bin", new byte[] { 3, 4 }));
+    assertThat(service.value()).isEqualTo("value");
+    var first = received.get();
+    assertThat(first.get("tenant-id")).isEqualTo("tenant");
+    assertThat(first.getBinary("custom-bin")).containsExactly((byte) 3, (byte) 4);
+    assertThatThrownBy(() -> first.add("x", "y")).isInstanceOf(IllegalStateException.class);
+    outgoing.set(Metadata.empty());
+    assertThat(service.value()).isEqualTo("value");
+    assertThat(received.get().isEmpty()).isTrue();
+    assertThat(first.get("traceparent")).startsWith("00-");
   }
 
   @Test
@@ -266,27 +302,49 @@ class RequestResponseIntegrationTests {
 
   public interface TestService {
     String value();
+
     int number();
+
     String nullValue();
+
     void nothing();
+
     Mono<String> mono();
+
     Mono<String> empty();
+
     Mono<Void> monoVoid();
+
     String failure();
+
     Mono<String> monoFailure();
+
     Mono<String> monoThrow();
+
     Mono<String> never();
+
     String slow();
+
     Future<String> futureValue();
+
     Future<String> futureNull();
+
     Future<Void> futureVoid();
+
     Future<String> futureFailure();
+
     Future<String> futureThrow();
+
     Future<String> pendingFuture();
+
     AsyncValue<String> customValue();
+
     AsyncValue<String> customEmpty();
+
     AsyncValue<String> customFailure();
+
     AsyncValue<String> customNever();
+
     CompletableFuture<String> completable();
   }
 
@@ -297,16 +355,27 @@ class RequestResponseIntegrationTests {
     final Promise<String> pending = Future.forPromise();
 
     public String value() { return "value"; }
+
     public AsyncValue<String> customValue() { return new AsyncValue<>(Mono.just("custom")); }
+
     public AsyncValue<String> customEmpty() { return new AsyncValue<>(Mono.empty()); }
+
     public AsyncValue<String> customFailure() { return new AsyncValue<>(Mono.error(new IllegalStateException("custom failure"))); }
+
     public AsyncValue<String> customNever() { return new AsyncValue<>(never()); }
+
     public CompletableFuture<String> completable() { return CompletableFuture.completedFuture("stage"); }
+
     public Future<String> futureValue() { return Future.ok("future"); }
+
     public Future<String> futureNull() { return Future.ok(null); }
+
     public Future<Void> futureVoid() { return Future.ok(); }
+
     public Future<String> futureFailure() { return Future.failed(new IllegalArgumentException("future failure")); }
+
     public Future<String> futureThrow() { throw new IllegalStateException("sync future failure"); }
+
     public Future<String> pendingFuture() {
       pending.onCompleted(completed -> {
         if (completed.isCancelled()) {
@@ -316,18 +385,29 @@ class RequestResponseIntegrationTests {
       subscribed.countDown();
       return pending;
     }
+
     public int number() { return 42; }
+
     public String nullValue() { return null; }
+
     public void nothing() { calls.incrementAndGet(); }
+
     public Mono<String> mono() { calls.incrementAndGet(); return Mono.just("mono"); }
+
     public Mono<String> empty() { return Mono.empty(); }
+
     public Mono<Void> monoVoid() { return Mono.empty(); }
+
     public String failure() { throw new IllegalStateException("sync failure"); }
+
     public Mono<String> monoFailure() { return Mono.error(new IllegalArgumentException("async failure")); }
+
     public Mono<String> monoThrow() { throw new IllegalStateException("sync mono failure"); }
+
     public Mono<String> never() {
       return Mono.<String>never().doOnSubscribe(s -> subscribed.countDown()).doOnCancel(cancelled::countDown);
     }
+
     public String slow() {
       try {
         Thread.sleep(5000);

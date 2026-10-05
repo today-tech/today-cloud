@@ -38,6 +38,53 @@ Publisher<Object> result = requestExecutor.execute(request);
 
 ## 扩展点
 
+### 跨进程元数据
+
+`Metadata` 用于显式传递调用元数据，与 `AttributeAccessor` 的本地属性独立。
+支持 UTF-8 文本、二进制值和同名多值；`entries()` 按添加顺序访问所有条目，
+`get(name)` / `getBinary(name)` 返回首个对应类型的值。
+
+客户端通过 `ClientInterceptor` 写入：
+
+```java
+ClientInterceptor propagation = invocation -> {
+  invocation.getMetadata().add("traceparent", traceparent);
+  invocation.getMetadata().add("tenant-id", tenantId);
+  invocation.getMetadata().addBinary("custom-bin", binaryValue);
+  return invocation.proceed();
+};
+```
+
+服务端通过 `ServiceInterceptor` 读取：
+
+```java
+ServiceInterceptor propagation = invocation -> {
+  String traceparent = invocation.getRequest().getMetadata().get("traceparent");
+  // 提取远端上下文并创建服务端 Span；本地 Span 对象放在 attributes 中。
+  invocation.setAttribute("serverSpan", serverSpan);
+  return invocation.proceed();
+};
+```
+
+客户端在构造每次发送的 payload 时获取元数据快照；服务端在释放 payload 前完成解码。
+`RemoteRequest` 持有不可变且独立于 ByteBuf 的快照，跨线程执行及参数数组复制会保留它。
+本地 attributes 不会自动发送，没有元数据时不分配 metadata buffer、不设置 metadata 标志。
+
+默认 V1 格式为：版本字节，随后是若干条目；每项包含 varint 类型标签、可选的名称长度与
+UTF-8 名称、varint 值长度和数据。标签最低位区分文本与二进制，其他位为名称编号。
+`traceparent`、`tracestate`、`baggage`、`tenant-id`、`authorization` 使用固定编号 1～5，
+自定义名称使用编号 0 并发送名称。不发送条目数量，使用 metadata 区域的边界结束解析。
+默认限制为 8 KiB、64 项，截断、非法版本和未知编号会被拒绝。
+该格式是应用 RPC 元数据格式，不是 RSocket Composite Metadata。
+
+可在客户端与服务端提供 `MetadataCodec` Bean 替换格式或配置限制，双方必须使用
+相同的编码契约。手动创建客户端调用器使用 `setMetadataCodec()`；服务端适配器有对应构造器。
+
+框架提供元数据传输，不会自动生成 Span 或安装 OpenTelemetry。trace 传播应由相应拦截器
+对接 tracing propagator，包含父 Span 信息、采样标志和可选的 tracestate，而不只是 traceId。
+当前客户端拦截器在代理调用时执行，延迟订阅场景需要由 tracing 集成显式处理订阅时上下文；
+跨进程元数据传递本身不等于 ThreadLocal、MDC 或 Reactor Context 的自动恢复。
+
 ### 服务调用拦截器
 
 注册有序的 `ServiceInterceptor` Bean 即可拦截已解码的服务调用，第一个拦截器位于最外层。

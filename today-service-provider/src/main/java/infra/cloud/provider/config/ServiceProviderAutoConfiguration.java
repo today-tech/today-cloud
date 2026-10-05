@@ -43,6 +43,8 @@ import infra.cloud.provider.TcpServerTransportFactory;
 import infra.cloud.serialize.ArgumentSerialization;
 import infra.cloud.serialize.ReturnValueSerializer;
 import infra.cloud.service.DefaultServiceMetadataProvider;
+import infra.cloud.service.MetadataCodec;
+import infra.cloud.service.DefaultMetadataCodec;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
 import infra.cloud.service.ServiceMetadataProvider;
 import infra.cloud.service.ServiceMethod;
@@ -135,8 +137,10 @@ public final class ServiceProviderAutoConfiguration {
 
   @Component
   public static ServiceChannelHandler serviceChannelHandler(RequestDeserializer requestDeserializer,
-          ResponseSerializer responseSerializer, ServiceRequestExecutor requestExecutor) {
-    return new ServiceChannelHandler(requestDeserializer, responseSerializer, requestExecutor);
+          ResponseSerializer responseSerializer, ServiceRequestExecutor requestExecutor,
+          ObjectProvider<MetadataCodec> metadataCodec) {
+    return new ServiceChannelHandler(requestDeserializer, responseSerializer, requestExecutor,
+            metadataCodec.getIfAvailable(DefaultMetadataCodec::new));
   }
 
   @Component

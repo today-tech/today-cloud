@@ -65,6 +65,13 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   private Duration requestTimeout = Duration.ofSeconds(30);
 
+  private MetadataCodec metadataCodec = new DefaultMetadataCodec();
+
+  public void setMetadataCodec(MetadataCodec metadataCodec) {
+    Assert.notNull(metadataCodec, "metadataCodec is required");
+    this.metadataCodec = metadataCodec;
+  }
+
   /** Set the deadline for a request-response subscription, including connection acquisition. */
   public void setRequestTimeout(Duration requestTimeout) {
     Assert.notNull(requestTimeout, "requestTimeout is required");
@@ -109,12 +116,23 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     private Mono<Payload> createMonoPayload() {
       return Mono.defer(() -> {
         ByteBuf buffer = allocator.ioBuffer();
+        ByteBuf metadataBuffer = null;
         try {
           requestSerializer.serialize(serviceMethod, getArguments(), new MessagePackWriter(buffer));
-          return Mono.just(ByteBufPayload.create(buffer));
+          Metadata metadata = getMetadata().snapshot();
+          if (!metadata.isEmpty()) {
+            metadataBuffer = allocator.ioBuffer();
+            metadataCodec.encode(metadata, metadataBuffer);
+          }
+          return Mono.just(metadataBuffer == null
+                  ? ByteBufPayload.create(buffer)
+                  : ByteBufPayload.create(buffer, metadataBuffer));
         }
         catch (Throwable ex) {
           buffer.release();
+          if (metadataBuffer != null) {
+            metadataBuffer.release();
+          }
           return Mono.error(ex);
         }
       });

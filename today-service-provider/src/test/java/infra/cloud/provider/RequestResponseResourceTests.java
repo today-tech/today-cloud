@@ -93,6 +93,18 @@ class RequestResponseResourceTests {
   }
 
   @Test
+  void malformedMetadataReleasesBothBuffers() {
+    var handler = new ServiceChannelHandler(mock(RequestDeserializer.class), mock(ResponseSerializer.class),
+            request -> Mono.empty());
+    var data = Unpooled.buffer().writeByte(0);
+    var metadata = Unpooled.buffer().writeByte(99);
+    Payload payload = ByteBufPayload.create(data, metadata);
+    StepVerifier.create(handler.requestResponse(payload)).expectError(IllegalArgumentException.class).verify();
+    assertThat(data.refCnt()).isZero();
+    assertThat(metadata.refCnt()).isZero();
+  }
+
+  @Test
   void malformedRequestReleasesPayload() {
     var deserializer = mock(RequestDeserializer.class);
     when(deserializer.deserialize(any())).thenThrow(new IllegalArgumentException("invalid request"));

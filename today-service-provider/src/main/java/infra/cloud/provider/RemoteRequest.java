@@ -18,6 +18,8 @@ package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
 
+import infra.cloud.service.Metadata;
+
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/27 22:11
@@ -30,10 +32,23 @@ public class RemoteRequest {
 
   private final ServiceObject serviceObject;
 
+  private final Metadata metadata;
+
   public RemoteRequest(InvocableMethod method, @Nullable Object @Nullable [] args, ServiceObject serviceObject) {
+    this(method, args, serviceObject, Metadata.empty());
+  }
+
+  public RemoteRequest(InvocableMethod method, @Nullable Object @Nullable [] args, ServiceObject serviceObject,
+          Metadata metadata) {
     this.method = method;
     this.args = args;
     this.serviceObject = serviceObject;
+    this.metadata = metadata.snapshot();
+  }
+
+  /** Return immutable, buffer-independent cross-process metadata. */
+  public Metadata getMetadata() {
+    return metadata;
   }
 
   @Nullable

@@ -28,6 +28,13 @@ public abstract class MethodServiceInvocation extends DefaultAttributeAccessor i
 
   private final Object[] args;
 
+  private final Metadata metadata = new Metadata();
+
+  @Override
+  public Metadata getMetadata() {
+    return metadata;
+  }
+
   private final ClientInterceptor[] interceptors;
 
   private int currentIndex = 0;

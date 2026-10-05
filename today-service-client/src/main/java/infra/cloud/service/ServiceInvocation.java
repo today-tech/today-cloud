@@ -27,6 +27,11 @@ import infra.core.AttributeAccessor;
 public interface ServiceInvocation extends AttributeAccessor {
 
   /**
+   * Return explicitly transmitted metadata, separate from local attributes.
+   */
+  Metadata getMetadata();
+
+  /**
    * Proceeds to the next interceptor in the chain.
    *
    * @return see the children interfaces' proceed definition.

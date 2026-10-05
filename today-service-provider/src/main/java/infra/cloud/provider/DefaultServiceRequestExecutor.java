@@ -16,14 +16,27 @@
 
 package infra.cloud.provider;
 
+import java.util.List;
+
 import infra.util.Assert;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * Executes service methods and delegates result adaptation to ordered handlers.
- * The supplied scheduler is externally owned and is not disposed by this executor.
+ * Schedules decoded requests through an ordered {@link ServiceInterceptor} chain
+ * and the method's pre-bound return value handler.
+ *
+ * <p>Each result subscription creates a fresh invocation and attribute context.
+ * When interceptors are configured, the argument array is shallow-copied to isolate
+ * element replacement between subscriptions. Referenced argument objects are not
+ * copied. Each chain continuation is single-use, although subscribing to the
+ * executor result again starts a new service invocation.
+ *
+ * <p>The default scheduler is bounded-elastic to isolate blocking service methods.
+ * An explicitly supplied scheduler is externally owned and is not disposed by this
+ * executor. Cancellation propagates through the chain; stopping business work
+ * still requires the service and interceptors to cooperate with cancellation.
  *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2026/10/5
@@ -32,22 +45,60 @@ public class DefaultServiceRequestExecutor implements ServiceRequestExecutor {
 
   private final Scheduler scheduler;
 
+  private final List<ServiceInterceptor> interceptors;
+
+  /** Create an executor without interceptors using bounded-elastic scheduling. */
   public DefaultServiceRequestExecutor() {
     this(Schedulers.boundedElastic());
   }
 
+  /**
+   * Create an executor without interceptors on the supplied scheduler.
+   *
+   * @param scheduler the externally owned execution scheduler
+   */
   public DefaultServiceRequestExecutor(Scheduler scheduler) {
-    Assert.notNull(scheduler, "scheduler is required");
-    this.scheduler = scheduler;
+    this(List.of(), scheduler);
   }
 
+  /**
+   * Create an executor using bounded-elastic scheduling.
+   *
+   * @param interceptors interceptors in outermost-first order, copied on construction
+   */
+  public DefaultServiceRequestExecutor(List<ServiceInterceptor> interceptors) {
+    this(interceptors, Schedulers.boundedElastic());
+  }
+
+  /**
+   * Create an executor with an ordered interceptor snapshot and explicit scheduling.
+   *
+   * @param interceptors interceptors in outermost-first order, never null and
+   * containing no null elements
+   * @param scheduler the externally owned execution scheduler, never null
+   */
+  public DefaultServiceRequestExecutor(List<ServiceInterceptor> interceptors, Scheduler scheduler) {
+    Assert.notNull(scheduler, "scheduler is required");
+    this.scheduler = scheduler;
+    this.interceptors = List.copyOf(interceptors);
+  }
+
+  /**
+   * Return a lazy result that starts a new invocation on each subscription.
+   *
+   * @param request the decoded service request, never null
+   * @return a result emitting at most one adapted value, completing empty for null
+   * or void, or failing with an invocation or interception error
+   */
   @Override
   public Mono<Object> execute(RemoteRequest request) {
     Assert.notNull(request, "request is required");
     return Mono.defer(() -> {
               try {
-                Object returnValue = request.invoke();
-                return Mono.from(request.getMethod().handleReturnValue(request, returnValue));
+                Object[] arguments = request.getArguments();
+                RemoteRequest call = interceptors.isEmpty() ? request : new RemoteRequest(request.getMethod(),
+                        arguments == null ? null : arguments.clone(), request.getServiceObject());
+                return Mono.from(new DefaultProviderInvocation(call, interceptors).proceed());
               }
               catch (Throwable error) {
                 reactor.core.Exceptions.throwIfFatal(error);

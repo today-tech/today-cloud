@@ -1,7 +1,6 @@
-# Service provider invocation
+# 服务端调用
 
-The request-response invocation pipeline separates wire decoding, method
-resolution, service execution, and response encoding:
+request-response 调用流程将请求解码、方法解析、服务执行和响应编码分开：
 
 ```text
 RequestDeserializer -> ServiceMethodResolver -> RemoteRequest
@@ -13,13 +12,12 @@ RequestDeserializer -> ServiceMethodResolver -> RemoteRequest
                                            ResponseSerializer
 ```
 
-`ServiceChannelHandler` bridges this pipeline to the current Remoting transport.
-It consumes and releases the inbound payload, delegates execution, encodes a value
-or null response, and handles errors through one response-error entry point.
+`ServiceChannelHandler` 将上述流程接入当前的 Remoting 传输层。它负责消费并释放
+入站 payload、委托执行服务调用、编码返回值或空值响应，并通过统一的响应异常入口处理错误。
 
-## Independent invocation
+## 独立调用
 
-Another transport can resolve a method and construct a decoded request directly:
+其他传输实现可以直接解析方法并构造已解码的请求：
 
 ```java
 InvocableMethod method = methodResolver.resolve("com.example.UserService", "findById",
@@ -28,38 +26,63 @@ RemoteRequest request = new RemoteRequest(method, new Object[] { 1L }, method.ge
 Publisher<Object> result = requestExecutor.execute(request);
 ```
 
-The executor and return-value handler interfaces expose Reactive Streams
-`Publisher`, not Reactor `Mono` or Remoting `Payload`. They represent at most one
-value; null and void are represented by empty completion. Each subscription starts
-a new invocation. Cancellation propagates to the underlying asynchronous work.
-The subscriber owns demand and cancellation and must serialize its signals.
+执行器和返回值处理接口使用 Reactive Streams 的 `Publisher`，不暴露 Reactor 的
+`Mono` 或 Remoting 的 `Payload`。结果最多包含一个值；null 和 void 以无值完成表示。
+每次订阅都会启动一次新的调用，取消会传播到底层异步任务。
+订阅者负责管理需求和取消，并保证相关信号符合 Reactive Streams 的串行化要求。
 
-The default executor still uses Reactor internally. It schedules service execution
-on bounded-elastic to isolate blocking methods. Its scheduler constructor allows
-manual scheduling customization; the scheduler is externally owned. A replacement
-executor can use another execution engine without changing response encoding.
-This is an interface boundary, not removal of Reactor dependencies from the module.
+默认执行器内部仍使用 Reactor，通过 bounded-elastic 调度服务执行，隔离阻塞方法。
+手动构造时可以传入自定义 Scheduler；调度器由外部管理生命周期，执行器不会释放它。
+替换执行器后可以使用其他执行引擎，无需同时修改响应编码。
+当前实现完成了接口边界解耦，模块本身仍依赖 Reactor。
 
-## Extension points
+## 扩展点
 
-- Provide a `ServiceMethodResolver` bean to replace method resolution. The default
-  resolver caches immutable signatures scoped to the service object and only exposes
-  methods present in exported interface metadata.
-- Provide a `ServiceRequestExecutor` bean to replace invocation and scheduling.
-- Provide ordered `ReturnValueHandler` beans to adapt application return types.
-  Custom handlers precede reactive and ordinary-value defaults. Handlers do not
-  depend on response serialization or transport buffers.
+### 服务调用拦截器
 
-`ReturnValueHandlerComposite` selects the handler when an `InvocableMethod` is
-constructed. The cached method retains only the selected handler; execution does
-not scan the strategy list. Configure handlers before resolving methods and keep
-them thread-safe. Changing handler configuration requires rebuilding the resolver
-and its method cache. Manual resolvers accept a configured composite through their
-constructor. The executor owns scheduling, not handler configuration.
+注册有序的 `ServiceInterceptor` Bean 即可拦截已解码的服务调用，第一个拦截器位于最外层。
+`ProviderInvocation` 提供方法、参数、请求以及调用链内共享的属性。
+它直接继承 `AttributeAccessor`，可使用 `invocation.setAttribute(name, value)` 和
+`invocation.getAttribute(name)` 访问属性；`getAttributes()` 返回底层属性 Map。
+不调用 `proceed()` 而直接返回结果，可以短路后续拦截器和服务方法。
+结果是已展开的业务值，而不是 Future 或 Mono 包装对象。
+配置拦截器时，每次订阅都会创建新的调用链，并浅拷贝参数数组，因此数组元素替换不会影响
+其他订阅；参数引用的对象本身不会被复制。
 
-Alternative method-ID request codecs can bypass name-based resolution and construct
-the same `RemoteRequest`. The existing request wire format is unchanged.
+```java
+ServiceInterceptor timing = invocation -> {
+  long started = System.nanoTime();
+  return Mono.from(invocation.proceed())
+      .doFinally(signal -> recordDuration(System.nanoTime() - started, signal));
+};
+```
 
-This execution contract is for request-response. Multi-value and duplex invocation
-need separate streaming execution contracts rather than truncating a stream into
-a single response. Cancellation does not roll back service side effects.
+接口使用 Reactive Streams，因此拦截器可以使用任意符合其规范的 Publisher 实现。
+上面的示例使用 Reactor 的生命周期操作符。异步成功、错误和取消应通过 Publisher 观察；
+包围 `proceed()` 的 `finally` 块只能观察 Publisher 的构造过程，不能表示异步调用结束。
+每层调用延续只允许一次 `proceed()` 和一次订阅；重复订阅进行隐式重试会被拒绝，避免重复
+产生业务副作用。请求解码和响应编码位于拦截链之外。
+拦截器必须线程安全，最多返回一个值，并在包装后续调用时保留取消传播。
+
+手动构造执行器时，可传入 `List<ServiceInterceptor>` 和可选的调度器。
+
+### 方法解析与执行策略
+
+- 提供 `ServiceMethodResolver` Bean 可替换方法解析逻辑。默认解析器按服务对象缓存不可变
+  方法签名，仅允许调用导出接口元数据中包含的方法。
+- 提供 `ServiceRequestExecutor` Bean 可替换调用执行和调度逻辑。
+- 提供有序的 `ReturnValueHandler` Bean 可适配应用返回值类型。自定义处理器优先于默认的
+  异步处理器和普通值处理器。处理器不依赖响应序列化或传输缓冲区。
+
+`ReturnValueHandlerComposite` 在构造 `InvocableMethod` 时选择处理器。
+缓存的方法只持有最终选中的处理器，执行时不再扫描策略列表。
+应在解析方法之前完成处理器配置，并保证处理器线程安全。
+修改处理器配置后，需要重新构建解析器及其方法缓存。
+手动构造解析器时，可以通过构造器传入已配置的组合处理器。
+执行器负责调度，处理器配置由方法解析阶段管理。
+
+基于 methodId 的请求编解码器可以跳过名称解析，直接构造相同的 `RemoteRequest`。
+当前请求报文格式保持不变。
+
+当前执行契约适用于 request-response。多值和双向流调用需要独立的流式执行契约，
+不能通过截取流中的第一个结果来代替。取消调用不会回滚已发生的业务副作用。

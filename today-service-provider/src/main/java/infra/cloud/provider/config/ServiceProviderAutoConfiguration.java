@@ -37,6 +37,7 @@ import infra.cloud.provider.ServiceChannelHandler;
 import infra.cloud.provider.ServiceMethodResolver;
 import infra.cloud.provider.ServiceProviderServer;
 import infra.cloud.provider.ServiceRequestExecutor;
+import infra.cloud.provider.ServiceInterceptor;
 import infra.cloud.provider.ServiceServerProperties;
 import infra.cloud.provider.TcpServerTransportFactory;
 import infra.cloud.serialize.ArgumentSerialization;
@@ -128,8 +129,8 @@ public final class ServiceProviderAutoConfiguration {
 
   @Component
   @ConditionalOnMissingBean
-  public static ServiceRequestExecutor serviceRequestExecutor() {
-    return new DefaultServiceRequestExecutor();
+  public static ServiceRequestExecutor serviceRequestExecutor(ObjectProvider<ServiceInterceptor> interceptors) {
+    return new DefaultServiceRequestExecutor(interceptors.orderedList());
   }
 
   @Component

@@ -89,22 +89,22 @@ public class ServiceMethodInvoker implements ServiceInvoker {
   }
 
   @Override
-  public InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Throwable {
+  public InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Exception {
     return chain.proceed(new DefaultClientRequest(serviceMethod, args));
   }
 
   private final class RemoteInvocation implements InterceptorChain {
 
     @Override
-    public InvocationResult proceed(ClientRequest invocation) {
-      ServiceInterfaceMethod serviceMethod = invocation.getServiceMethod();
+    public InvocationResult proceed(ClientRequest request) {
+      ServiceInterfaceMethod serviceMethod = request.getServiceMethod();
       RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(serviceMethod);
-      return switch (invocation.getType()) {
-        case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload(invocation)));
-        case REQUEST_RESPONSE -> new RequestResponseResult(serviceMethod, operations.requestResponse(createMonoPayload(invocation)).timeout(requestTimeout)
+      return switch (request.getType()) {
+        case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload(request)));
+        case REQUEST_RESPONSE -> new RequestResponseResult(serviceMethod, operations.requestResponse(createMonoPayload(request)).timeout(requestTimeout)
                 .onErrorMap(TimeoutException.class, error -> new ServiceTimeoutException("Service request timed out: " + serviceMethod.getMethod(), error)), responseDeserializer);
-        case RESPONSE_STREAMING -> new ResponseStreamingResult(serviceMethod, operations.requestStream(createMonoPayload(invocation)), responseDeserializer);
-        case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload(invocation)));
+        case RESPONSE_STREAMING -> new ResponseStreamingResult(serviceMethod, operations.requestStream(createMonoPayload(request)), responseDeserializer);
+        case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload(request)));
       };
     }
 

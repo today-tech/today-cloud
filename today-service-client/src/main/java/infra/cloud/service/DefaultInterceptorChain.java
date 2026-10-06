@@ -60,8 +60,8 @@ public final class DefaultInterceptorChain implements InterceptorChain {
   }
 
   @Override
-  public InvocationResult proceed(ClientRequest invocation) throws Throwable {
-    return interceptor != null ? interceptor.intercept(invocation, next) : next.proceed(invocation);
+  public InvocationResult proceed(ClientRequest request) throws Exception {
+    return interceptor != null ? interceptor.intercept(request, next) : next.proceed(request);
   }
 
 }

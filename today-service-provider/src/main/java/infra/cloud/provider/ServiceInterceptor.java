@@ -53,10 +53,10 @@ public interface ServiceInterceptor {
    * @param chain the reusable continuation to the next interceptor or service method
    * @return a non-null publisher emitting at most one non-null result, or completing
    * empty; asynchronous failures are emitted as error signals
-   * @throws Throwable if interception fails synchronously; the default executor
+   * @throws Exception if interception fails synchronously; the default executor
    * propagates non-fatal failures as error signals
    */
   Publisher<Object> intercept(RemoteRequest request, InterceptorChain chain)
-          throws Throwable;
+          throws Exception;
 
 }

@@ -48,8 +48,9 @@ public interface ClientInterceptor {
    * @param request per-call arguments, wire metadata and local attributes
    * @param chain reusable continuation accepting the context for the next stage
    * @return the remote or short-circuit result
-   * @throws Throwable if interception fails synchronously
+   * @throws Exception if interception fails synchronously
    */
-  InvocationResult intercept(ClientRequest request, InterceptorChain chain) throws Throwable;
+  InvocationResult intercept(ClientRequest request, InterceptorChain chain)
+          throws Exception;
 
 }

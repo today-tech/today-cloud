@@ -31,8 +31,8 @@ public interface ServiceInvoker {
    * @param args invocation args
    * @return the result of the call to {@link InterceptorChain#proceed(ClientRequest)}, might be
    * intercepted by the interceptor.
-   * @throws Throwable if the interceptors or the target-object throws an exception.
+   * @throws Exception if the interceptors or the target-object throws an exception.
    */
-  InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Throwable;
+  InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Exception;
 
 }

@@ -25,7 +25,7 @@ import java.util.Arrays;
 class TracingInterceptor implements ClientInterceptor {
 
   @Override
-  public InvocationResult intercept(ClientRequest request, InterceptorChain chain) throws Throwable {
+  public InvocationResult intercept(ClientRequest request, InterceptorChain chain) throws Exception {
     System.out.printf("before service %s with args %s%n", request, Arrays.toString(request.getArguments()));
     InvocationResult result = chain.proceed(request);
 

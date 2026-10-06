@@ -35,8 +35,8 @@ public interface InterceptorChain {
    *
    * @param request context passed to the next interceptor or terminal invocation
    * @return non-null result publisher permitting only one subscription
-   * @throws Throwable if obtaining the continuation fails synchronously
+   * @throws Exception if obtaining the continuation fails synchronously
    */
-  Publisher<Object> proceed(RemoteRequest request) throws Throwable;
+  Publisher<Object> proceed(RemoteRequest request) throws Exception;
 
 }

@@ -21,15 +21,15 @@ package infra.cloud.service;
  * "on top" of the target.
  *
  * <p>
- * The user should implement the {@link #intercept(ServiceInvocation)} method to
+ * The user should implement the {@link #intercept(ClientRequest, InterceptorChain)} method to
  * modify the original behavior. E.g. the following class implements a tracing
  * interceptor (traces all the calls on the intercepted method(s)):
  *
  * <pre>{@code
  * class TracingInterceptor implements ClientInterceptor {
- *    public InvocationResult intercept(ServiceInvocation i) throws Throwable {
+ *    public InvocationResult intercept(ClientRequest i, InterceptorChain chain) throws Throwable {
  *         System.out.println("before service " + i + " with args " + i.getArguments());
- *         Object ret = i.proceed();
+ *         InvocationResult ret = chain.proceed(i);
  *         System.out.println("after service " + i + " returns " + ret);
  *         return ret;
  *     }
@@ -41,6 +41,15 @@ package infra.cloud.service;
  */
 public interface ClientInterceptor {
 
-  InvocationResult intercept(ServiceInvocation invocation) throws Throwable;
+  /**
+   * Intercept a client call, optionally short-circuiting or wrapping its result.
+   * Observe asynchronous completion on the result rather than method return.
+   *
+   * @param request per-call arguments, wire metadata and local attributes
+   * @param chain reusable continuation accepting the context for the next stage
+   * @return the remote or short-circuit result
+   * @throws Throwable if interception fails synchronously
+   */
+  InvocationResult intercept(ClientRequest request, InterceptorChain chain) throws Throwable;
 
 }

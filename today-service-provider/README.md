@@ -47,11 +47,11 @@ Publisher<Object> result = requestExecutor.execute(request);
 客户端通过 `ClientInterceptor` 写入：
 
 ```java
-ClientInterceptor propagation = invocation -> {
+ClientInterceptor propagation = (invocation, chain) -> {
   invocation.getMetadata().add("traceparent", traceparent);
   invocation.getMetadata().add("tenant-id", tenantId);
   invocation.getMetadata().addBinary("custom-bin", binaryValue);
-  return invocation.proceed();
+  return chain.proceed(invocation);
 };
 ```
 

@@ -22,7 +22,7 @@ import infra.core.DefaultAttributeAccessor;
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 14:11
  */
-public abstract class MethodServiceInvocation extends DefaultAttributeAccessor implements ServiceInvocation {
+public class DefaultClientRequest extends DefaultAttributeAccessor implements ClientRequest {
 
   protected final ServiceInterfaceMethod serviceMethod;
 
@@ -35,29 +35,10 @@ public abstract class MethodServiceInvocation extends DefaultAttributeAccessor i
     return metadata;
   }
 
-  private final ClientInterceptor[] interceptors;
-
-  private int currentIndex = 0;
-
-  private final int interceptorSize;
-
-  public MethodServiceInvocation(ServiceInterfaceMethod serviceMethod, Object[] args, ClientInterceptor[] interceptors) {
+  public DefaultClientRequest(ServiceInterfaceMethod serviceMethod, Object[] args) {
     this.serviceMethod = serviceMethod;
     this.args = args;
-    this.interceptors = interceptors;
-    this.interceptorSize = interceptors.length;
   }
-
-  @Override
-  public InvocationResult proceed() throws Throwable {
-    if (currentIndex < interceptorSize) {
-      return interceptors[currentIndex++].intercept(this);
-    }
-
-    return invokeRemoting();
-  }
-
-  protected abstract InvocationResult invokeRemoting();
 
   @Override
   public ServiceInterfaceMethod getServiceMethod() {

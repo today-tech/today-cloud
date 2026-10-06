@@ -53,7 +53,7 @@ import reactor.core.publisher.Operators;
  */
 public class ServiceMethodInvoker implements ServiceInvoker {
 
-  private final ClientInterceptor[] interceptors;
+  private final InterceptorChain chain;
 
   private final RemotingOperationsProvider remotingOperationsProvider;
 
@@ -81,7 +81,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   public ServiceMethodInvoker(List<ClientInterceptor> interceptors, RemotingOperationsProvider remotingOperationsProvider,
           ByteBufAllocator allocator, RequestSerializer requestSerializer, ResponseDeserializer responseDeserializer) {
-    this.interceptors = interceptors.toArray(new ClientInterceptor[0]);
+    this.chain = new DefaultInterceptorChain(interceptors, new RemoteInvocation());
     this.remotingOperationsProvider = remotingOperationsProvider;
     this.allocator = allocator;
     this.requestSerializer = requestSerializer;
@@ -90,36 +90,32 @@ public class ServiceMethodInvoker implements ServiceInvoker {
 
   @Override
   public InvocationResult invoke(ServiceInterfaceMethod serviceMethod, Object[] args) throws Throwable {
-    MethodServiceInvocation invocation = new MethodServiceInvocation0(serviceMethod, args, interceptors);
-    return invocation.proceed();
+    return chain.proceed(new DefaultClientRequest(serviceMethod, args));
   }
 
-  class MethodServiceInvocation0 extends MethodServiceInvocation {
-
-    public MethodServiceInvocation0(ServiceInterfaceMethod serviceMethod, Object[] args, ClientInterceptor[] interceptors) {
-      super(serviceMethod, args, interceptors);
-    }
+  private final class RemoteInvocation implements InterceptorChain {
 
     @Override
-    protected InvocationResult invokeRemoting() {
-      RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(getServiceMethod());
-      return switch (getType()) {
-        case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload()));
-        case REQUEST_RESPONSE -> new RequestResponseResult(getServiceMethod(), operations.requestResponse(createMonoPayload()).timeout(requestTimeout)
+    public InvocationResult proceed(ClientRequest invocation) {
+      ServiceInterfaceMethod serviceMethod = invocation.getServiceMethod();
+      RemotingOperations operations = remotingOperationsProvider.getRemotingOperations(serviceMethod);
+      return switch (invocation.getType()) {
+        case FIRE_AND_FORGET -> new FireAndForgetResult(operations.fireAndForget(createMonoPayload(invocation)));
+        case REQUEST_RESPONSE -> new RequestResponseResult(serviceMethod, operations.requestResponse(createMonoPayload(invocation)).timeout(requestTimeout)
                 .onErrorMap(TimeoutException.class, error -> new ServiceTimeoutException("Service request timed out: " + serviceMethod.getMethod(), error)), responseDeserializer);
-
-        case RESPONSE_STREAMING -> new ResponseStreamingResult(getServiceMethod(), operations.requestStream(createMonoPayload()), responseDeserializer);
-        case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload()));
+        case RESPONSE_STREAMING -> new ResponseStreamingResult(serviceMethod, operations.requestStream(createMonoPayload(invocation)), responseDeserializer);
+        case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload(invocation)));
       };
     }
 
-    private Mono<Payload> createMonoPayload() {
+    private Mono<Payload> createMonoPayload(ClientRequest invocation) {
+      ServiceInterfaceMethod serviceMethod = invocation.getServiceMethod();
       return Mono.defer(() -> {
         ByteBuf buffer = allocator.ioBuffer();
         ByteBuf metadataBuffer = null;
         try {
-          requestSerializer.serialize(serviceMethod, getArguments(), new MessagePackWriter(buffer));
-          Metadata metadata = getMetadata().snapshot();
+          requestSerializer.serialize(serviceMethod, invocation.getArguments(), new MessagePackWriter(buffer));
+          Metadata metadata = invocation.getMetadata().snapshot();
           if (!metadata.isEmpty()) {
             metadataBuffer = allocator.ioBuffer();
             metadataCodec.encode(metadata, metadataBuffer);
@@ -139,8 +135,8 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     }
 
     @SuppressWarnings("unchecked")
-    private Publisher<Payload> createChannelPayload() {
-      Flux<Object> flux = (Flux<Object>) getArguments()[0];
+    private Publisher<Payload> createChannelPayload(ClientRequest invocation) {
+      Flux<Object> flux = (Flux<Object>) invocation.getArguments()[0];
 
       return Flux.empty();
     }

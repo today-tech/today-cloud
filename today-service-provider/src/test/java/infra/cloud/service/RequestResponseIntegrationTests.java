@@ -102,7 +102,7 @@ class RequestResponseIntegrationTests {
             .bindNow(LocalServerTransport.create(name));
     client = RemotingClient.from(ChannelConnector.create().payloadDecoder(PayloadDecoder.ZERO_COPY)
             .connect(LocalClientTransport.create(name)));
-    ClientInterceptor inject = invocation -> {
+    ClientInterceptor inject = (invocation, chain) -> {
       invocation.setAttribute("local-only", "not transmitted");
       for (var entry : outgoing.get().entries()) {
         if (entry.binary()) {
@@ -112,7 +112,7 @@ class RequestResponseIntegrationTests {
           invocation.getMetadata().add(entry.name(), new String(entry.value(), java.nio.charset.StandardCharsets.UTF_8));
         }
       }
-      return invocation.proceed();
+      return chain.proceed(invocation);
     };
     invoker = new ServiceMethodInvoker(List.of(inject), method -> client, ByteBufAllocator.DEFAULT,
             new RequestSerializer(List.of()), new ResponseDeserializer(List.of(serialization), new ThrowableSerialization()));

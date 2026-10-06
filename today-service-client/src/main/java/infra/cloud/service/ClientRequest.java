@@ -19,25 +19,19 @@ package infra.cloud.service;
 import infra.core.AttributeAccessor;
 
 /**
- * This interface represents a service invocation.
+ * Logical client request before wire encoding. Holds method information,
+ * arguments, wire metadata and local attributes. Creating this context does not
+ * imply that the request has been sent.
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 10:12
  */
-public interface ServiceInvocation extends AttributeAccessor {
+public interface ClientRequest extends AttributeAccessor {
 
   /**
    * Return explicitly transmitted metadata, separate from local attributes.
    */
   Metadata getMetadata();
-
-  /**
-   * Proceeds to the next interceptor in the chain.
-   *
-   * @return see the children interfaces' proceed definition.
-   * @throws Throwable if the invocation throws an exception.
-   */
-  InvocationResult proceed() throws Throwable;
 
   /**
    * Service ID

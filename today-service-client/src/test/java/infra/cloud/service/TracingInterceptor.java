@@ -25,17 +25,17 @@ import java.util.Arrays;
 class TracingInterceptor implements ClientInterceptor {
 
   @Override
-  public InvocationResult intercept(ServiceInvocation invocation) throws Throwable {
-    System.out.printf("before service %s with args %s%n", invocation, Arrays.toString(invocation.getArguments()));
-    InvocationResult result = invocation.proceed();
+  public InvocationResult intercept(ClientRequest request, InterceptorChain chain) throws Throwable {
+    System.out.printf("before service %s with args %s%n", request, Arrays.toString(request.getArguments()));
+    InvocationResult result = chain.proceed(request);
 
     if (result.isRequestResponse()) {
       result.future().onCompleted(future -> {
         if (future.isSuccess()) {
-          System.out.printf("after service %s returns %s%n", invocation, future.getNow());
+          System.out.printf("after service %s returns %s%n", request, future.getNow());
         }
         else {
-          System.out.printf("service %s failed %s%n", invocation, future.getCause());
+          System.out.printf("service %s failed %s%n", request, future.getCause());
         }
       });
     }

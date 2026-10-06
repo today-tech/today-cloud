@@ -25,11 +25,11 @@ public interface ServiceInvoker {
   /**
    * Implement this method to perform extra treatments before and after the
    * invocation. Polite implementations would certainly like to invoke
-   * {@link ServiceInvocation#proceed()}.
+   * {@link InterceptorChain#proceed(ClientRequest)}.
    *
    * @param serviceMethod the service method
    * @param args invocation args
-   * @return the result of the call to {@link ServiceInvocation#proceed()}, might be
+   * @return the result of the call to {@link InterceptorChain#proceed(ClientRequest)}, might be
    * intercepted by the interceptor.
    * @throws Throwable if the interceptors or the target-object throws an exception.
    */

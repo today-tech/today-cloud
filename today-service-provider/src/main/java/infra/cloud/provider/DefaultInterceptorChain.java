@@ -41,8 +41,6 @@ import reactor.core.publisher.Mono;
  */
 public final class DefaultInterceptorChain implements InterceptorChain {
 
-  private final List<ServiceInterceptor> interceptors;
-
   private final @Nullable ServiceInterceptor interceptor;
 
   private final @Nullable DefaultInterceptorChain next;
@@ -54,26 +52,18 @@ public final class DefaultInterceptorChain implements InterceptorChain {
    * containing no null elements
    */
   public DefaultInterceptorChain(List<ServiceInterceptor> interceptors) {
-    this.interceptors = interceptors;
-    DefaultInterceptorChain chain = new DefaultInterceptorChain(this.interceptors, null, null);
-    var iterator = this.interceptors.listIterator(this.interceptors.size());
+    DefaultInterceptorChain chain = new DefaultInterceptorChain(null, null);
+    var iterator = interceptors.listIterator(interceptors.size());
     while (iterator.hasPrevious()) {
-      chain = new DefaultInterceptorChain(this.interceptors, iterator.previous(), chain);
+      chain = new DefaultInterceptorChain(iterator.previous(), chain);
     }
     this.interceptor = chain.interceptor;
     this.next = chain.next;
   }
 
-  private DefaultInterceptorChain(List<ServiceInterceptor> interceptors,
-          @Nullable ServiceInterceptor interceptor, @Nullable DefaultInterceptorChain next) {
-    this.interceptors = interceptors;
+  private DefaultInterceptorChain(@Nullable ServiceInterceptor interceptor, @Nullable DefaultInterceptorChain next) {
     this.interceptor = interceptor;
     this.next = next;
-  }
-
-  /** Return the immutable interceptor snapshot in outermost-first order. */
-  public List<ServiceInterceptor> getInterceptors() {
-    return interceptors;
   }
 
   @Override

@@ -92,16 +92,19 @@ class ServiceInterceptorTests {
   @Test
   void immutableChainIsReusableAcrossConcurrentRequests() {
     var interceptors = new ArrayList<ServiceInterceptor>();
-    interceptors.add((request, chain) -> chain.proceed(request));
+    var interceptions = new AtomicInteger();
+    interceptors.add((request, chain) -> {
+      interceptions.incrementAndGet();
+      return chain.proceed(request);
+    });
     var chain = new DefaultInterceptorChain(interceptors);
     interceptors.clear();
-    assertThat(chain.getInterceptors()).hasSize(1);
-    assertThatThrownBy(() -> chain.getInterceptors().clear()).isInstanceOf(UnsupportedOperationException.class);
     var calls = new AtomicInteger();
     StepVerifier.create(reactor.core.publisher.Flux.range(0, 50)
             .flatMap(i -> Mono.from(chain.proceed(request(calls))).subscribeOn(Schedulers.parallel())))
             .expectNextCount(50).verifyComplete();
     assertThat(calls).hasValue(50);
+    assertThat(interceptions).hasValue(50);
   }
 
   @Test

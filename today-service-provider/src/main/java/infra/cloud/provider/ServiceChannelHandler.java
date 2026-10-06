@@ -20,11 +20,15 @@ import org.reactivestreams.Publisher;
 
 import infra.cloud.serialize.MessagePackReader;
 import infra.cloud.service.DefaultMetadataCodec;
+import infra.cloud.service.InvocationResult;
+import infra.cloud.service.InvocationResults;
 import infra.cloud.service.Metadata;
 import infra.cloud.service.MetadataCodec;
+import infra.cloud.service.SingleInvocationResult;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.util.Assert;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -76,15 +80,19 @@ public class ServiceChannelHandler implements Channel {
     finally {
       payload.release();
     }
-    final Publisher<Object> result;
+    final InvocationResult result;
     try {
       result = requestExecutor.execute(request);
+      if (!(result instanceof SingleInvocationResult)) {
+        result.cancel();
+        throw new IllegalStateException("request-response requires a single-value invocation result");
+      }
     }
     catch (Throwable error) {
-      reactor.core.Exceptions.throwIfFatal(error);
+      Exceptions.throwIfFatal(error);
       return responseSerializer.serialize(request, error);
     }
-    return Mono.from(result)
+    return Mono.from(InvocationResults.publisher(result))
             .flatMap(value -> responseSerializer.serialize(request, value))
             .switchIfEmpty(Mono.defer(() -> responseSerializer.serialize(request, (Object) null)))
             .onErrorResume(error -> responseSerializer.serialize(request, error))

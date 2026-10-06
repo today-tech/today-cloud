@@ -159,12 +159,12 @@ class RequestResponseIntegrationTests {
   }
 
   @Test
-  void monoIsLazyAndSupportsRepeatedSubscriptions() {
+  void monoIsLazyAndRepeatedObservationSharesOneInvocation() {
     Mono<String> result = service.mono();
     assertThat(implementation.calls).hasValue(0);
     StepVerifier.create(result).expectNext("mono").verifyComplete();
     StepVerifier.create(result).expectNext("mono").verifyComplete();
-    assertThat(implementation.calls).hasValue(2);
+    assertThat(implementation.calls).hasValue(1);
   }
 
   @Test
@@ -354,27 +354,49 @@ class RequestResponseIntegrationTests {
     final CountDownLatch cancelled = new CountDownLatch(1);
     final Promise<String> pending = Future.forPromise();
 
-    public String value() { return "value"; }
+    public String value() {
+      return "value";
+    }
 
-    public AsyncValue<String> customValue() { return new AsyncValue<>(Mono.just("custom")); }
+    public AsyncValue<String> customValue() {
+      return new AsyncValue<>(Mono.just("custom"));
+    }
 
-    public AsyncValue<String> customEmpty() { return new AsyncValue<>(Mono.empty()); }
+    public AsyncValue<String> customEmpty() {
+      return new AsyncValue<>(Mono.empty());
+    }
 
-    public AsyncValue<String> customFailure() { return new AsyncValue<>(Mono.error(new IllegalStateException("custom failure"))); }
+    public AsyncValue<String> customFailure() {
+      return new AsyncValue<>(Mono.error(new IllegalStateException("custom failure")));
+    }
 
-    public AsyncValue<String> customNever() { return new AsyncValue<>(never()); }
+    public AsyncValue<String> customNever() {
+      return new AsyncValue<>(never());
+    }
 
-    public CompletableFuture<String> completable() { return CompletableFuture.completedFuture("stage"); }
+    public CompletableFuture<String> completable() {
+      return CompletableFuture.completedFuture("stage");
+    }
 
-    public Future<String> futureValue() { return Future.ok("future"); }
+    public Future<String> futureValue() {
+      return Future.ok("future");
+    }
 
-    public Future<String> futureNull() { return Future.ok(null); }
+    public Future<String> futureNull() {
+      return Future.ok(null);
+    }
 
-    public Future<Void> futureVoid() { return Future.ok(); }
+    public Future<Void> futureVoid() {
+      return Future.ok();
+    }
 
-    public Future<String> futureFailure() { return Future.failed(new IllegalArgumentException("future failure")); }
+    public Future<String> futureFailure() {
+      return Future.failed(new IllegalArgumentException("future failure"));
+    }
 
-    public Future<String> futureThrow() { throw new IllegalStateException("sync future failure"); }
+    public Future<String> futureThrow() {
+      throw new IllegalStateException("sync future failure");
+    }
 
     public Future<String> pendingFuture() {
       pending.onCompleted(completed -> {
@@ -386,23 +408,42 @@ class RequestResponseIntegrationTests {
       return pending;
     }
 
-    public int number() { return 42; }
+    public int number() {
+      return 42;
+    }
 
-    public String nullValue() { return null; }
+    public String nullValue() {
+      return null;
+    }
 
-    public void nothing() { calls.incrementAndGet(); }
+    public void nothing() {
+      calls.incrementAndGet();
+    }
 
-    public Mono<String> mono() { calls.incrementAndGet(); return Mono.just("mono"); }
+    public Mono<String> mono() {
+      calls.incrementAndGet();
+      return Mono.just("mono");
+    }
 
-    public Mono<String> empty() { return Mono.empty(); }
+    public Mono<String> empty() {
+      return Mono.empty();
+    }
 
-    public Mono<Void> monoVoid() { return Mono.empty(); }
+    public Mono<Void> monoVoid() {
+      return Mono.empty();
+    }
 
-    public String failure() { throw new IllegalStateException("sync failure"); }
+    public String failure() {
+      throw new IllegalStateException("sync failure");
+    }
 
-    public Mono<String> monoFailure() { return Mono.error(new IllegalArgumentException("async failure")); }
+    public Mono<String> monoFailure() {
+      return Mono.error(new IllegalArgumentException("async failure"));
+    }
 
-    public Mono<String> monoThrow() { throw new IllegalStateException("sync mono failure"); }
+    public Mono<String> monoThrow() {
+      throw new IllegalStateException("sync mono failure");
+    }
 
     public Mono<String> never() {
       return Mono.<String>never().doOnSubscribe(s -> subscribed.countDown()).doOnCancel(cancelled::countDown);

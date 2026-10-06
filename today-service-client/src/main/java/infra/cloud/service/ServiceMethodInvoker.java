@@ -104,7 +104,7 @@ public class ServiceMethodInvoker implements ServiceInvoker {
         case REQUEST_RESPONSE -> new RequestResponseResult(serviceMethod, operations.requestResponse(createMonoPayload(request)).timeout(requestTimeout)
                 .onErrorMap(TimeoutException.class, error -> new ServiceTimeoutException("Service request timed out: " + serviceMethod.getMethod(), error)), responseDeserializer);
         case RESPONSE_STREAMING -> new ResponseStreamingResult(serviceMethod, operations.requestStream(createMonoPayload(request)), responseDeserializer);
-        case DUPLEX_STREAMING -> new DuplexStreamingResult(operations.requestChannel(createChannelPayload(request)));
+        case DUPLEX_STREAMING -> new DuplexStreamingResult(serviceMethod, operations.requestChannel(createChannelPayload(request)), responseDeserializer);
       };
     }
 
@@ -141,132 +141,6 @@ public class ServiceMethodInvoker implements ServiceInvoker {
       return Flux.empty();
     }
 
-  }
-
-  class InvocationResult0 extends AbstractInvocationResult implements Publisher<Object>,
-          Subscriber<Payload>, FutureListener<Future<Object>>, Subscription {
-
-    @Nullable
-    private Throwable throwable;
-
-    private final InvocationType invocationType;
-
-    private final Publisher<Payload> payloadPublisher;
-
-    @Nullable
-    private Promise<Object> resultPromise;
-
-    @Nullable
-    private Subscription payloadSubscription;
-
-    private Subscriber<? super Object> downstream;
-
-    public InvocationResult0(InvocationType invocationType, Publisher<Payload> publisher) {
-      this.invocationType = invocationType;
-      this.payloadPublisher = publisher;
-    }
-
-    @Nullable
-    @Override
-    public Object getBlockingValue() {
-      return future().join();
-    }
-
-    @Override
-    public boolean isFailed() {
-      return throwable != null;
-    }
-
-    @Nullable
-    @Override
-    public Throwable getException() {
-      return throwable;
-    }
-
-    @Override
-    public InvocationType getType() {
-      return invocationType;
-    }
-
-    @Override
-    public Future<Object> future() {
-      if (resultPromise == null) {
-        resultPromise = Future.forPromise();
-      }
-      return resultPromise;
-    }
-
-    @Override
-    public Publisher<Object> publisher() {
-      return this;
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super Object> downstream) {
-      this.downstream = downstream;
-      downstream.onSubscribe(this);
-      payloadPublisher.subscribe(this);
-      if (resultPromise != null) {
-        resultPromise.onCompleted(this);
-      }
-    }
-
-    @Override
-    public void request(long n) {
-      if (Operators.validate(n) && payloadSubscription != null) {
-        payloadSubscription.request(n);
-      }
-    }
-
-    @Override
-    public void cancel() {
-      if (payloadSubscription != null) {
-        payloadSubscription.cancel();
-        payloadSubscription = null;
-      }
-
-      if (resultPromise != null) {
-        resultPromise.cancel();
-      }
-    }
-
-    @Override
-    public void onSubscribe(Subscription s) {
-      if (Operators.validate(payloadSubscription, s)) {
-        this.payloadSubscription = s;
-      }
-    }
-
-    @Override
-    public void onNext(Payload payload) {
-      Object result = deserialize(payload);
-      downstream.onNext(result);
-      if (resultPromise != null) {
-        resultPromise.trySuccess(result);
-      }
-    }
-
-    @Override
-    public void onError(Throwable t) {
-      downstream.onError(t);
-    }
-
-    @Override
-    public void onComplete() {
-      downstream.onComplete();
-      if (resultPromise != null && !resultPromise.isDone()) {
-        resultPromise.trySuccess(null);
-      }
-    }
-
-    @Override
-    public void operationComplete(Future<Object> completed) {
-      if (completed.isCancelled()) {
-        if (payloadSubscription != null) {
-          payloadSubscription.cancel();
-        }
-      }
-    }
   }
 
 }

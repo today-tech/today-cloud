@@ -18,6 +18,7 @@ package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
+import infra.cloud.service.InvocationResult;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -63,7 +64,7 @@ public class InvocableMethod extends ServiceMethod {
     return returnValueHandler;
   }
 
-  public Publisher<Object> handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
+  public InvocationResult handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
     return returnValueHandler.handleReturnValue(request, returnValue);
   }
 

@@ -34,10 +34,10 @@ class RequestResponseResultTests {
     when(deserializer.deserialize(method, payload.data())).thenReturn(value);
     var result = new RequestResponseResult(method, Mono.just(payload), deserializer);
     if (value == null) {
-      StepVerifier.create(result.publisher()).verifyComplete();
+      StepVerifier.create(InvocationResults.publisher(result)).verifyComplete();
     }
     else {
-      StepVerifier.create(result.publisher()).expectNext(value).verifyComplete();
+      StepVerifier.create(InvocationResults.publisher(result)).expectNext(value).verifyComplete();
     }
     assertThat(payload.refCnt()).isZero();
   }
@@ -50,7 +50,7 @@ class RequestResponseResultTests {
     var error = new IllegalStateException("invalid response");
     when(deserializer.deserialize(method, payload.data())).thenThrow(error);
     var result = new RequestResponseResult(method, Mono.just(payload), deserializer);
-    StepVerifier.create(result.publisher()).expectErrorSatisfies(actual -> assertThat(actual).isSameAs(error)).verify();
+    StepVerifier.create(InvocationResults.publisher(result)).expectErrorSatisfies(actual -> assertThat(actual).isSameAs(error)).verify();
     assertThat(payload.refCnt()).isZero();
     assertThat(result.isFailed()).isTrue();
     assertThat(result.getException()).isSameAs(error);

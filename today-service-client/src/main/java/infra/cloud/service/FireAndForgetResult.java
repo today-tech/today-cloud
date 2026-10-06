@@ -16,61 +16,40 @@
 
 package infra.cloud.service;
 
-import org.reactivestreams.Publisher;
-
 import infra.util.concurrent.Future;
 import reactor.core.publisher.Mono;
 
 /**
+ * Completion-only client result for a fire-and-forget request.
+ *
+ * <p>Execution starts explicitly and at most once. Completion describes the local
+ * send operation; it does not acknowledge successful execution by the remote
+ * service. Cancellation is forwarded to the underlying send operation.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 20:36
  */
-class FireAndForgetResult extends AbstractInvocationResult {
+final class FireAndForgetResult implements InvocationResult {
 
-  private final Mono fireAndForgetMono;
+  private final InvocationResult delegate;
 
-  public FireAndForgetResult(Mono<Void> fireAndForgetMono) {
-    this.fireAndForgetMono = fireAndForgetMono;
+  FireAndForgetResult(Mono<Void> source) {
+    delegate = InvocationResults.completion(source);
   }
 
-  @Override
-  public Object getBlockingValue() {
-    return null;
-  }
-
-  @Override
-  public boolean isFailed() {
-    return false;
-  }
-
-  @Override
-  public Throwable getException() {
-    return null;
-  }
-
-  @Override
   public InvocationType getType() {
-    return InvocationType.FIRE_AND_FORGET;
+    return delegate.getType();
   }
 
-  @Override
-  public boolean isRequestResponse() {
-    return false;
+  public Future<Void> completion() {
+    return delegate.completion();
   }
 
-  @Override
-  public boolean isStreaming() {
-    return false;
+  public void start() {
+    delegate.start();
   }
 
-  @Override
-  public Future<Object> future() {
-    return null;
+  public boolean cancel() {
+    return delegate.cancel();
   }
-
-  @Override
-  public Publisher<Object> publisher() {
-    return fireAndForgetMono;
-  }
-
 }

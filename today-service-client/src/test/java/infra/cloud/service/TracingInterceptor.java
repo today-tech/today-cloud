@@ -30,7 +30,7 @@ class TracingInterceptor implements ClientInterceptor {
     InvocationResult result = chain.proceed(request);
 
     if (result.isRequestResponse()) {
-      result.future().onCompleted(future -> {
+      result.completion().onCompleted(future -> {
         if (future.isSuccess()) {
           System.out.printf("after service %s returns %s%n", request, future.getNow());
         }

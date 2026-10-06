@@ -18,10 +18,12 @@ package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
 
+import infra.cloud.service.InvocationResult;
+import infra.cloud.service.InvocationResults;
+import infra.cloud.service.InvocationType;
 import infra.cloud.service.ServiceMethod;
 import infra.core.ReactiveAdapter;
 import infra.util.Assert;
-import reactor.core.publisher.Mono;
 
 /**
  * Handles asynchronous values such as Mono, Future, and CompletionStage.
@@ -37,12 +39,12 @@ public class ReactiveReturnValueHandler implements ReturnValueHandler {
   }
 
   @Override
-  public Mono<Object> handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
+  public InvocationResult handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
     ReactiveAdapter adapter = request.getMethod().getResponseAdapter();
     Assert.state(adapter != null, "No reactive adapter for service return type");
     if (adapter.isMultiValue()) {
-      return Mono.error(new IllegalStateException("Multi-value return type requires request-stream"));
+      return InvocationResults.stream(InvocationType.RESPONSE_STREAMING, adapter.toPublisher(returnValue));
     }
-    return Mono.from(adapter.toPublisher(returnValue));
+    return InvocationResults.single(adapter.toPublisher(returnValue));
   }
 }

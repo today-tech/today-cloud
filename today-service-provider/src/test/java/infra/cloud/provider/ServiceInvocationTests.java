@@ -10,6 +10,7 @@ import infra.core.ReactiveAdapterRegistry;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import infra.cloud.service.InvocationResults;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -74,8 +75,8 @@ class ServiceInvocationTests {
     var executor = new DefaultServiceRequestExecutor(Schedulers.immediate());
     var result = executor.execute(request);
     assertThat(implementation.calls).hasValue(0);
-    StepVerifier.create(result).expectNext(1).verifyComplete();
-    StepVerifier.create(result).expectError(IllegalStateException.class).verify();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext(1).verifyComplete();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext(1).verifyComplete();
     assertThat(implementation.calls).hasValue(1);
   }
 
@@ -84,9 +85,9 @@ class ServiceInvocationTests {
     var service = new ServiceObject(Example.class, new ExampleImpl());
     var resolver = resolver(service);
     var executor = new DefaultServiceRequestExecutor(Schedulers.immediate());
-    StepVerifier.create(executor.execute(new RemoteRequest(resolver.resolve(Example.class.getName(), "empty", new String[0]), null, service)))
+    StepVerifier.create(InvocationResults.publisher(executor.execute(new RemoteRequest(resolver.resolve(Example.class.getName(), "empty", new String[0]), null, service))))
             .verifyComplete();
-    StepVerifier.create(executor.execute(new RemoteRequest(resolver.resolve(Example.class.getName(), "failure", new String[0]), null, service)))
+    StepVerifier.create(InvocationResults.publisher(executor.execute(new RemoteRequest(resolver.resolve(Example.class.getName(), "failure", new String[0]), null, service))))
             .expectErrorMatches(error -> error.getMessage().contains("failure")).verify();
   }
 
@@ -100,9 +101,9 @@ class ServiceInvocationTests {
         return method.getMethod().getName().equals("count");
       }
 
-      public Mono<Object> handleReturnValue(RemoteRequest request, Object value) {
+      public infra.cloud.service.InvocationResult handleReturnValue(RemoteRequest request, Object value) {
         adaptations.incrementAndGet();
-        return Mono.just("adapted-" + value);
+        return InvocationResults.success("adapted-" + value);
       }
     };
     var service = new ServiceObject(Example.class, new ExampleImpl());
@@ -116,12 +117,23 @@ class ServiceInvocationTests {
     assertThat(resolver.resolve(Example.class.getName(), "count", new String[0])).isSameAs(method);
     var executor = new DefaultServiceRequestExecutor(Schedulers.immediate());
     var result = executor.execute(new RemoteRequest(method, null, service));
-    StepVerifier.create(result).expectNext("adapted-1").verifyComplete();
-    StepVerifier.create(result).expectError(IllegalStateException.class).verify();
-    StepVerifier.create(executor.execute(new RemoteRequest(method, null, service)))
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext("adapted-1").verifyComplete();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext("adapted-1").verifyComplete();
+    StepVerifier.create(InvocationResults.publisher(executor.execute(new RemoteRequest(method, null, service))))
             .expectNext("adapted-2").verifyComplete();
     assertThat(selections).hasValue(1);
     assertThat(adaptations).hasValue(2);
+  }
+
+  @Test
+  void executorPreservesStreamingCapabilityAndAllElements() {
+    var service = new ServiceObject(Example.class, new ExampleImpl());
+    var method = resolver(service).resolve(Example.class.getName(), "stream", new String[0]);
+    var result = new DefaultServiceRequestExecutor(Schedulers.immediate()).execute(new RemoteRequest(method, null, service));
+    assertThat(result).isInstanceOf(infra.cloud.service.StreamingInvocationResult.class);
+    StepVerifier.create(((infra.cloud.service.StreamingInvocationResult) result).values(), 0)
+            .thenRequest(1).expectNext(1).thenRequest(2).expectNext(2, 3).verifyComplete();
+    assertThat(result.completion().isSuccess()).isTrue();
   }
 
   public interface Example {
@@ -130,15 +142,37 @@ class ServiceInvocationTests {
     int count();
     Mono<String> empty();
     String failure();
+    reactor.core.publisher.Flux<Integer> stream();
   }
 
   public static class ExampleImpl implements Example {
     final AtomicInteger calls = new AtomicInteger();
-    public String echo(String value) { return value; }
-    public int echo(int value) { return value; }
-    public int count() { return calls.incrementAndGet(); }
-    public Mono<String> empty() { return Mono.empty(); }
-    public String failure() { throw new IllegalStateException("failure"); }
-    public String implementationOnly() { return "private operation"; }
+    public String echo(String value) {
+      return value;
+    }
+
+    public int echo(int value) {
+      return value;
+    }
+
+    public int count() {
+      return calls.incrementAndGet();
+    }
+
+    public Mono<String> empty() {
+      return Mono.empty();
+    }
+
+    public String failure() {
+      throw new IllegalStateException("failure");
+    }
+
+    public reactor.core.publisher.Flux<Integer> stream() {
+      return reactor.core.publisher.Flux.just(1, 2, 3);
+    }
+
+    public String implementationOnly() {
+      return "private operation";
+    }
   }
 }

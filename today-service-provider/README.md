@@ -23,12 +23,15 @@ RequestDeserializer -> ServiceMethodResolver -> RemoteRequest
 InvocableMethod method = methodResolver.resolve("com.example.UserService", "findById",
     new String[] { "long" });
 RemoteRequest request = new RemoteRequest(method, new Object[] { 1L }, method.getServiceObject());
-Publisher<Object> result = requestExecutor.execute(request);
+InvocationResult result = requestExecutor.execute(request);
 ```
 
-执行器和返回值处理接口使用 Reactive Streams 的 `Publisher`，不暴露 Reactor 的
-`Mono` 或 Remoting 的 `Payload`。结果最多包含一个值；null 和 void 以无值完成表示。
-每个执行结果只允许一次订阅，重复订阅会报错，取消会传播到底层异步任务。
+执行器、拦截器、调用链和返回值处理接口统一返回 `InvocationResult`，不暴露 Reactor 的
+`Mono` 或 Remoting 的 `Payload`。单值能力由 `SingleInvocationResult.value()` 提供，成功 null
+表示空值；流式能力由 `StreamingInvocationResult.values()` 提供，保留元素需求和取消。
+`completion()` 返回稳定的完成 Future，访问或注册观察回调不会启动调用。
+单值调用通过 `start()` 显式启动，重复启动不会重复执行；流通过唯一的数据订阅启动。
+单值结果可重复观察同一个 Future，流不允许重复订阅。`cancel()` 关联原始任务。
 订阅者负责管理需求和取消，并保证相关信号符合 Reactive Streams 的串行化要求。
 
 默认执行器内部仍使用 Reactor，通过 bounded-elastic 调度服务执行，隔离阻塞方法。
@@ -95,28 +98,29 @@ UTF-8 名称、varint 值长度和数据。标签最低位区分文本与二进�
 不调用 `proceed()` 而直接返回结果，可以短路后续拦截器和服务方法。
 结果是已展开的业务值，而不是 Future 或 Mono 包装对象。
 执行器直接使用原始 `RemoteRequest`，不复制参数或本地属性。同一次调用链共享请求，
-各次入站 RPC 使用独立请求。每个执行结果只允许一次订阅，避免重复执行产生业务副作用。
+各次入站 RPC 使用独立请求。每个结果句柄只执行一次，观察单值结果不会重复产生业务副作用。
 显式重试应创建新的请求与执行尝试；请求对象不应被并发或重复执行。
 
 ```java
 ServiceInterceptor timing = (request, chain) -> {
   long started = System.nanoTime();
-  return Mono.from(chain.proceed(request))
-      .doFinally(signal -> recordDuration(System.nanoTime() - started, signal));
+  InvocationResult result = chain.proceed(request);
+  result.completion().onCompleted(completed ->
+      recordDuration(System.nanoTime() - started, completed));
+  return result;
 };
 ```
 
-接口使用 Reactive Streams，因此拦截器可以使用任意符合其规范的 Publisher 实现。
-上面的示例使用 Reactor 的生命周期操作符。异步成功、错误和取消应通过 Publisher 观察；
-包围 `proceed()` 的 `finally` 块只能观察 Publisher 的构造过程，不能表示异步调用结束。
-每个 `proceed()` 返回的结果只允许一次订阅。多次调用 `proceed()` 会创建独立的后续执行结果，
+接口使用统一结果句柄，异步成功、错误和取消通过 `completion()` 观察。
+包围 `proceed()` 的 `finally` 块只能观察结果句柄的构造过程，不能表示异步调用结束。
+多次调用 `proceed()` 会创建独立的后续执行结果，
 可能重复产生业务副作用，由拦截器自行负责；通常应只委托一次。请求解码和响应编码位于拦截链之外。
-拦截器必须线程安全，最多返回一个值，并在包装后续调用时保留取消传播。
+拦截器必须线程安全，保持返回结果的单值/流式能力，并在包装后续调用时保留取消传播。
 
 手动构造执行器时，可传入 `List<ServiceInterceptor>` 和可选的调度器。
 默认实现参考 Spring `DefaultWebFilterChain`，初始化时反向构建不可变链节点，
 执行器持有并复用完整链，支持并发处理不同请求。共享节点不保存请求或推进状态；
-拦截器直接接收预构建的下一节点，不创建调用级 chain 包装；每个返回结果维护单订阅检查。
+拦截器直接接收预构建的下一节点，不创建调用级 chain 包装；结果实现管理单次启动和流订阅。
 
 ### 方法解析与执行策略
 
@@ -136,5 +140,7 @@ ServiceInterceptor timing = (request, chain) -> {
 基于 methodId 的请求编解码器可以跳过名称解析，直接构造相同的 `RemoteRequest`。
 当前请求报文格式保持不变。
 
-当前执行契约适用于 request-response。多值和双向流调用需要独立的流式执行契约，
-不能通过截取流中的第一个结果来代替。取消调用不会回滚已发生的业务副作用。
+当前 Remoting 适配器仍只接通 request-response，遇到流式结果会拒绝而不是截取首项。
+执行层已能生成流式结果；request-stream、双向流的线上接入需进一步实现。
+双向结果的 completion 当前描述输出流终止，不承诺输入半关闭也已结束。
+取消调用不会回滚已发生的业务副作用。默认结果桥接实现仍使用 Reactor，本次未移除依赖。

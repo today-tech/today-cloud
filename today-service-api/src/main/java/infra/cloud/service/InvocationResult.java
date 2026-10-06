@@ -17,45 +17,103 @@
 package infra.cloud.service;
 
 import org.jspecify.annotations.Nullable;
-import org.reactivestreams.Publisher;
 
-import infra.core.AttributeAccessor;
 import infra.util.concurrent.Future;
 
 /**
- * Remote service invocation result
+ * Lifecycle handle for one client or provider invocation.
+ *
+ * <p>Data access is defined by {@link SingleInvocationResult} and
+ * {@link StreamingInvocationResult}. Completion-only operations expose neither
+ * capability. Observing a future does not start execution or create an additional
+ * data subscription. This handle is a local abstraction, not a wire response.
  *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/9 12:10
  */
-public interface InvocationResult extends AttributeAccessor {
+public interface InvocationResult {
 
-  @Nullable
-  Object getBlockingValue();
+  /**
+   * Return the stable future representing termination of this invocation.
+   * Accessing the future or registering a listener does not start execution or
+   * subscribe to the data source. Cancelling the future cancels the invocation.
+   *
+   * @return the same future on every access, succeeding with null on completion,
+   * failing on invocation error, or cancelled when the invocation is cancelled
+   * @see #start()
+   * @see #cancel()
+   */
+  Future<Void> completion();
 
-  boolean isFailed();
+  /**
+   * Start a single-value or completion-only operation at most once.
+   * Subsequent calls are no-ops. For streaming results this method does not consume
+   * data: the data subscriber starts consumption and controls demand.
+   * Calling this method after cancellation must not start the underlying work.
+   * Starting an operation does not imply that it has completed.
+   *
+   * @see SingleInvocationResult#value()
+   * @see StreamingInvocationResult#values()
+   */
+  void start();
 
-  @Nullable
-  Throwable getException();
+  /**
+   * Cancel the invocation and its associated asynchronous work.
+   * Cancellation may precede execution and does not roll back business side effects.
+   * Stopping already-running work requires the underlying operation to cooperate
+   * with cancellation. Cancellation is a terminal state, distinct from success.
+   *
+   * @return {@code true} if this call transitions the result to cancelled,
+   * {@code false} if it has already terminated
+   */
+  boolean cancel();
 
+  /**
+   * Determine whether termination represents failure or cancellation.
+   * A false result does not distinguish pending execution from success.
+   *
+   * @return whether the completion future represents failure or cancellation
+   * @see Future#isFailed()
+   */
+  default boolean isFailed() {
+    return completion().isFailed();
+  }
+
+  /**
+   * Return the terminal failure or cancellation cause, if available.
+   *
+   * @return the cause, or null while pending or after successful completion
+   */
+  default @Nullable Throwable getException() {
+    return completion().getCause();
+  }
+
+  /**
+   * Return the interaction model represented by this result.
+   *
+   * @return the invocation type
+   */
   InvocationType getType();
 
+  /**
+   * Determine whether this result represents a request-response invocation.
+   *
+   * @return {@code true} for {@link InvocationType#REQUEST_RESPONSE}
+   */
   default boolean isRequestResponse() {
     return getType() == InvocationType.REQUEST_RESPONSE;
   }
 
-  default boolean isStreaming() {
-    return !getType().serverSendsOneMessage();
-  }
-
   /**
-   * Only for {@link InvocationType#REQUEST_RESPONSE}
+   * Determine whether the interaction model has a streaming output.
+   * Fire-and-forget operations are not streaming invocations.
    *
-   * @see InvocationType#REQUEST_RESPONSE
-   * @see #isRequestResponse()
+   * @return {@code true} for response-streaming or duplex-streaming invocations
+   * @see StreamingInvocationResult
    */
-  Future<Object> future();
-
-  Publisher<Object> publisher();
+  default boolean isStreaming() {
+    return getType() == InvocationType.RESPONSE_STREAMING
+            || getType() == InvocationType.DUPLEX_STREAMING;
+  }
 
 }

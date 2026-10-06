@@ -79,7 +79,7 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
 
     @Override
     public Object resolve(ServiceInterfaceMethod method, InvocationResult result) {
-      return method.getResponseAdapter().fromPublisher(result.publisher());
+      return method.getResponseAdapter().fromPublisher(InvocationResults.publisher(result));
     }
 
     @Override
@@ -102,7 +102,8 @@ public class DefaultServiceInterfaceMetadataProvider extends AbstractServiceInte
 
     @Override
     public @Nullable Object resolve(ServiceInterfaceMethod method, InvocationResult result) throws Throwable {
-      return result.getBlockingValue();
+      result.start();
+      return ((SingleInvocationResult) result).value().join();
     }
 
     @Override

@@ -21,14 +21,19 @@ import org.jspecify.annotations.Nullable;
 import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
 import infra.util.concurrent.Future;
-import infra.util.concurrent.PublisherFuture;
 import reactor.core.publisher.Mono;
 
 /**
+ * Client-side single result that decodes and releases one response payload.
+ *
+ * <p>Value and completion futures do not start network work on access. Explicit
+ * start or result bridging starts the request once. A decoded null completes the
+ * value future successfully with null. The payload is released even if decoding fails.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 19:55
  */
-final class RequestResponseResult extends AbstractInvocationResult {
+final class RequestResponseResult extends AbstractInvocationResult implements SingleInvocationResult {
 
   private final Mono<Payload> resultPublisher;
 
@@ -36,29 +41,28 @@ final class RequestResponseResult extends AbstractInvocationResult {
 
   private final ResponseDeserializer responseDeserializer;
 
-  private Future<Object> future;
-
-  private volatile @Nullable Throwable exception;
+  private final SingleInvocationResult delegate;
 
   RequestResponseResult(ServiceInterfaceMethod method, Mono<Payload> resultPublisher, ResponseDeserializer responseDeserializer) {
     this.resultPublisher = resultPublisher;
     this.method = method;
     this.responseDeserializer = responseDeserializer;
-  }
-
-  @Override
-  public @Nullable Object getBlockingValue() {
-    return publisher().block();
+    this.delegate = InvocationResults.single(resultPublisher.handle((payload, sink) -> {
+      Object value = apply(payload);
+      if (value != null) {
+        sink.next(value);
+      }
+    }));
   }
 
   @Override
   public boolean isFailed() {
-    return exception != null;
+    return delegate.isFailed();
   }
 
   @Override
   public @Nullable Throwable getException() {
-    return exception;
+    return delegate.getException();
   }
 
   @Override
@@ -76,22 +80,20 @@ final class RequestResponseResult extends AbstractInvocationResult {
     return false;
   }
 
-  @Override
-  public Future<Object> future() {
-    if (future == null) {
-      future = PublisherFuture.of(publisher());
-    }
-    return future;
+  public Future<Object> value() {
+    return delegate.value();
   }
 
-  @Override
-  public Mono<Object> publisher() {
-    return resultPublisher.handle((payload, sink) -> {
-      Object value = apply(payload);
-      if (value != null) {
-        sink.next(value);
-      }
-    }).doOnError(error -> exception = error);
+  public Future<Void> completion() {
+    return delegate.completion();
+  }
+
+  public void start() {
+    delegate.start();
+  }
+
+  public boolean cancel() {
+    return delegate.cancel();
   }
 
   private Object apply(Payload payload) {

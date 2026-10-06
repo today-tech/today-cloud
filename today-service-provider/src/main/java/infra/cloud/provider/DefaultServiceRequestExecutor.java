@@ -18,8 +18,12 @@ package infra.cloud.provider;
 
 import java.util.List;
 
+import infra.cloud.service.InvocationResult;
+import infra.cloud.service.InvocationResults;
+import infra.cloud.service.InvocationType;
 import infra.util.Assert;
 import reactor.core.Exceptions;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
@@ -28,9 +32,9 @@ import reactor.core.scheduler.Schedulers;
  * Schedules decoded requests through an ordered {@link ServiceInterceptor} chain
  * and the method's pre-bound return value handler.
  *
- * <p>Each execution result permits one subscription. The supplied request, its
+ * <p>Each execution result starts once. The supplied request, its
  * argument array and local attributes are shared throughout the chain without
- * copying. A second subscription fails rather than repeating business side effects.
+ * copying. Repeated observation of a single result does not repeat side effects.
  *
  * <p>The default scheduler is bounded-elastic to isolate blocking service methods.
  * An explicitly supplied scheduler is externally owned and is not disposed by this
@@ -83,23 +87,27 @@ public class DefaultServiceRequestExecutor implements ServiceRequestExecutor {
   }
 
   /**
-   * Return a lazy, single-subscription result for the supplied request.
+   * Return a lazy single or streaming result for the supplied request.
    *
    * @param request the decoded service request, never null
    * @return a result emitting at most one adapted value, completing empty for null
    * or void, or failing with an invocation or interception error
    */
   @Override
-  public Mono<Object> execute(RemoteRequest request) {
+  public InvocationResult execute(RemoteRequest request) {
     Assert.notNull(request, "request is required");
-    try {
-      return Mono.from(chain.proceed(request))
-              .subscribeOn(scheduler);
-    }
-    catch (Throwable error) {
-      Exceptions.throwIfFatal(error);
-      return Mono.error(error);
-    }
+    var source = Flux.defer(() -> {
+      try {
+        return Flux.from(InvocationResults.publisher(chain.proceed(request)));
+      }
+      catch (Throwable error) {
+        Exceptions.throwIfFatal(error);
+        return Mono.error(error);
+      }
+    }).subscribeOn(scheduler);
+    var adapter = request.getMethod().getResponseAdapter();
+    return adapter != null && adapter.isMultiValue()
+            ? InvocationResults.stream(InvocationType.RESPONSE_STREAMING, source) : InvocationResults.single(source);
   }
 
 }

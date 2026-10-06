@@ -17,7 +17,8 @@
 package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
-import org.reactivestreams.Publisher;
+
+import infra.cloud.service.InvocationResult;
 
 import infra.cloud.service.ServiceMethod;
 
@@ -35,8 +36,8 @@ public interface ReturnValueHandler {
   boolean supportsReturnValue(ServiceMethod method);
 
   /**
-   * Adapt a return value to a single-value publisher. Null and void results
-   * complete without a value. Failures must be emitted as error signals.
+   * Adapt a return value to its result capability. Single null and void results
+   * complete successfully with null; streaming results preserve demand.
    */
-  Publisher<Object> handleReturnValue(RemoteRequest request, @Nullable Object returnValue);
+  InvocationResult handleReturnValue(RemoteRequest request, @Nullable Object returnValue);
 }

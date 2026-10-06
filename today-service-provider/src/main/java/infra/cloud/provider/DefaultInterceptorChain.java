@@ -20,8 +20,11 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
+import infra.cloud.service.InvocationResult;
+import infra.cloud.service.InvocationResults;
+import infra.cloud.service.InvocationType;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -67,23 +70,22 @@ public final class DefaultInterceptorChain implements InterceptorChain {
   }
 
   @Override
-  public Publisher<Object> proceed(RemoteRequest request) {
-    var subscribed = new AtomicBoolean();
-    return Mono.defer(() -> {
-      if (!subscribed.compareAndSet(false, true)) {
-        return Mono.error(new IllegalStateException("Invocation continuation allows only one subscription"));
-      }
+  public InvocationResult proceed(RemoteRequest request) throws Exception {
+    if (interceptor != null && next != null) {
+      return interceptor.intercept(request, next);
+    }
+    Publisher<Object> source = Flux.defer(() -> {
       try {
-        if (interceptor != null && next != null) {
-          return Mono.from(interceptor.intercept(request, next));
-        }
         Object value = request.invoke();
-        return Mono.from(request.getMethod().handleReturnValue(request, value));
+        return Flux.from(InvocationResults.publisher(request.getMethod().handleReturnValue(request, value)));
       }
       catch (Throwable error) {
         reactor.core.Exceptions.throwIfFatal(error);
         return Mono.error(error);
       }
     });
+    var adapter = request.getMethod().getResponseAdapter();
+    return adapter != null && adapter.isMultiValue()
+            ? InvocationResults.stream(InvocationType.RESPONSE_STREAMING, source) : InvocationResults.single(source);
   }
 }

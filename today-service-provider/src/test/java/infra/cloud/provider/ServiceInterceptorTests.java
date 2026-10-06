@@ -10,6 +10,7 @@ import java.time.Duration;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import infra.cloud.service.InvocationResults;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,7 +32,7 @@ class ServiceInterceptorTests {
       calls.incrementAndGet();
       return ((Object[]) i.getArgument(0))[0];
     });
-    when(method.handleReturnValue(any(), any())).thenAnswer(i -> Mono.just(i.getArgument(1)));
+    when(method.handleReturnValue(any(), any())).thenAnswer(i -> InvocationResults.success(i.getArgument(1)));
     return new RemoteRequest(method, new Object[] { "original" }, mock(ServiceObject.class));
   }
 
@@ -48,19 +49,19 @@ class ServiceInterceptorTests {
       invocation.setAttribute("key", "shared");
       invocation.getArguments()[0] = "changed";
       events.add("first-before");
-      return Mono.from(chain.proceed(invocation)).doOnNext(v -> events.add("first-after"));
+      return InvocationResults.single(Mono.from(InvocationResults.publisher(chain.proceed(invocation))).doOnNext(v -> events.add("first-after")));
     };
     ServiceInterceptor second = (invocation, chain) -> {
       assertThat(invocation.getAttribute("key")).isEqualTo("shared");
       events.add("second-before");
-      return Mono.from(chain.proceed(invocation)).doOnNext(v -> events.add("second-after"));
+      return InvocationResults.single(Mono.from(InvocationResults.publisher(chain.proceed(invocation))).doOnNext(v -> events.add("second-after")));
     };
     var executor = new DefaultServiceRequestExecutor(List.of(first, second), Schedulers.immediate());
     var result = executor.execute(request);
     assertThat(events).isEmpty();
-    StepVerifier.create(result).expectNext("changed").verifyComplete();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext("changed").verifyComplete();
     assertThat(events).containsExactly("first-before", "second-before", "second-after", "first-after");
-    StepVerifier.create(result).expectError(IllegalStateException.class).verify();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext("changed").verifyComplete();
     assertThat(calls).hasValue(1);
     assertThat(request.getArguments()).containsExactly("changed");
     assertThat(request.getAttribute("key")).isEqualTo("shared");
@@ -69,13 +70,13 @@ class ServiceInterceptorTests {
   @Test
   void shortCircuitDoesNotInvokeService() {
     var calls = new AtomicInteger();
-    var executor = new DefaultServiceRequestExecutor(List.of((invocation, chain) -> Mono.just("cached")), Schedulers.immediate());
-    StepVerifier.create(executor.execute(request(calls))).expectNext("cached").verifyComplete();
+    var executor = new DefaultServiceRequestExecutor(List.of((invocation, chain) -> InvocationResults.success("cached")), Schedulers.immediate());
+    StepVerifier.create(InvocationResults.publisher(executor.execute(request(calls)))).expectNext("cached").verifyComplete();
     assertThat(calls).hasValue(0);
   }
 
   @Test
-  void unusedProceedDoesNotConsumeChainAndDuplicateSubscriptionIsRejected() {
+  void unusedProceedDoesNotConsumeChainAndResultObservationDoesNotRepeatExecution() throws Exception {
     var calls = new AtomicInteger();
     var request = request(calls);
     ServiceInterceptor interceptor = (candidate, continuation) -> {
@@ -84,8 +85,8 @@ class ServiceInterceptorTests {
     };
     var chain = new DefaultInterceptorChain(List.of(interceptor));
     var result = chain.proceed(request);
-    StepVerifier.create(result).expectNext("original").verifyComplete();
-    StepVerifier.create(result).expectError(IllegalStateException.class).verify();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext("original").verifyComplete();
+    StepVerifier.create(InvocationResults.publisher(result)).expectNext("original").verifyComplete();
     assertThat(calls).hasValue(1);
   }
 
@@ -101,7 +102,15 @@ class ServiceInterceptorTests {
     interceptors.clear();
     var calls = new AtomicInteger();
     StepVerifier.create(reactor.core.publisher.Flux.range(0, 50)
-            .flatMap(i -> Mono.from(chain.proceed(request(calls))).subscribeOn(Schedulers.parallel())))
+             .flatMap(i -> {
+               try {
+                 return Mono.from(InvocationResults.publisher(chain.proceed(request(calls))))
+                         .subscribeOn(Schedulers.parallel());
+               }
+               catch (Exception error) {
+                 return Mono.error(error);
+               }
+             }))
             .expectNextCount(50).verifyComplete();
     assertThat(calls).hasValue(50);
     assertThat(interceptions).hasValue(50);
@@ -113,22 +122,22 @@ class ServiceInterceptorTests {
     var executor = new DefaultServiceRequestExecutor(List.of((invocation, chain) -> {
       throw new IllegalArgumentException("rejected");
     }), Schedulers.immediate());
-    StepVerifier.create(executor.execute(request(calls))).expectErrorMessage("rejected").verify();
+    StepVerifier.create(InvocationResults.publisher(executor.execute(request(calls)))).expectErrorMessage("rejected").verify();
     assertThat(calls).hasValue(0);
   }
 
   @Test
   void cancellationAndAsyncErrorAreVisibleToInterceptor() {
     var cancelled = new AtomicInteger();
-    ServiceInterceptor interceptor = (invocation, chain) -> Mono.from(chain.proceed(invocation)).doOnCancel(cancelled::incrementAndGet);
+    ServiceInterceptor interceptor = (invocation, chain) -> InvocationResults.single(Mono.from(InvocationResults.publisher(chain.proceed(invocation))).doOnCancel(cancelled::incrementAndGet));
     var method = mock(InvocableMethod.class);
     when(method.invoke(any())).thenReturn("value");
-    when(method.handleReturnValue(any(), any())).thenReturn(Mono.never());
+    when(method.handleReturnValue(any(), any())).thenAnswer(i -> InvocationResults.single(Mono.never()));
     var request = new RemoteRequest(method, new Object[] { "value" }, mock(ServiceObject.class));
     var executor = new DefaultServiceRequestExecutor(List.of(interceptor), Schedulers.immediate());
-    StepVerifier.create(executor.execute(request)).thenAwait(Duration.ofMillis(20)).thenCancel().verify();
+    StepVerifier.create(InvocationResults.publisher(executor.execute(request))).thenAwait(Duration.ofMillis(20)).thenCancel().verify();
     assertThat(cancelled).hasValue(1);
-    when(method.handleReturnValue(any(), any())).thenReturn(Mono.error(new IllegalStateException("async")));
-    StepVerifier.create(executor.execute(request)).expectErrorMessage("async").verify();
+    when(method.handleReturnValue(any(), any())).thenAnswer(i -> InvocationResults.failure(new IllegalStateException("async")));
+    StepVerifier.create(InvocationResults.publisher(executor.execute(request))).expectErrorMessage("async").verify();
   }
 }

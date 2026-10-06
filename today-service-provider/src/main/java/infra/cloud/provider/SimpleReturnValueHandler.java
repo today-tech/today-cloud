@@ -18,8 +18,9 @@ package infra.cloud.provider;
 
 import org.jspecify.annotations.Nullable;
 
+import infra.cloud.service.InvocationResult;
+import infra.cloud.service.InvocationResults;
 import infra.cloud.service.ServiceMethod;
-import reactor.core.publisher.Mono;
 
 /**
  * Fallback handler for ordinary values, null, and void.
@@ -35,7 +36,7 @@ public class SimpleReturnValueHandler implements ReturnValueHandler {
   }
 
   @Override
-  public Mono<Object> handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
-    return Mono.justOrEmpty(returnValue);
+  public InvocationResult handleReturnValue(RemoteRequest request, @Nullable Object returnValue) {
+    return InvocationResults.success(returnValue);
   }
 }

@@ -10,6 +10,7 @@ dependencies {
   implementation 'cn.taketoday:infra-context'
 
   optional "com.google.protobuf:protobuf-java"
+  testImplementation "io.projectreactor:reactor-test"
 
 //  testImplementation project(":today-cloud-samples:demo-tests:demo-user-api")
 }

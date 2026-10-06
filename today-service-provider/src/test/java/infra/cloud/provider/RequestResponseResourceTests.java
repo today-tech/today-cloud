@@ -44,12 +44,14 @@ class RequestResponseResourceTests {
             .thenAnswer(invocation -> Mono.just(ByteBufPayload.create(Unpooled.buffer().writeByte(42))));
     var seen = new AtomicReference<Object>();
     var custom = new ReturnValueHandler() {
-      public boolean supportsReturnValue(ServiceMethod candidate) { return candidate == method; }
+      public boolean supportsReturnValue(ServiceMethod candidate) {
+        return candidate == method;
+      }
 
-      public Mono<Object> handleReturnValue(RemoteRequest candidate, Object result) {
+      public infra.cloud.service.InvocationResult handleReturnValue(RemoteRequest candidate, Object result) {
         assertThat(candidate).isSameAs(request);
         seen.set(result);
-        return Mono.just("adapted");
+        return infra.cloud.service.InvocationResults.success("adapted");
       }
     };
     when(method.handleReturnValue(request, value)).thenAnswer(invocation -> custom.handleReturnValue(request, value));
@@ -77,7 +79,7 @@ class RequestResponseResourceTests {
             .thenAnswer(invocation -> Mono.just(ByteBufPayload.create(Unpooled.buffer().writeByte(7))));
     ServiceRequestExecutor executor = candidate -> {
       assertThat(candidate).isSameAs(request);
-      return Mono.just("external");
+      return infra.cloud.service.InvocationResults.success("external");
     };
     var handler = new ServiceChannelHandler(deserializer, serializer, executor);
     Payload payload = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
@@ -95,7 +97,7 @@ class RequestResponseResourceTests {
   @Test
   void malformedMetadataReleasesBothBuffers() {
     var handler = new ServiceChannelHandler(mock(RequestDeserializer.class), mock(ResponseSerializer.class),
-            request -> Mono.empty());
+            request -> infra.cloud.service.InvocationResults.success(null));
     var data = Unpooled.buffer().writeByte(0);
     var metadata = Unpooled.buffer().writeByte(99);
     Payload payload = ByteBufPayload.create(data, metadata);
@@ -118,7 +120,9 @@ class RequestResponseResourceTests {
   void encodingFailureReleasesBuffer() {
     var buffer = new AtomicReference<ByteBuf>();
     var serializer = new ReturnValueSerializer<Object>() {
-      public boolean supportsReturnValue(ServiceMethod method) { return true; }
+      public boolean supportsReturnValue(ServiceMethod method) {
+        return true;
+      }
 
       public void serialize(ServiceMethod method, Object value, Writable writable) {
         buffer.set((ByteBuf) ReflectionTestUtils.getField(writable, "buffer"));

@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package infra.cloud.provider;
+package infra.cloud.service;
 
-import infra.cloud.service.InvocationResult;
+import infra.util.concurrent.Future;
 
 /**
- * Transport-independent execution of a decoded service request.
- * Returns a stable single or streaming result handle. Observation does not start
- * execution. Single results start explicitly; streams start on data subscription.
- * Cancellation must propagate to the underlying invocation.
+ * Single-value capability. The same future is returned on every access without
+ * starting work. Successful null represents an empty or void result.
  *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
- * @since 1.0 2026/10/5
+ * @since 1.0 2026/10/6
  */
-public interface ServiceRequestExecutor {
+public interface SingleInvocationResult extends InvocationResult {
 
-  InvocationResult execute(RemoteRequest request);
+  /**
+   * Obtain the stable value future without starting execution.
+   * Call {@link #start()} to execute. Cancelling this future cancels the invocation.
+   * Repeated access observes the same value and never creates a new invocation.
+   *
+   * @return the same future on every access; its successful value may be null
+   */
+  Future<Object> value();
 }

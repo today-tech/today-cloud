@@ -18,74 +18,57 @@ package infra.cloud.service;
 
 import org.reactivestreams.Publisher;
 
-import java.util.function.Function;
-
 import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
 import infra.util.concurrent.Future;
 import reactor.core.publisher.Flux;
 
 /**
+ * Client-side result for a request followed by a response stream.
+ *
+ * <p>The data subscription drives consumption and demand. Each payload is
+ * released after decoding, even on failure. Observing completion does not subscribe
+ * to the source; successful completion, errors, and cancellation update the same
+ * result lifecycle. Decoded null values are not emitted as stream elements.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 20:34
  */
-final class ResponseStreamingResult extends AbstractInvocationResult implements Function<Payload, Object> {
+final class ResponseStreamingResult implements StreamingInvocationResult {
 
-  private final Flux<Payload> payloadFlux;
+  private final StreamingInvocationResult delegate;
 
-  private final ServiceInterfaceMethod method;
-
-  private final ResponseDeserializer responseDeserializer;
-
-  public ResponseStreamingResult(ServiceInterfaceMethod method, Flux<Payload> payloadFlux, ResponseDeserializer responseDeserializer) {
-    this.method = method;
-    this.payloadFlux = payloadFlux;
-    this.responseDeserializer = responseDeserializer;
+  ResponseStreamingResult(ServiceInterfaceMethod method, Flux<Payload> source, ResponseDeserializer decoder) {
+    delegate = InvocationResults.stream(InvocationType.RESPONSE_STREAMING, source.handle((payload, sink) -> {
+      try {
+        Object value = decoder.deserialize(method, payload.data());
+        if (value != null) {
+          sink.next(value);
+        }
+      }
+      finally {
+        payload.release();
+      }
+    }));
   }
 
-  @Override
-  public Object getBlockingValue() {
-    return null;
-  }
-
-  @Override
-  public boolean isFailed() {
-    return false;
-  }
-
-  @Override
-  public Throwable getException() {
-    return null;
-  }
-
-  @Override
   public InvocationType getType() {
-    return InvocationType.RESPONSE_STREAMING;
+    return delegate.getType();
   }
 
-  @Override
-  public boolean isRequestResponse() {
-    return false;
+  public Future<Void> completion() {
+    return delegate.completion();
   }
 
-  @Override
-  public boolean isStreaming() {
-    return true;
+  public void start() {
+    delegate.start();
   }
 
-  @Override
-  public Future<Object> future() {
-    return null;
+  public boolean cancel() {
+    return delegate.cancel();
   }
 
-  @Override
-  public Publisher<Object> publisher() {
-    return payloadFlux.map(this);
+  public Publisher<Object> values() {
+    return delegate.values();
   }
-
-  @Override
-  public Object apply(Payload payload) {
-    return responseDeserializer.deserialize(method, payload.data());
-  }
-
 }

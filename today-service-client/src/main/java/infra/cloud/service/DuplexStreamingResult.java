@@ -18,59 +18,56 @@ package infra.cloud.service;
 
 import org.reactivestreams.Publisher;
 
+import infra.cloud.service.serialize.ResponseDeserializer;
 import infra.remoting.Payload;
 import infra.util.concurrent.Future;
 import reactor.core.publisher.Flux;
 
 /**
+ * Client-side result for the output of a duplex invocation.
+ *
+ * <p>Each received payload is decoded and released, including when decoding fails.
+ * The output allows one data subscription and preserves downstream demand.
+ * Completion describes output termination, not the independent input half-close.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/15 20:35
  */
-class DuplexStreamingResult extends AbstractInvocationResult {
+final class DuplexStreamingResult implements StreamingInvocationResult {
 
-  private final Flux<Payload> payloadFlux;
+  private final StreamingInvocationResult delegate;
 
-  public DuplexStreamingResult(Flux<Payload> payloadFlux) {
-    this.payloadFlux = payloadFlux;
+  DuplexStreamingResult(ServiceInterfaceMethod method, Flux<Payload> source, ResponseDeserializer decoder) {
+    delegate = InvocationResults.stream(InvocationType.DUPLEX_STREAMING, source.handle((payload, sink) -> {
+      try {
+        Object value = decoder.deserialize(method, payload.data());
+        if (value != null) {
+          sink.next(value);
+        }
+      }
+      finally {
+        payload.release();
+      }
+    }));
   }
 
-  @Override
-  public Object getBlockingValue() {
-    return null;
-  }
-
-  @Override
-  public boolean isFailed() {
-    return false;
-  }
-
-  @Override
-  public Throwable getException() {
-    return null;
-  }
-
-  @Override
   public InvocationType getType() {
-    return InvocationType.DUPLEX_STREAMING;
+    return delegate.getType();
   }
 
-  @Override
-  public boolean isRequestResponse() {
-    return false;
+  public Future<Void> completion() {
+    return delegate.completion();
   }
 
-  @Override
-  public boolean isStreaming() {
-    return true;
+  public void start() {
+    delegate.start();
   }
 
-  @Override
-  public Future<Object> future() {
-    return null;
+  public boolean cancel() {
+    return delegate.cancel();
   }
 
-  @Override
-  public Publisher<Object> publisher() {
-    return null;
+  public Publisher<Object> values() {
+    return delegate.values();
   }
 }

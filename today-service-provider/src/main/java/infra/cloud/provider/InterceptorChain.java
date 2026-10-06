@@ -16,7 +16,7 @@
 
 package infra.cloud.provider;
 
-import org.reactivestreams.Publisher;
+import infra.cloud.service.InvocationResult;
 
 /**
  * Continuation independent of request context. The default chain is immutable
@@ -30,13 +30,13 @@ public interface InterceptorChain {
 
   /**
    * Obtain a lazy continuation for the supplied request. The default implementation
-   * advances on subscription, emitting at most one adapted value or completing
-   * empty for null and void. Wrappers must preserve cancellation and demand.
+   * returns a single or streaming result. Wrappers must preserve cancellation
+   * and streaming demand.
    *
    * @param request context passed to the next interceptor or terminal invocation
-   * @return non-null result publisher permitting only one subscription
+   * @return non-null result handle with stable completion observation
    * @throws Exception if obtaining the continuation fails synchronously
    */
-  Publisher<Object> proceed(RemoteRequest request) throws Exception;
+  InvocationResult proceed(RemoteRequest request) throws Exception;
 
 }

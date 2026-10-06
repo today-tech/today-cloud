@@ -75,7 +75,8 @@ class ServiceInvocationTests {
     var result = executor.execute(request);
     assertThat(implementation.calls).hasValue(0);
     StepVerifier.create(result).expectNext(1).verifyComplete();
-    StepVerifier.create(result).expectNext(2).verifyComplete();
+    StepVerifier.create(result).expectError(IllegalStateException.class).verify();
+    assertThat(implementation.calls).hasValue(1);
   }
 
   @Test
@@ -116,7 +117,9 @@ class ServiceInvocationTests {
     var executor = new DefaultServiceRequestExecutor(Schedulers.immediate());
     var result = executor.execute(new RemoteRequest(method, null, service));
     StepVerifier.create(result).expectNext("adapted-1").verifyComplete();
-    StepVerifier.create(result).expectNext("adapted-2").verifyComplete();
+    StepVerifier.create(result).expectError(IllegalStateException.class).verify();
+    StepVerifier.create(executor.execute(new RemoteRequest(method, null, service)))
+            .expectNext("adapted-2").verifyComplete();
     assertThat(selections).hasValue(1);
     assertThat(adaptations).hasValue(2);
   }

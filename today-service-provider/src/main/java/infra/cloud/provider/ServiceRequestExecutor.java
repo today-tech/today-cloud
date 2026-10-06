@@ -20,7 +20,7 @@ import org.reactivestreams.Publisher;
 
 /**
  * Transport-independent execution of a decoded service request.
- * Each subscription invokes the service anew, producing at most one non-null
+ * Each returned publisher permits one subscription, producing at most one non-null
  * value. Empty completion represents null or void; errors represent invocation
  * failures. Cancellation must propagate to the underlying invocation.
  *

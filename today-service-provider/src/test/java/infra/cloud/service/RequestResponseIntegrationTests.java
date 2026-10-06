@@ -90,10 +90,10 @@ class RequestResponseIntegrationTests {
             .thenReturn(new ServiceObject(TestService.class, implementation));
     var requests = new RequestDeserializer(List.of(),
             new infra.cloud.provider.DefaultServiceInterfaceMetadataProvider(metadata), holder, adapters);
-    infra.cloud.provider.ServiceInterceptor capture = invocation -> {
-      received.set(invocation.getRequest().getMetadata());
-      assertThat(invocation.getAttribute("local-only")).isNull();
-      return invocation.proceed();
+    infra.cloud.provider.ServiceInterceptor capture = (request, chain) -> {
+      received.set(request.getMetadata());
+      assertThat(request.getAttribute("local-only")).isNull();
+      return chain.proceed(request);
     };
     var handler = new ServiceChannelHandler(requests, new ResponseSerializer(List.of(serialization)),
             new infra.cloud.provider.DefaultServiceRequestExecutor(List.of(capture)));

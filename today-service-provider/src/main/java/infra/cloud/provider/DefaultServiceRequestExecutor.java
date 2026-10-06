@@ -19,6 +19,7 @@ package infra.cloud.provider;
 import java.util.List;
 
 import infra.util.Assert;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
@@ -27,11 +28,9 @@ import reactor.core.scheduler.Schedulers;
  * Schedules decoded requests through an ordered {@link ServiceInterceptor} chain
  * and the method's pre-bound return value handler.
  *
- * <p>Each result subscription creates a fresh invocation and attribute context.
- * When interceptors are configured, the argument array is shallow-copied to isolate
- * element replacement between subscriptions. Referenced argument objects are not
- * copied. Each chain continuation is single-use, although subscribing to the
- * executor result again starts a new service invocation.
+ * <p>Each execution result permits one subscription. The supplied request, its
+ * argument array and local attributes are shared throughout the chain without
+ * copying. A second subscription fails rather than repeating business side effects.
  *
  * <p>The default scheduler is bounded-elastic to isolate blocking service methods.
  * An explicitly supplied scheduler is externally owned and is not disposed by this
@@ -45,7 +44,7 @@ public class DefaultServiceRequestExecutor implements ServiceRequestExecutor {
 
   private final Scheduler scheduler;
 
-  private final List<ServiceInterceptor> interceptors;
+  private final DefaultInterceptorChain chain;
 
   /** Create an executor without interceptors using bounded-elastic scheduling. */
   public DefaultServiceRequestExecutor() {
@@ -80,11 +79,11 @@ public class DefaultServiceRequestExecutor implements ServiceRequestExecutor {
   public DefaultServiceRequestExecutor(List<ServiceInterceptor> interceptors, Scheduler scheduler) {
     Assert.notNull(scheduler, "scheduler is required");
     this.scheduler = scheduler;
-    this.interceptors = List.copyOf(interceptors);
+    this.chain = new DefaultInterceptorChain(interceptors);
   }
 
   /**
-   * Return a lazy result that starts a new invocation on each subscription.
+   * Return a lazy, single-subscription result for the supplied request.
    *
    * @param request the decoded service request, never null
    * @return a result emitting at most one adapted value, completing empty for null
@@ -93,19 +92,14 @@ public class DefaultServiceRequestExecutor implements ServiceRequestExecutor {
   @Override
   public Mono<Object> execute(RemoteRequest request) {
     Assert.notNull(request, "request is required");
-    return Mono.defer(() -> {
-              try {
-                Object[] arguments = request.getArguments();
-                RemoteRequest call = interceptors.isEmpty() ? request : new RemoteRequest(request.getMethod(),
-                        arguments == null ? null : arguments.clone(), request.getServiceObject(), request.getMetadata());
-                return Mono.from(new DefaultProviderInvocation(call, interceptors).proceed());
-              }
-              catch (Throwable error) {
-                reactor.core.Exceptions.throwIfFatal(error);
-                return Mono.error(error);
-              }
-            })
-            .subscribeOn(scheduler);
+    try {
+      return Mono.from(chain.proceed(request))
+              .subscribeOn(scheduler);
+    }
+    catch (Throwable error) {
+      Exceptions.throwIfFatal(error);
+      return Mono.error(error);
+    }
   }
 
 }

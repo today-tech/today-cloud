@@ -25,7 +25,7 @@ import org.reactivestreams.Publisher;
  * between concurrent calls and must be thread-safe.
  *
  * <p>An interceptor may inspect or modify arguments, share per-call attributes,
- * delegate through {@link ProviderInvocation#proceed()}, or short-circuit by
+ * delegate through {@link InterceptorChain#proceed(RemoteRequest)}, or short-circuit by
  * returning its own publisher. Results are adapted service values rather than
  * asynchronous wrappers such as futures. Request decoding and response encoding
  * are outside this chain.
@@ -43,17 +43,20 @@ public interface ServiceInterceptor {
   /**
    * Intercept one invocation and return its result publisher.
    *
-   * <p>Call {@link ProviderInvocation#proceed()} at most once and subscribe to its
-   * continuation at most once. Returning without proceeding skips the remaining
+   * <p>Normally delegate once through {@link InterceptorChain#proceed(RemoteRequest)}.
+   * Multiple calls obtain independent results and may repeat service side effects.
+   * Each returned continuation result permits one subscription. Returning without proceeding skips the remaining
    * chain and service invocation. A successful null or void result is represented
    * by empty completion, never by a null element.
    *
-   * @param invocation the per-call context and continuation
+   * @param request the per-call context, including arguments, metadata and local attributes
+   * @param chain the reusable continuation to the next interceptor or service method
    * @return a non-null publisher emitting at most one non-null result, or completing
    * empty; asynchronous failures are emitted as error signals
    * @throws Throwable if interception fails synchronously; the default executor
    * propagates non-fatal failures as error signals
    */
-  Publisher<Object> intercept(ProviderInvocation invocation) throws Throwable;
+  Publisher<Object> intercept(RemoteRequest request, InterceptorChain chain)
+          throws Throwable;
 
 }

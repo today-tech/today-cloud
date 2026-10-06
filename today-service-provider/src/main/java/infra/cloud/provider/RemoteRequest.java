@@ -19,12 +19,13 @@ package infra.cloud.provider;
 import org.jspecify.annotations.Nullable;
 
 import infra.cloud.service.Metadata;
+import infra.core.DefaultAttributeAccessor;
 
 /**
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/27 22:11
  */
-public class RemoteRequest {
+public class RemoteRequest extends DefaultAttributeAccessor {
 
   private final InvocableMethod method;
 

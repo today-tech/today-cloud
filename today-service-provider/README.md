@@ -28,7 +28,7 @@ Publisher<Object> result = requestExecutor.execute(request);
 
 执行器和返回值处理接口使用 Reactive Streams 的 `Publisher`，不暴露 Reactor 的
 `Mono` 或 Remoting 的 `Payload`。结果最多包含一个值；null 和 void 以无值完成表示。
-每次订阅都会启动一次新的调用，取消会传播到底层异步任务。
+每个执行结果只允许一次订阅，重复订阅会报错，取消会传播到底层异步任务。
 订阅者负责管理需求和取消，并保证相关信号符合 Reactive Streams 的串行化要求。
 
 默认执行器内部仍使用 Reactor，通过 bounded-elastic 调度服务执行，隔离阻塞方法。
@@ -58,11 +58,11 @@ ClientInterceptor propagation = invocation -> {
 服务端通过 `ServiceInterceptor` 读取：
 
 ```java
-ServiceInterceptor propagation = invocation -> {
-  String traceparent = invocation.getRequest().getMetadata().get("traceparent");
+ServiceInterceptor propagation = (request, chain) -> {
+  String traceparent = request.getMetadata().get("traceparent");
   // 提取远端上下文并创建服务端 Span；本地 Span 对象放在 attributes 中。
-  invocation.setAttribute("serverSpan", serverSpan);
-  return invocation.proceed();
+  request.setAttribute("serverSpan", serverSpan);
+  return chain.proceed(request);
 };
 ```
 
@@ -88,18 +88,20 @@ UTF-8 名称、varint 值长度和数据。标签最低位区分文本与二进�
 ### 服务调用拦截器
 
 注册有序的 `ServiceInterceptor` Bean 即可拦截已解码的服务调用，第一个拦截器位于最外层。
-`ProviderInvocation` 提供方法、参数、请求以及调用链内共享的属性。
-它直接继承 `AttributeAccessor`，可使用 `invocation.setAttribute(name, value)` 和
-`invocation.getAttribute(name)` 访问属性；`getAttributes()` 返回底层属性 Map。
+`RemoteRequest` 提供方法、参数、metadata 以及调用链内共享的本地属性。
+它继承 `DefaultAttributeAccessor`，可使用 `request.setAttribute(name, value)` 和
+`request.getAttribute(name)` 访问属性；`getAttributes()` 返回底层属性 Map。
+`InterceptorChain` 单独负责推进调用链，使用 `chain.proceed(request)` 委托下一层。
 不调用 `proceed()` 而直接返回结果，可以短路后续拦截器和服务方法。
 结果是已展开的业务值，而不是 Future 或 Mono 包装对象。
-配置拦截器时，每次订阅都会创建新的调用链，并浅拷贝参数数组，因此数组元素替换不会影响
-其他订阅；参数引用的对象本身不会被复制。
+执行器直接使用原始 `RemoteRequest`，不复制参数或本地属性。同一次调用链共享请求，
+各次入站 RPC 使用独立请求。每个执行结果只允许一次订阅，避免重复执行产生业务副作用。
+显式重试应创建新的请求与执行尝试；请求对象不应被并发或重复执行。
 
 ```java
-ServiceInterceptor timing = invocation -> {
+ServiceInterceptor timing = (request, chain) -> {
   long started = System.nanoTime();
-  return Mono.from(invocation.proceed())
+  return Mono.from(chain.proceed(request))
       .doFinally(signal -> recordDuration(System.nanoTime() - started, signal));
 };
 ```
@@ -107,11 +109,14 @@ ServiceInterceptor timing = invocation -> {
 接口使用 Reactive Streams，因此拦截器可以使用任意符合其规范的 Publisher 实现。
 上面的示例使用 Reactor 的生命周期操作符。异步成功、错误和取消应通过 Publisher 观察；
 包围 `proceed()` 的 `finally` 块只能观察 Publisher 的构造过程，不能表示异步调用结束。
-每层调用延续只允许一次 `proceed()` 和一次订阅；重复订阅进行隐式重试会被拒绝，避免重复
-产生业务副作用。请求解码和响应编码位于拦截链之外。
+每个 `proceed()` 返回的结果只允许一次订阅。多次调用 `proceed()` 会创建独立的后续执行结果，
+可能重复产生业务副作用，由拦截器自行负责；通常应只委托一次。请求解码和响应编码位于拦截链之外。
 拦截器必须线程安全，最多返回一个值，并在包装后续调用时保留取消传播。
 
 手动构造执行器时，可传入 `List<ServiceInterceptor>` 和可选的调度器。
+默认实现参考 Spring `DefaultWebFilterChain`，初始化时反向构建不可变链节点，
+执行器持有并复用完整链，支持并发处理不同请求。共享节点不保存请求或推进状态；
+拦截器直接接收预构建的下一节点，不创建调用级 chain 包装；每个返回结果维护单订阅检查。
 
 ### 方法解析与执行策略
 

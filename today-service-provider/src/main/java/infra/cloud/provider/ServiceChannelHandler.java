@@ -76,7 +76,15 @@ public class ServiceChannelHandler implements Channel {
     finally {
       payload.release();
     }
-    return Mono.defer(() -> Mono.from(requestExecutor.execute(request)))
+    final Publisher<Object> result;
+    try {
+      result = requestExecutor.execute(request);
+    }
+    catch (Throwable error) {
+      reactor.core.Exceptions.throwIfFatal(error);
+      return responseSerializer.serialize(request, error);
+    }
+    return Mono.from(result)
             .flatMap(value -> responseSerializer.serialize(request, value))
             .switchIfEmpty(Mono.defer(() -> responseSerializer.serialize(request, (Object) null)))
             .onErrorResume(error -> responseSerializer.serialize(request, error))

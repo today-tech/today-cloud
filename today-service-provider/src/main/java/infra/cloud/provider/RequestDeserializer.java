@@ -24,6 +24,7 @@ import infra.cloud.serialize.ArgumentSerialization;
 import infra.cloud.serialize.Readable;
 import infra.cloud.serialize.SerializationException;
 import infra.cloud.service.ServiceInterfaceMetadataProvider;
+import infra.cloud.service.StreamElementParameter;
 import infra.core.MethodParameter;
 import infra.core.ReactiveAdapterRegistry;
 import infra.util.Assert;
@@ -60,11 +61,7 @@ public class RequestDeserializer {
   }
 
   public RemoteRequest deserialize(Readable readable) throws SerializationException {
-    String serviceClass = readable.readString();
-    String methodName = readable.readString();
-    String[] paramTypes = readable.read(String.class, Readable::readString);
-
-    InvocableMethod method = methodResolver.resolve(serviceClass, methodName, paramTypes);
+    InvocableMethod method = deserializeMethod(readable);
 
     MethodParameter[] parameters = method.getParameters();
     @Nullable Object[] args = new Object[parameters.length];
@@ -76,6 +73,26 @@ public class RequestDeserializer {
     }
 
     return new RemoteRequest(method, args, method.getServiceObject());
+  }
+
+  /**
+   * Resolve a channel's initial method header without decoding a Publisher argument.
+   */
+  public InvocableMethod deserializeMethod(Readable readable) {
+    String serviceClass = readable.readString();
+    String methodName = readable.readString();
+    String[] paramTypes = readable.read(String.class, Readable::readString);
+
+    return methodResolver.resolve(serviceClass, methodName, paramTypes);
+  }
+
+  /**
+   * Decode one channel element independently of the inbound buffer.
+   */
+  public Object deserializeElement(MethodParameter parameter, Readable readable) {
+    Object value = findArgumentSerialization(parameter).deserialize(parameter, readable);
+    Assert.notNull(value, "Channel elements must be non-null");
+    return value;
   }
 
   private ArgumentSerialization findArgumentSerialization(MethodParameter parameter) {

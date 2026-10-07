@@ -40,11 +40,7 @@ public class RequestSerializer {
 
   @SuppressWarnings("unchecked")
   public void serialize(ServiceInterfaceMethod serviceMethod, Object[] arguments, Writable writable) {
-    writable.write(serviceMethod.getServiceInterface().getName());
-    writable.write(serviceMethod.getMethod().getName());
-    writable.write(serviceMethod.getParameters(), parameter -> {
-      writable.write(parameter.getParameterType().getName());
-    });
+    serializeHeader(serviceMethod, writable);
 
     int idx = 0;
 
@@ -54,6 +50,24 @@ public class RequestSerializer {
       serialization.serialize(parameter, arguments[idx++], writable);
     }
     afterSerializeArguments(writable, arguments);
+  }
+
+  /**
+   * Encode method identity without arguments for the initial channel payload.
+   */
+  public void serializeHeader(ServiceInterfaceMethod serviceMethod, Writable writable) {
+    writable.write(serviceMethod.getServiceInterface().getName());
+    writable.write(serviceMethod.getMethod().getName());
+    writable.write(serviceMethod.getParameters(), parameter -> {
+      writable.write(parameter.getParameterType().getName());
+    });
+  }
+
+  /**
+   * Encode one non-null channel element using its declared generic type.
+   */
+  public void serializeElement(MethodParameter parameter, Object value, Writable writable) {
+    findArgumentSerialization(parameter).serialize(parameter, value, writable);
   }
 
   private ArgumentSerialization findArgumentSerialization(MethodParameter parameter) {

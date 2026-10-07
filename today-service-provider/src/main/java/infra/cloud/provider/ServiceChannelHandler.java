@@ -25,6 +25,9 @@ import infra.cloud.service.InvocationResults;
 import infra.cloud.service.Metadata;
 import infra.cloud.service.MetadataCodec;
 import infra.cloud.service.SingleInvocationResult;
+import infra.cloud.service.StreamElementParameter;
+import infra.cloud.service.StreamingInvocationResult;
+import infra.core.MethodParameter;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.util.Assert;
@@ -46,8 +49,7 @@ public class ServiceChannelHandler implements Channel {
 
   private final MetadataCodec metadataCodec;
 
-  public ServiceChannelHandler(LocalServiceHolder localServiceHolder,
-          RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
+  public ServiceChannelHandler(RequestDeserializer requestDeserializer, ResponseSerializer responseSerializer) {
     this(requestDeserializer, responseSerializer, new DefaultServiceRequestExecutor());
   }
 
@@ -101,17 +103,104 @@ public class ServiceChannelHandler implements Channel {
 
   @Override
   public Flux<Payload> requestStream(Payload payload) {
-    return Channel.super.requestStream(payload);
+    final RemoteRequest request;
+    try {
+      request = decodeRequest(payload);
+    }
+    catch (Throwable error) {
+      Exceptions.throwIfFatal(error);
+      return Flux.error(error);
+    }
+    return streamResponse(request);
   }
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return Channel.super.requestChannel(payloads);
+    return Flux.from(payloads).switchOnFirst((signal, input) -> {
+      if (!signal.hasValue()) {
+        return signal.hasError() ? Flux.error(signal.getThrowable())
+                : Flux.error(new IllegalArgumentException("Missing channel method header"));
+      }
+      Payload header = signal.get();
+      final InvocableMethod method;
+      final Metadata metadata;
+      try {
+        metadata = header.hasMetadata() ? metadataCodec.decode(header.metadata()) : Metadata.empty();
+        method = requestDeserializer.deserializeMethod(new MessagePackReader(header.data()));
+        Assert.isTrue(method.getParameters().length == 1
+                        && method.getParameters()[0].getParameterType() == Flux.class,
+                "Channel method requires one Flux argument");
+      }
+      catch (Throwable error) {
+        Exceptions.throwIfFatal(error);
+        return Flux.error(error);
+      }
+      finally {
+        header.release();
+      }
+
+      MethodParameter parameter = StreamElementParameter.of(method.getParameters()[0]);
+      Flux<Object> values = input.skip(1).map(payload -> {
+        try {
+          Assert.isTrue(!payload.hasMetadata(), "Channel metadata is only allowed on the header");
+          return requestDeserializer.deserializeElement(parameter, new MessagePackReader(payload.data()));
+        }
+        finally {
+          payload.release();
+        }
+      });
+      RemoteRequest request = new RemoteRequest(method, new Object[] { values }, method.getServiceObject(), metadata);
+      return streamResponse(request);
+    }, true).doOnDiscard(Payload.class, payload -> {
+      if (payload.refCnt() > 0) {
+        payload.release();
+      }
+    });
   }
 
   @Override
   public Mono<Void> fireAndForget(Payload payload) {
-    return Channel.super.fireAndForget(payload);
+    final RemoteRequest request;
+    try {
+      request = decodeRequest(payload);
+    }
+    catch (Throwable error) {
+      Exceptions.throwIfFatal(error);
+      return Mono.error(error);
+    }
+    return Mono.defer(() -> {
+      InvocationResult result = requestExecutor.execute(request);
+      if (result instanceof StreamingInvocationResult) {
+        result.cancel();
+        return Mono.error(new IllegalStateException("fire-and-forget does not accept streaming output"));
+      }
+      return Flux.from(InvocationResults.publisher(result)).then();
+    });
+  }
+
+  private RemoteRequest decodeRequest(Payload payload) {
+    try {
+      Metadata metadata = payload.hasMetadata() ? metadataCodec.decode(payload.metadata()) : Metadata.empty();
+      RemoteRequest request = requestDeserializer.deserialize(new MessagePackReader(payload.data()));
+      return metadata.isEmpty() ? request : new RemoteRequest(request.getMethod(), request.getArguments(),
+              request.getServiceObject(), metadata);
+    }
+    finally {
+      payload.release();
+    }
+  }
+
+  private Flux<Payload> streamResponse(RemoteRequest request) {
+    return Flux.defer(() -> {
+      InvocationResult result = requestExecutor.execute(request);
+      if (!(result instanceof StreamingInvocationResult stream)) {
+        result.cancel();
+        return Flux.error(new IllegalStateException("Streaming interaction requires streaming output"));
+      }
+      return Flux.from(stream.values())
+              .concatMap(value -> responseSerializer.serialize(request, value), 1)
+              .onErrorResume(error -> responseSerializer.serialize(request, error));
+    }).doOnDiscard(Payload.class, Payload::release);
   }
 
   @Override

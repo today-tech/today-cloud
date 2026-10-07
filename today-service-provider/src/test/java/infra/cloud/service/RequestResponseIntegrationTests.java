@@ -88,7 +88,8 @@ class RequestResponseIntegrationTests {
     var holder = mock(LocalServiceHolder.class);
     when(holder.getServiceObject(TestService.class.getName()))
             .thenReturn(new ServiceObject(TestService.class, implementation));
-    var requests = new RequestDeserializer(List.of(),
+    var arguments = List.<infra.cloud.serialize.ArgumentSerialization>of(new infra.cloud.serialize.support.SimpleValueArgumentSerialization());
+    var requests = new RequestDeserializer(arguments,
             new infra.cloud.provider.DefaultServiceInterfaceMetadataProvider(metadata), holder, adapters);
     infra.cloud.provider.ServiceInterceptor capture = (request, chain) -> {
       received.set(request.getMetadata());
@@ -115,7 +116,7 @@ class RequestResponseIntegrationTests {
       return chain.proceed(invocation);
     };
     invoker = new ServiceMethodInvoker(List.of(inject), method -> client, ByteBufAllocator.DEFAULT,
-            new RequestSerializer(List.of()), new ResponseDeserializer(List.of(serialization), new ThrowableSerialization()));
+            new RequestSerializer(arguments), new ResponseDeserializer(List.of(serialization), new ThrowableSerialization()));
     service = new DefaultServiceProxyFactory(new DefaultServiceInterfaceMetadataProvider(metadata, List.of(), adapters), invoker)
             .getService(TestService.class);
   }
@@ -294,6 +295,79 @@ class RequestResponseIntegrationTests {
   }
 
   @Test
+  void responseStreamPreservesElementsEmptyAndErrors() {
+    StepVerifier.create(service.stream(), 0).thenRequest(1).expectNext(1)
+            .thenRequest(2).expectNext(2, 3).verifyComplete();
+    StepVerifier.create(service.emptyStream()).verifyComplete();
+    StepVerifier.create(service.failedStream()).expectNext(1).expectErrorMessage("stream failure").verify();
+    assertThat(service.value()).isEqualTo("value");
+  }
+
+  @Test
+  void duplexSupportsEmptyInputMetadataAndHalfClose() {
+    outgoing.set(new Metadata().add("tenant-id", "channel"));
+    StepVerifier.create(service.duplex(reactor.core.publisher.Flux.just(1, 2, 3)), 0)
+            .thenRequest(1).expectNext(2).thenRequest(2).expectNext(4, 6)
+            .expectComplete().verify(Duration.ofSeconds(5));
+    assertThat(received.get().get("tenant-id")).isEqualTo("channel");
+    StepVerifier.create(service.duplex(reactor.core.publisher.Flux.empty()))
+            .expectComplete().verify(Duration.ofSeconds(5));
+    StepVerifier.create(service.channelTail(reactor.core.publisher.Flux.just(7)))
+            .expectNext(7, 99).expectComplete().verify(Duration.ofSeconds(5));
+    StepVerifier.create(service.ignoreInput(reactor.core.publisher.Flux.never()))
+            .expectNext(42).expectComplete().verify(Duration.ofSeconds(5));
+  }
+
+  @Test
+  void duplexCancellationStopsInputAndOutput() throws Exception {
+    var inputCancelled = new CountDownLatch(1);
+    var subscription = service.duplex(reactor.core.publisher.Flux.<Integer>never()
+            .doOnCancel(inputCancelled::countDown)).subscribe();
+    try {
+      assertThat(implementation.subscribed.await(5, TimeUnit.SECONDS)).isTrue();
+    }
+    finally {
+      subscription.dispose();
+    }
+    assertThat(inputCancelled.await(5, TimeUnit.SECONDS)).isTrue();
+    assertThat(implementation.cancelled.await(5, TimeUnit.SECONDS)).isTrue();
+  }
+
+  @Test
+  void streamCancellationAndDuplexInputFailureDoNotBreakConnection() throws Exception {
+    var subscription = service.duplex(reactor.core.publisher.Flux.concat(
+            reactor.core.publisher.Flux.just(1), Mono.<Integer>never())).subscribe();
+    assertThat(implementation.subscribed.await(5, TimeUnit.SECONDS)).isTrue();
+    subscription.dispose();
+    assertThat(implementation.cancelled.await(5, TimeUnit.SECONDS)).isTrue();
+    StepVerifier.create(service.duplex(reactor.core.publisher.Flux.error(new IllegalStateException("input failure"))))
+            .expectErrorMatches(error -> error.getMessage().contains("input failure"))
+            .verify(Duration.ofSeconds(5));
+    assertThat(service.value()).isEqualTo("value");
+  }
+
+  @Test
+  void fireAndForgetSendsWithoutAwaitingBusinessAcknowledgement() throws Exception {
+    var metadata = new DefaultServiceInterfaceMetadataProvider(
+            type -> new ServiceMetadata("test", "1", List.of(type.getName())), List.of());
+    var method = metadata.getMetadata(TestService.class).getServiceMethods().stream()
+            .filter(candidate -> candidate.getMethod().getName().equals("nothing")).findFirst().orElseThrow();
+    // Explicit interaction selection does not change the void request-response default.
+    var notificationInvoker = new ServiceMethodInvoker(List.of((request, chain) -> chain.proceed(
+            new DefaultClientRequest(request.getServiceMethod(), request.getArguments()) {
+              @Override
+              public InvocationType getType() {
+                return InvocationType.FIRE_AND_FORGET;
+              }
+            })), candidate -> client, ByteBufAllocator.DEFAULT, new RequestSerializer(List.of()),
+            new ResponseDeserializer(List.of(), new ThrowableSerialization()));
+    InvocationResult result = notificationInvoker.invoke(method, new Object[0]);
+    result.start();
+    result.completion().join(Duration.ofSeconds(5));
+    assertThat(implementation.notified.await(5, TimeUnit.SECONDS)).isTrue();
+  }
+
+  @Test
   void completionStageWorksThroughDefaultRegistry() throws Exception {
     assertThat(service.completable().get(5, TimeUnit.SECONDS)).isEqualTo("stage");
   }
@@ -301,6 +375,18 @@ class RequestResponseIntegrationTests {
   public record AsyncValue<T>(Mono<T> publisher) { }
 
   public interface TestService {
+    reactor.core.publisher.Flux<Integer> stream();
+
+    reactor.core.publisher.Flux<Integer> emptyStream();
+
+    reactor.core.publisher.Flux<Integer> failedStream();
+
+    reactor.core.publisher.Flux<Integer> duplex(reactor.core.publisher.Flux<Integer> input);
+
+    reactor.core.publisher.Flux<Integer> channelTail(reactor.core.publisher.Flux<Integer> input);
+
+    reactor.core.publisher.Flux<Integer> ignoreInput(reactor.core.publisher.Flux<Integer> input);
+
     String value();
 
     int number();
@@ -353,6 +439,32 @@ class RequestResponseIntegrationTests {
     final CountDownLatch subscribed = new CountDownLatch(1);
     final CountDownLatch cancelled = new CountDownLatch(1);
     final Promise<String> pending = Future.forPromise();
+
+    final CountDownLatch notified = new CountDownLatch(1);
+
+    public reactor.core.publisher.Flux<Integer> stream() {
+      return reactor.core.publisher.Flux.just(1, 2, 3);
+    }
+
+    public reactor.core.publisher.Flux<Integer> emptyStream() {
+      return reactor.core.publisher.Flux.empty();
+    }
+
+    public reactor.core.publisher.Flux<Integer> failedStream() {
+      return reactor.core.publisher.Flux.concat(reactor.core.publisher.Flux.just(1), Mono.error(new IllegalStateException("stream failure")));
+    }
+
+    public reactor.core.publisher.Flux<Integer> duplex(reactor.core.publisher.Flux<Integer> input) {
+      return input.map(value -> value * 2).doOnSubscribe(s -> subscribed.countDown()).doOnCancel(cancelled::countDown);
+    }
+
+    public reactor.core.publisher.Flux<Integer> channelTail(reactor.core.publisher.Flux<Integer> input) {
+      return input.concatWithValues(99);
+    }
+
+    public reactor.core.publisher.Flux<Integer> ignoreInput(reactor.core.publisher.Flux<Integer> input) {
+      return reactor.core.publisher.Flux.just(42);
+    }
 
     public String value() {
       return "value";
@@ -418,6 +530,7 @@ class RequestResponseIntegrationTests {
 
     public void nothing() {
       calls.incrementAndGet();
+      notified.countDown();
     }
 
     public Mono<String> mono() {

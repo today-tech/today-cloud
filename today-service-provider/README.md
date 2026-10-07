@@ -140,7 +140,23 @@ ServiceInterceptor timing = (request, chain) -> {
 基于 methodId 的请求编解码器可以跳过名称解析，直接构造相同的 `RemoteRequest`。
 当前请求报文格式保持不变。
 
-当前 Remoting 适配器仍只接通 request-response，遇到流式结果会拒绝而不是截取首项。
-执行层已能生成流式结果；request-stream、双向流的线上接入需进一步实现。
+### Remoting 交互模型
+
+Remoting 适配器接通 request-response、request-stream、fire-and-forget 和 request-channel。
+request-response 只接受单值结果；request-stream 和 channel 只接受流式结果，逐项编码，
+保持发送顺序，空流直接结束。流中的错误通过传输错误信号传播，不伪装成数据元素。
+fire-and-forget 执行业务并消费 completion-only 或单值结果，不发送响应；客户端完成
+只表示本地发送完成，不确认远端业务成功。普通 void 方法仍默认使用 request-response，
+需要通过自定义客户端返回值策略或请求拦截器显式选择 FIRE_AND_FORGET。
+
+双向方法当前采用 `Flux<R> method(Flux<T> input)`，输入元素必须有具体泛型类型。
+首个 Payload 仅包含现有方法标识（接口名、方法名、参数类型名称），不包含参数值，
+跨进程 metadata 只放在首个 Payload。后续每个 Payload 是一个使用 ArgumentSerialization
+编码的 T 元素；编码器看到的是保留参数注解的元素类型视图。服务端按下游需求解码并释放
+每个 Payload，不缓存完整输入。首帧独立发送，因此空输入也能调用服务。
+输入完成表示输入 half-close；输出可继续发送。输出取消或结束会关闭剩余的输入订阅。
+流式输入只能订阅一次；不支持原始 Flux 类型、null 元素和额外的非流参数。
+`metadataPush` 是连接级交互，没有服务方法路由，仍采用 Channel 默认行为。
+
 双向结果的 completion 当前描述输出流终止，不承诺输入半关闭也已结束。
 取消调用不会回滚已发生的业务副作用。默认结果桥接实现仍使用 Reactor，本次未移除依赖。

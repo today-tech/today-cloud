@@ -1,21 +1,37 @@
+/*
+ * Copyright 2021 - 2026 the TODAY authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package infra.cloud.provider;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import infra.cloud.serialize.ReturnValueSerializer;
 import infra.cloud.serialize.Writable;
 import infra.cloud.service.ServiceMethod;
-import infra.test.util.ReflectionTestUtils;
 import infra.remoting.Payload;
 import infra.remoting.util.ByteBufPayload;
+import infra.test.util.ReflectionTestUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import reactor.test.StepVerifier;
 import reactor.core.publisher.Mono;
-import java.time.Duration;
+import reactor.test.StepVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -110,10 +126,29 @@ class RequestResponseResourceTests {
   void malformedRequestReleasesPayload() {
     var deserializer = mock(RequestDeserializer.class);
     when(deserializer.deserialize(any())).thenThrow(new IllegalArgumentException("invalid request"));
-    var handler = new ServiceChannelHandler(mock(LocalServiceHolder.class), deserializer, mock(ResponseSerializer.class));
+    var handler = new ServiceChannelHandler(deserializer, mock(ResponseSerializer.class));
     Payload payload = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
     StepVerifier.create(handler.requestResponse(payload)).expectError(IllegalArgumentException.class).verify();
     assertThat(payload.refCnt()).isZero();
+  }
+
+  @Test
+  void malformedStreamingAndNotificationRequestsReleasePayloads() {
+    var deserializer = mock(RequestDeserializer.class);
+    when(deserializer.deserialize(any())).thenThrow(new IllegalArgumentException("invalid request"));
+    when(deserializer.deserializeMethod(any())).thenThrow(new IllegalArgumentException("invalid header"));
+    var handler = new ServiceChannelHandler(deserializer, mock(ResponseSerializer.class));
+    Payload stream = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
+    StepVerifier.create(handler.requestStream(stream)).expectErrorMessage("invalid request").verify();
+    assertThat(stream.refCnt()).isZero();
+    Payload notification = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
+    StepVerifier.create(handler.fireAndForget(notification)).expectErrorMessage("invalid request").verify();
+    assertThat(notification.refCnt()).isZero();
+    Payload header = ByteBufPayload.create(Unpooled.buffer().writeByte(0));
+    StepVerifier.create(handler.requestChannel(Mono.just(header))).expectErrorMessage("invalid header").verify();
+    assertThat(header.refCnt()).isZero();
+    StepVerifier.create(handler.requestChannel(reactor.core.publisher.Flux.empty()))
+            .expectErrorMessage("Missing channel method header").verify();
   }
 
   @Test

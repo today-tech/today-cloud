@@ -20,9 +20,9 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.CancellationException;
 
 import infra.util.Assert;
 import infra.util.concurrent.Future;
@@ -209,8 +209,11 @@ public final class InvocationResults {
         if (done.isCancelled()) {
           return Flux.error(new CancellationException());
         }
-        return Flux.from(source).doOnSubscribe(this::subscribe)
-                .doOnComplete(() -> done.trySuccess(null)).doOnError(done::tryFailure).doOnCancel(this::cancel);
+        return Flux.from(source)
+                .doOnSubscribe(this::subscribe)
+                .doOnComplete(() -> done.trySuccess(null))
+                .doOnError(done::tryFailure)
+                .doOnCancel(this::cancel);
       });
     }
 

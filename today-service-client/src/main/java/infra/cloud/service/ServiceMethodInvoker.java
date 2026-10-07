@@ -18,8 +18,6 @@ package infra.cloud.service;
 
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.time.Duration;
 import java.util.List;
@@ -29,18 +27,15 @@ import infra.cloud.ServiceTimeoutException;
 import infra.cloud.serialize.MessagePackWriter;
 import infra.cloud.service.serialize.RequestSerializer;
 import infra.cloud.service.serialize.ResponseDeserializer;
+import infra.core.MethodParameter;
 import infra.remoting.Payload;
 import infra.remoting.RemotingOperations;
 import infra.remoting.util.ByteBufPayload;
 import infra.util.Assert;
-import infra.util.concurrent.Future;
-import infra.util.concurrent.FutureListener;
-import infra.util.concurrent.Promise;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Operators;
 
 /**
  * Invokes service methods by handling different invocation types such as fire-and-forget,
@@ -72,7 +67,9 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     this.metadataCodec = metadataCodec;
   }
 
-  /** Set the deadline for a request-response subscription, including connection acquisition. */
+  /**
+   * Set the deadline for a request-response subscription, including connection acquisition.
+   */
   public void setRequestTimeout(Duration requestTimeout) {
     Assert.notNull(requestTimeout, "requestTimeout is required");
     Assert.isTrue(!requestTimeout.isZero() && !requestTimeout.isNegative(), "requestTimeout must be positive");
@@ -135,10 +132,42 @@ public class ServiceMethodInvoker implements ServiceInvoker {
     }
 
     @SuppressWarnings("unchecked")
-    private Publisher<Payload> createChannelPayload(ClientRequest invocation) {
-      Flux<Object> flux = (Flux<Object>) invocation.getArguments()[0];
+    private Publisher<Payload> createChannelPayload(ClientRequest request) {
+      return Flux.defer(() -> {
+        ServiceInterfaceMethod method = request.getServiceMethod();
+        Assert.isTrue(method.getParameters().length == 1, "Channel requires one stream argument");
+        MethodParameter parameter = StreamElementParameter.of(method.getParameters()[0]);
+        Flux<Object> input = Flux.from((Publisher<Object>) request.getArguments()[0]);
+        Mono<Payload> header = Mono.fromSupplier(() -> encodeChannelPayload(parameter, request, null));
+        return header.concatWith(input.map(value -> encodeChannelPayload(parameter, request, value)))
+                .doOnDiscard(Payload.class, Payload::release);
+      });
+    }
 
-      return Flux.empty();
+    private Payload encodeChannelPayload(MethodParameter parameter, ClientRequest request, @Nullable Object value) {
+      ByteBuf buffer = allocator.ioBuffer();
+      ByteBuf metadataBuffer = null;
+      try {
+        if (value == null) {
+          requestSerializer.serializeHeader(request.getServiceMethod(), new MessagePackWriter(buffer));
+          Metadata metadata = request.getMetadata().snapshot();
+          if (!metadata.isEmpty()) {
+            metadataBuffer = allocator.ioBuffer();
+            metadataCodec.encode(metadata, metadataBuffer);
+          }
+        }
+        else {
+          requestSerializer.serializeElement(parameter, value, new MessagePackWriter(buffer));
+        }
+        return metadataBuffer == null ? ByteBufPayload.create(buffer) : ByteBufPayload.create(buffer, metadataBuffer);
+      }
+      catch (Throwable error) {
+        buffer.release();
+        if (metadataBuffer != null) {
+          metadataBuffer.release();
+        }
+        throw error;
+      }
     }
 
   }

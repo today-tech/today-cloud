@@ -1,0 +1,13 @@
+
+if (isReleaseVersion) {
+  apply plugin: "signing"
+
+  signing {
+    def signingKey = findProperty("signing.key")
+    def signingKeyId = findProperty("signing.keyId")
+    def signingPassword = findProperty("signing.password")
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+
+    sign(publishing.publications)
+  }
+}

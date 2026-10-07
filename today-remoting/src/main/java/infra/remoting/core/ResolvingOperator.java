@@ -1,21 +1,21 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.time.Duration;
@@ -25,15 +25,12 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiConsumer;
 
-import infra.lang.Nullable;
 import reactor.core.CoreSubscriber;
 import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.Scannable;
 import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
-
-// A copy of this class exists in io.rsocket.loadbalance
 
 class ResolvingOperator<T> implements Disposable {
 
@@ -78,7 +75,7 @@ class ResolvingOperator<T> implements Disposable {
 
   @Override
   public final void dispose() {
-    this.terminate(ON_DISPOSE);
+    terminate(ON_DISPOSE);
   }
 
   @Override
@@ -94,10 +91,7 @@ class ResolvingOperator<T> implements Disposable {
   @Nullable
   public final T valueIfResolved() {
     if (this.subscribers == READY) {
-      T value = this.value;
-      if (value != null) {
-        return value;
-      }
+      return this.value;
     }
 
     return null;
@@ -105,7 +99,7 @@ class ResolvingOperator<T> implements Disposable {
 
   final void observe(BiConsumer<T, Throwable> actual) {
     for (; ; ) {
-      final int state = this.add(actual);
+      final int state = add(actual);
 
       T value = this.value;
 
@@ -165,7 +159,7 @@ class ResolvingOperator<T> implements Disposable {
       // connect once
       if (subscribers == EMPTY_UNSUBSCRIBED
               && SUBSCRIBERS.compareAndSet(this, EMPTY_UNSUBSCRIBED, EMPTY_SUBSCRIBED)) {
-        this.doSubscribe();
+        doSubscribe();
       }
 
       long delay;
@@ -201,7 +195,7 @@ class ResolvingOperator<T> implements Disposable {
         // connect again since invalidate() has happened in between
         if (subscribers == EMPTY_UNSUBSCRIBED
                 && SUBSCRIBERS.compareAndSet(this, EMPTY_UNSUBSCRIBED, EMPTY_SUBSCRIBED)) {
-          this.doSubscribe();
+          doSubscribe();
         }
 
         Thread.sleep(1);
@@ -230,9 +224,9 @@ class ResolvingOperator<T> implements Disposable {
       return;
     }
 
-    this.doOnDispose();
+    doOnDispose();
 
-    this.doFinally();
+    doFinally();
 
     for (BiConsumer<T, Throwable> consumer : subscribers) {
       consumer.accept(null, t);
@@ -242,7 +236,7 @@ class ResolvingOperator<T> implements Disposable {
   final void complete(T value) {
     BiConsumer<T, Throwable>[] subscribers = this.subscribers;
     if (subscribers == TERMINATED) {
-      this.doOnValueExpired(value);
+      doOnValueExpired(value);
       return;
     }
 
@@ -257,12 +251,12 @@ class ResolvingOperator<T> implements Disposable {
       subscribers = this.subscribers;
 
       if (subscribers == TERMINATED) {
-        this.doFinally();
+        doFinally();
         return;
       }
     }
 
-    this.doOnValueResolved(value);
+    doOnValueResolved(value);
 
     for (BiConsumer<T, Throwable> consumer : subscribers) {
       consumer.accept(value, null);
@@ -285,7 +279,7 @@ class ResolvingOperator<T> implements Disposable {
       value = this.value;
       if (value != null && isDisposed()) {
         this.value = null;
-        this.doOnValueExpired(value);
+        doOnValueExpired(value);
         return;
       }
 
@@ -312,7 +306,7 @@ class ResolvingOperator<T> implements Disposable {
       final T value = this.value;
       if (value != null) {
         this.value = null;
-        this.doOnValueExpired(value);
+        doOnValueExpired(value);
       }
 
       int m = 1;
@@ -357,7 +351,7 @@ class ResolvingOperator<T> implements Disposable {
       }
 
       if (SUBSCRIBERS.compareAndSet(this, a, EMPTY_SUBSCRIBED)) {
-        this.doSubscribe();
+        doSubscribe();
         return true;
       }
     }
@@ -383,7 +377,7 @@ class ResolvingOperator<T> implements Disposable {
 
       if (SUBSCRIBERS.compareAndSet(this, a, b)) {
         if (a == EMPTY_UNSUBSCRIBED) {
-          this.doSubscribe();
+          doSubscribe();
         }
         return ADDED_STATE;
       }
@@ -649,6 +643,7 @@ class ResolvingOperator<T> implements Disposable {
       }
     }
 
+    @Nullable
     @Override
     public Object scanUnsafe(Attr key) {
       if (key == Attr.PARENT)

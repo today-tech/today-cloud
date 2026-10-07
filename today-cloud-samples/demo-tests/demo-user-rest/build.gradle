@@ -2,14 +2,19 @@ description = "Demo Client"
 
 
 dependencies {
-  implementation project(":today-service-client")
-  implementation project(":today-cloud-samples:demo-tests:demo-user-api")
+  implementation "cn.taketoday:today-service-client"
+  implementation "cn.taketoday:today-remoting-transport-tcp"
 
-  implementation 'cn.taketoday:today-starter-web'
-  implementation 'cn.taketoday:today-starter-json'
-  implementation 'cn.taketoday:today-starter-netty'
+  implementation project(":demo-tests:demo-user-api")
+
+  implementation 'cn.taketoday:infra-starter-web'
+  implementation 'cn.taketoday:infra-starter-application'
+  implementation 'cn.taketoday:infra-starter-json'
+  implementation 'cn.taketoday:infra-starter-netty-server'
   implementation 'ch.qos.logback:logback-classic'
 
   implementation "com.google.protobuf:protobuf-java"
+
+  implementation project(":today-service-registry-simple-discovery")
 
 }

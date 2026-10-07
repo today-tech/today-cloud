@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.core;
@@ -35,16 +34,11 @@ import java.util.Collection;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCounted;
-import infra.remoting.Payload;
 import infra.remoting.Channel;
+import infra.remoting.Payload;
 import infra.remoting.buffer.LeaksTrackingByteBufAllocator;
-import infra.remoting.exceptions.Exceptions;
-import infra.remoting.exceptions.RejectedException;
+import infra.remoting.error.Exceptions;
+import infra.remoting.error.RejectedException;
 import infra.remoting.frame.FrameHeaderCodec;
 import infra.remoting.frame.FrameType;
 import infra.remoting.frame.LeaseFrameCodec;
@@ -60,10 +54,15 @@ import infra.remoting.lease.Lease;
 import infra.remoting.lease.MissingLeaseException;
 import infra.remoting.plugins.InitializingInterceptorRegistry;
 import infra.remoting.test.util.TestClientTransport;
-import infra.remoting.test.util.TestDuplexConnection;
+import infra.remoting.test.util.TestConnection;
 import infra.remoting.test.util.TestServerTransport;
 import infra.remoting.util.ByteBufPayload;
 import infra.remoting.util.DefaultPayload;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCounted;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -89,8 +88,8 @@ class ChannelLeaseTests {
   private Channel channelRequester;
   private ResponderLeaseTracker responderLeaseTracker;
   private LeaksTrackingByteBufAllocator byteBufAllocator;
-  private TestDuplexConnection connection;
-  private ChannelResponder rSocketResponder;
+  private TestConnection connection;
+  private ResponderChannel responderChannel;
   private Channel mockChannelHandler;
 
   private Sinks.Many<Lease> leaseSender = Sinks.many().multicast().onBackpressureBuffer();
@@ -103,7 +102,7 @@ class ChannelLeaseTests {
     PayloadDecoder payloadDecoder = PayloadDecoder.DEFAULT;
     byteBufAllocator = LeaksTrackingByteBufAllocator.instrument(ByteBufAllocator.DEFAULT);
 
-    connection = new TestDuplexConnection(byteBufAllocator);
+    connection = new TestConnection(byteBufAllocator);
     requesterLeaseTracker = new RequesterLeaseTracker(TAG, 0);
     responderLeaseTracker = new ResponderLeaseTracker(TAG, connection, () -> leaseSender.asFlux());
     this.thisClosedSink = Sinks.empty();
@@ -112,7 +111,7 @@ class ChannelLeaseTests {
     ClientServerInputMultiplexer multiplexer =
             new ClientServerInputMultiplexer(connection, new InitializingInterceptorRegistry(), true);
     channelRequester =
-            new ChannelRequester(
+            new RequesterChannel(
                     multiplexer.asClientConnection(),
                     payloadDecoder,
                     StreamIdProvider.forClient(),
@@ -183,8 +182,8 @@ class ChannelLeaseTests {
                                                       }));
                     });
 
-    rSocketResponder =
-            new ChannelResponder(
+    responderChannel =
+            new ResponderChannel(
                     multiplexer.asServerConnection(),
                     mockChannelHandler,
                     payloadDecoder,
@@ -202,7 +201,7 @@ class ChannelLeaseTests {
   }
 
   @Test
-  public void serverRSocketFactoryRejectsUnsupportedLease() {
+  public void serverChannelFactoryRejectsUnsupportedLease() {
     Payload payload = DefaultPayload.create(DefaultPayload.EMPTY_BUFFER);
     ByteBuf setupFrame =
             SetupFrameCodec.encode(
@@ -217,7 +216,7 @@ class ChannelLeaseTests {
     TestServerTransport transport = new TestServerTransport();
     RemotingServer.create().bind(transport).block();
 
-    TestDuplexConnection connection = transport.connect();
+    TestConnection connection = transport.connect();
     connection.addToReceivedBuffer(setupFrame);
 
     Collection<ByteBuf> sent = connection.getSent();
@@ -232,7 +231,7 @@ class ChannelLeaseTests {
   }
 
   @Test
-  public void clientRSocketFactorySetsLeaseFlag() {
+  public void clientChannelFactorySetsLeaseFlag() {
     TestClientTransport clientTransport = new TestClientTransport();
     try {
       ChannelConnector.create().lease().connect(clientTransport).block();
@@ -426,25 +425,25 @@ class ChannelLeaseTests {
       case REQUEST_FNF:
         final ByteBuf fnfFrame =
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        rSocketResponder.handleFrame(fnfFrame);
+        responderChannel.handleFrame(fnfFrame);
         fnfFrame.release();
         break;
       case REQUEST_RESPONSE:
         final ByteBuf requestResponseFrame =
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        rSocketResponder.handleFrame(requestResponseFrame);
+        responderChannel.handleFrame(requestResponseFrame);
         requestResponseFrame.release();
         break;
       case REQUEST_STREAM:
         final ByteBuf requestStreamFrame =
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, 1, payload1);
-        rSocketResponder.handleFrame(requestStreamFrame);
+        responderChannel.handleFrame(requestStreamFrame);
         requestStreamFrame.release();
         break;
       case REQUEST_CHANNEL:
         final ByteBuf requestChannelFrame =
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, true, 1, payload1);
-        rSocketResponder.handleFrame(requestChannelFrame);
+        responderChannel.handleFrame(requestChannelFrame);
         requestChannelFrame.release();
         break;
     }
@@ -474,25 +473,25 @@ class ChannelLeaseTests {
       case REQUEST_FNF:
         final ByteBuf fnfFrame =
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        rSocketResponder.handleFireAndForget(1, fnfFrame);
+        responderChannel.handleFireAndForget(1, fnfFrame);
         fnfFrame.release();
         break;
       case REQUEST_RESPONSE:
         final ByteBuf requestResponseFrame =
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
-        rSocketResponder.handleFrame(requestResponseFrame);
+        responderChannel.handleFrame(requestResponseFrame);
         requestResponseFrame.release();
         break;
       case REQUEST_STREAM:
         final ByteBuf requestStreamFrame =
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, 1, payload1);
-        rSocketResponder.handleFrame(requestStreamFrame);
+        responderChannel.handleFrame(requestStreamFrame);
         requestStreamFrame.release();
         break;
       case REQUEST_CHANNEL:
         final ByteBuf requestChannelFrame =
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, true, 1, payload1);
-        rSocketResponder.handleFrame(requestChannelFrame);
+        responderChannel.handleFrame(requestChannelFrame);
         requestChannelFrame.release();
         break;
     }
@@ -547,8 +546,8 @@ class ChannelLeaseTests {
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
         final ByteBuf fnfFrame2 =
                 RequestFireAndForgetFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, payload2);
-        rSocketResponder.handleFrame(fnfFrame);
-        rSocketResponder.handleFrame(fnfFrame2);
+        responderChannel.handleFrame(fnfFrame);
+        responderChannel.handleFrame(fnfFrame2);
         fnfFrame.release();
         fnfFrame2.release();
         break;
@@ -557,8 +556,8 @@ class ChannelLeaseTests {
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, payload1);
         final ByteBuf requestResponseFrame2 =
                 RequestResponseFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, payload2);
-        rSocketResponder.handleFrame(requestResponseFrame);
-        rSocketResponder.handleFrame(requestResponseFrame2);
+        responderChannel.handleFrame(requestResponseFrame);
+        responderChannel.handleFrame(requestResponseFrame2);
         requestResponseFrame.release();
         requestResponseFrame2.release();
         break;
@@ -567,8 +566,8 @@ class ChannelLeaseTests {
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, 1, payload1);
         final ByteBuf requestStreamFrame2 =
                 RequestStreamFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, 1, payload2);
-        rSocketResponder.handleFrame(requestStreamFrame);
-        rSocketResponder.handleFrame(requestStreamFrame2);
+        responderChannel.handleFrame(requestStreamFrame);
+        responderChannel.handleFrame(requestStreamFrame2);
         requestStreamFrame.release();
         requestStreamFrame2.release();
         break;
@@ -577,8 +576,8 @@ class ChannelLeaseTests {
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 1, true, 1, payload1);
         final ByteBuf requestChannelFrame2 =
                 RequestChannelFrameCodec.encodeReleasingPayload(byteBufAllocator, 3, true, 1, payload2);
-        rSocketResponder.handleFrame(requestChannelFrame);
-        rSocketResponder.handleFrame(requestChannelFrame2);
+        responderChannel.handleFrame(requestChannelFrame);
+        responderChannel.handleFrame(requestChannelFrame2);
         requestChannelFrame.release();
         requestChannelFrame2.release();
         break;
@@ -718,7 +717,7 @@ class ChannelLeaseTests {
                     FrameType.REQUEST_STREAM),
             Arguments.of(
                     (BiFunction<Channel, Payload, Publisher<?>>)
-                            (rSocket, payload) -> rSocket.requestChannel(Mono.just(payload)),
+                            (channel, payload) -> channel.requestChannel(Mono.just(payload)),
                     FrameType.REQUEST_CHANNEL));
   }
 

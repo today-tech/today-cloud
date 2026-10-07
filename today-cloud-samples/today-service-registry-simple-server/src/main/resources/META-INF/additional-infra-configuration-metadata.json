@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "registry.services.uri",
+      "type": "java.lang.String",
+      "description": "Simple service registry URI.",
+      "defaultValue": "/services"
+    }
+  ]
+}

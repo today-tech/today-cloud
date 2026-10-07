@@ -1,40 +1,40 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.lb;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.core.ChannelConnector;
 
 /**
- * {@link LoadBalanceStrategy} that assigns a weight to each {@code RSocket} based on {@link
+ * {@link LoadBalanceStrategy} that assigns a weight to each {@code Channel} based on {@link
  * Channel#availability() availability} and usage statistics. The weight is used to decide which
- * {@code RSocket} to select.
+ * {@code Channel} to select.
  *
  * <p>Use {@link #create()} or a {@link #builder() Builder} to create an instance.
  *
  * @see <a href="https://www.youtube.com/watch?v=6NdxUY1La2I">Predictive Load-Balancing: Unfair but
- * Faster & more Robust</a>
+ * Faster and more Robust</a>
  * @see WeightedStatsRequestInterceptor
  */
 public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
@@ -184,7 +184,7 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
     }
 
     /**
-     * How many times to try to randomly select a pair of RSocket connections with non-zero
+     * How many times to try to randomly select a pair of Channel connections with non-zero
      * availability. This is applicable when there are more than two connections in the pool. If the
      * number of attempts is exceeded, the last selected pair is used.
      *
@@ -199,7 +199,7 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
 
     /**
      * Configure how the created {@link WeightedLoadBalanceStrategy} should find the stats for a
-     * given RSocket.
+     * given Channel.
      *
      * <p>By default this resolver is not set.
      *
@@ -209,7 +209,7 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
      * ClientLoadBalanceStrategy} callback. If this strategy is used in any other context however, a
      * resolver here must be provided.
      *
-     * @param resolver to find the stats for an RSocket with
+     * @param resolver to find the stats for an Channel with
      */
     public Builder weightedStatsResolver(Function<Channel, WeightedStats> resolver) {
       this.weightedStatsResolver = resolver;
@@ -233,14 +233,14 @@ public class WeightedLoadBalanceStrategy implements ClientLoadBalanceStrategy {
     }
 
     void init(ChannelConnector connector) {
-      connector.interceptors(registry -> registry.forRequestsInRequester(rSocket -> {
+      connector.interceptors(registry -> registry.forRequestsInRequester(channel -> {
         final WeightedStatsRequestInterceptor interceptor = new WeightedStatsRequestInterceptor() {
           @Override
           public void dispose() {
-            statsMap.remove(rSocket);
+            statsMap.remove(channel);
           }
         };
-        statsMap.put(rSocket, interceptor);
+        statsMap.put(channel, interceptor);
         return interceptor;
       }));
     }

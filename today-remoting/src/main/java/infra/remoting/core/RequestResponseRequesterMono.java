@@ -1,32 +1,29 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import infra.lang.NonNull;
-import infra.lang.Nullable;
-import infra.remoting.DuplexConnection;
+import infra.remoting.Connection;
 import infra.remoting.Payload;
 import infra.remoting.frame.CancelFrameCodec;
 import infra.remoting.frame.FrameType;
-import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.RequestInterceptor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -57,19 +54,12 @@ import static infra.remoting.core.StateUtils.markTerminated;
 final class RequestResponseRequesterMono extends Mono<Payload>
         implements RequesterFrameHandler, LeasePermitHandler, Subscription, Scannable {
 
-  final ByteBufAllocator allocator;
   final Payload payload;
-  final int mtu;
-  final int maxFrameLength;
-  final int maxInboundPayloadSize;
-  final RequesterResponderSupport requesterResponderSupport;
-  final DuplexConnection connection;
-  final PayloadDecoder payloadDecoder;
+
+  final ChannelSupport channel;
 
   @Nullable
   final RequesterLeaseTracker requesterLeaseTracker;
-  @Nullable
-  final RequestInterceptor requestInterceptor;
 
   volatile long state;
   static final AtomicLongFieldUpdater<RequestResponseRequesterMono> STATE =
@@ -80,29 +70,20 @@ final class RequestResponseRequesterMono extends Mono<Payload>
   CompositeByteBuf frames;
   boolean done;
 
-  RequestResponseRequesterMono(
-          Payload payload, RequesterResponderSupport requesterResponderSupport) {
-
-    this.allocator = requesterResponderSupport.getAllocator();
+  RequestResponseRequesterMono(Payload payload, ChannelSupport channel) {
     this.payload = payload;
-    this.mtu = requesterResponderSupport.getMtu();
-    this.maxFrameLength = requesterResponderSupport.getMaxFrameLength();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
-    this.connection = requesterResponderSupport.getDuplexConnection();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.requesterLeaseTracker = requesterResponderSupport.getRequesterLeaseTracker();
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.channel = channel;
+    this.requesterLeaseTracker = channel.getRequesterLeaseTracker();
   }
 
   @Override
   public void subscribe(CoreSubscriber<? super Payload> actual) {
-
+    ChannelSupport channel = this.channel;
     long previousState = markSubscribed(STATE, this);
     if (isSubscribedOrTerminated(previousState)) {
       final IllegalStateException e =
               new IllegalStateException("RequestResponseMono allows only a single " + "Subscriber");
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(e, FrameType.REQUEST_RESPONSE, null);
       }
@@ -113,13 +94,11 @@ final class RequestResponseRequesterMono extends Mono<Payload>
 
     final Payload p = this.payload;
     try {
-      if (!isValid(this.mtu, this.maxFrameLength, p, false)) {
+      if (!isValid(channel.mtu, channel.maxFrameLength, p, false)) {
         lazyTerminate(STATE, this);
 
-        final IllegalArgumentException e =
-                new IllegalArgumentException(
-                        String.format(INVALID_PAYLOAD_ERROR_MESSAGE, this.maxFrameLength));
-        final RequestInterceptor requestInterceptor = this.requestInterceptor;
+        final IllegalArgumentException e = new IllegalArgumentException(String.format(INVALID_PAYLOAD_ERROR_MESSAGE, channel.maxFrameLength));
+        final RequestInterceptor requestInterceptor = channel.requestInterceptor;
         if (requestInterceptor != null) {
           requestInterceptor.onReject(e, FrameType.REQUEST_RESPONSE, p.metadata());
         }
@@ -133,7 +112,7 @@ final class RequestResponseRequesterMono extends Mono<Payload>
     catch (IllegalReferenceCountException e) {
       lazyTerminate(STATE, this);
 
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(e, FrameType.REQUEST_RESPONSE, null);
       }
@@ -182,9 +161,9 @@ final class RequestResponseRequesterMono extends Mono<Payload>
 
   void sendFirstPayload(Payload payload) {
 
-    final RequesterResponderSupport sm = this.requesterResponderSupport;
-    final DuplexConnection connection = this.connection;
-    final ByteBufAllocator allocator = this.allocator;
+    final ChannelSupport sm = this.channel;
+    final Connection connection = sm.connection;
+    final ByteBufAllocator allocator = sm.allocator;
 
     final int streamId;
     try {
@@ -196,7 +175,7 @@ final class RequestResponseRequesterMono extends Mono<Payload>
       final long previousState = markTerminated(STATE, this);
 
       final Throwable ut = Exceptions.unwrap(t);
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onReject(ut, FrameType.REQUEST_RESPONSE, payload.metadata());
       }
@@ -209,14 +188,14 @@ final class RequestResponseRequesterMono extends Mono<Payload>
       return;
     }
 
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onStart(streamId, FrameType.REQUEST_RESPONSE, payload.metadata());
     }
 
     try {
       sendReleasingPayload(
-              streamId, FrameType.REQUEST_RESPONSE, this.mtu, payload, connection, allocator, true);
+              streamId, FrameType.REQUEST_RESPONSE, sm.mtu, payload, connection, allocator, true);
     }
     catch (Throwable e) {
       this.done = true;
@@ -258,13 +237,14 @@ final class RequestResponseRequesterMono extends Mono<Payload>
 
     if (isFirstFrameSent(previousState)) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      ChannelSupport channel = this.channel;
+      channel.remove(streamId, this);
 
       ReassemblyUtils.synchronizedRelease(this, previousState);
 
-      this.connection.sendFrame(streamId, CancelFrameCodec.encode(this.allocator, streamId));
+      channel.connection.sendFrame(streamId, CancelFrameCodec.encode(channel.allocator, streamId));
 
-      final RequestInterceptor requestInterceptor = this.requestInterceptor;
+      final RequestInterceptor requestInterceptor = channel.requestInterceptor;
       if (requestInterceptor != null) {
         requestInterceptor.onCancel(streamId, FrameType.REQUEST_RESPONSE);
       }
@@ -290,9 +270,9 @@ final class RequestResponseRequesterMono extends Mono<Payload>
     }
 
     final int streamId = this.streamId;
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channel.remove(streamId, this);
 
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onTerminate(streamId, FrameType.REQUEST_RESPONSE, null);
     }
@@ -316,9 +296,9 @@ final class RequestResponseRequesterMono extends Mono<Payload>
     }
 
     final int streamId = this.streamId;
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channel.remove(streamId, this);
 
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onTerminate(streamId, FrameType.REQUEST_RESPONSE, null);
     }
@@ -337,7 +317,7 @@ final class RequestResponseRequesterMono extends Mono<Payload>
     }
 
     final Payload p = this.payload;
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onReject(cause, FrameType.REQUEST_RESPONSE, p.metadata());
     }
@@ -364,9 +344,9 @@ final class RequestResponseRequesterMono extends Mono<Payload>
     ReassemblyUtils.synchronizedRelease(this, previousState);
 
     final int streamId = this.streamId;
-    this.requesterResponderSupport.remove(streamId, this);
+    this.channel.remove(streamId, this);
 
-    final RequestInterceptor requestInterceptor = this.requestInterceptor;
+    final RequestInterceptor requestInterceptor = channel.requestInterceptor;
     if (requestInterceptor != null) {
       requestInterceptor.onTerminate(streamId, FrameType.REQUEST_RESPONSE, cause);
     }
@@ -376,14 +356,13 @@ final class RequestResponseRequesterMono extends Mono<Payload>
 
   @Override
   public void handleNext(ByteBuf frame, boolean hasFollows, boolean isLastPayload) {
-    handleNextSupport(
-            STATE,
+    handleNextSupport(STATE,
             this,
             this,
             this.actual,
-            this.payloadDecoder,
-            this.allocator,
-            this.maxInboundPayloadSize,
+            channel.payloadDecoder,
+            channel.allocator,
+            channel.maxInboundPayloadSize,
             frame,
             hasFollows,
             isLastPayload);
@@ -395,7 +374,7 @@ final class RequestResponseRequesterMono extends Mono<Payload>
   }
 
   @Override
-  public void setFrames(CompositeByteBuf byteBuf) {
+  public void setFrames(@Nullable CompositeByteBuf byteBuf) {
     this.frames = byteBuf;
   }
 
@@ -414,7 +393,6 @@ final class RequestResponseRequesterMono extends Mono<Payload>
   }
 
   @Override
-  @NonNull
   public String stepName() {
     return "source(RequestResponseMono)";
   }

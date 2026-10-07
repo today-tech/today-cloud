@@ -15,7 +15,6 @@ dependencies {
   api(project(":today-remoting"))
 
   api "io.projectreactor.netty:reactor-netty-core"
-  api "io.projectreactor.netty:reactor-netty-http"
 
   optional 'io.netty:netty-transport'
   optional 'io.netty:netty-codec'
@@ -28,15 +27,8 @@ dependencies {
 
   testRuntimeOnly 'org.bouncycastle:bcpkix-jdk15on:1.70'
   testRuntimeOnly 'ch.qos.logback:logback-classic'
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
   testRuntimeOnly 'io.netty:netty-tcnative-boringssl-static' + os_suffix
 
   testImplementation testFixtures(project(":today-remoting"))
 
-}
-
-jar {
-  manifest {
-    attributes("Automatic-Module-Name": "infra.remoting.transport.tcp")
-  }
 }

@@ -1,0 +1,4 @@
+infra.app.env.EnvironmentPostProcessor=infra.cloud.net.HostInfoEnvironmentPostProcessor
+
+
+

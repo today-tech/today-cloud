@@ -3,3 +3,8 @@ description = "Demo Tests"
 dependencies {
 
 }
+
+configure(subprojects) {
+  apply plugin: 'today.cloud-application'
+
+}

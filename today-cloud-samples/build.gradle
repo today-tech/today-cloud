@@ -1,0 +1,30 @@
+description = "TODAY Cloud samples"
+
+configure(allprojects) {
+  group = "cn.taketoday.cloud.samples"
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = "https://central.sonatype.com/repository/maven-snapshots/" }
+  }
+
+  configurations.configureEach {
+    resolutionStrategy {
+      cacheChangingModulesFor 0, "seconds"
+      cacheDynamicVersionsFor 0, "seconds"
+    }
+  }
+}
+
+configure(subprojects) {
+  apply plugin: 'java'
+  apply plugin: 'java-library'
+  apply plugin: 'today.cloud-application'
+
+  java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+  }
+
+}

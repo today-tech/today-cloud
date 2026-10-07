@@ -1,0 +1,162 @@
+# 服务端调用
+
+request-response 调用流程将请求解码、方法解析、服务执行和响应编码分开：
+
+```text
+RequestDeserializer -> ServiceMethodResolver -> RemoteRequest
+                                                   |
+                                       ServiceRequestExecutor
+                                                   |
+                                          ReturnValueHandler
+                                                   |
+                                           ResponseSerializer
+```
+
+`ServiceChannelHandler` 将上述流程接入当前的 Remoting 传输层。它负责消费并释放
+入站 payload、委托执行服务调用、编码返回值或空值响应，并通过统一的响应异常入口处理错误。
+
+## 独立调用
+
+其他传输实现可以直接解析方法并构造已解码的请求：
+
+```java
+InvocableMethod method = methodResolver.resolve("com.example.UserService", "findById",
+    new String[] { "long" });
+RemoteRequest request = new RemoteRequest(method, new Object[] { 1L }, method.getServiceObject());
+InvocationResult result = requestExecutor.execute(request);
+```
+
+执行器、拦截器、调用链和返回值处理接口统一返回 `InvocationResult`，不暴露 Reactor 的
+`Mono` 或 Remoting 的 `Payload`。单值能力由 `SingleInvocationResult.value()` 提供，成功 null
+表示空值；流式能力由 `StreamingInvocationResult.values()` 提供，保留元素需求和取消。
+`completion()` 返回稳定的完成 Future，访问或注册观察回调不会启动调用。
+单值调用通过 `start()` 显式启动，重复启动不会重复执行；流通过唯一的数据订阅启动。
+单值结果可重复观察同一个 Future，流不允许重复订阅。`cancel()` 关联原始任务。
+订阅者负责管理需求和取消，并保证相关信号符合 Reactive Streams 的串行化要求。
+
+默认执行器内部仍使用 Reactor，通过 bounded-elastic 调度服务执行，隔离阻塞方法。
+手动构造时可以传入自定义 Scheduler；调度器由外部管理生命周期，执行器不会释放它。
+替换执行器后可以使用其他执行引擎，无需同时修改响应编码。
+当前实现完成了接口边界解耦，模块本身仍依赖 Reactor。
+
+## 扩展点
+
+### 跨进程元数据
+
+`Metadata` 用于显式传递调用元数据，与 `AttributeAccessor` 的本地属性独立。
+支持 UTF-8 文本、二进制值和同名多值；`entries()` 按添加顺序访问所有条目，
+`get(name)` / `getBinary(name)` 返回首个对应类型的值。
+
+客户端通过 `ClientInterceptor` 写入：
+
+```java
+ClientInterceptor propagation = (invocation, chain) -> {
+  invocation.getMetadata().add("traceparent", traceparent);
+  invocation.getMetadata().add("tenant-id", tenantId);
+  invocation.getMetadata().addBinary("custom-bin", binaryValue);
+  return chain.proceed(invocation);
+};
+```
+
+服务端通过 `ServiceInterceptor` 读取：
+
+```java
+ServiceInterceptor propagation = (request, chain) -> {
+  String traceparent = request.getMetadata().get("traceparent");
+  // 提取远端上下文并创建服务端 Span；本地 Span 对象放在 attributes 中。
+  request.setAttribute("serverSpan", serverSpan);
+  return chain.proceed(request);
+};
+```
+
+客户端在构造每次发送的 payload 时获取元数据快照；服务端在释放 payload 前完成解码。
+`RemoteRequest` 持有不可变且独立于 ByteBuf 的快照，跨线程执行及参数数组复制会保留它。
+本地 attributes 不会自动发送，没有元数据时不分配 metadata buffer、不设置 metadata 标志。
+
+默认 V1 格式为：版本字节，随后是若干条目；每项包含 varint 类型标签、可选的名称长度与
+UTF-8 名称、varint 值长度和数据。标签最低位区分文本与二进制，其他位为名称编号。
+`traceparent`、`tracestate`、`baggage`、`tenant-id`、`authorization` 使用固定编号 1～5，
+自定义名称使用编号 0 并发送名称。不发送条目数量，使用 metadata 区域的边界结束解析。
+默认限制为 8 KiB、64 项，截断、非法版本和未知编号会被拒绝。
+该格式是应用 RPC 元数据格式，不是 RSocket Composite Metadata。
+
+可在客户端与服务端提供 `MetadataCodec` Bean 替换格式或配置限制，双方必须使用
+相同的编码契约。手动创建客户端调用器使用 `setMetadataCodec()`；服务端适配器有对应构造器。
+
+框架提供元数据传输，不会自动生成 Span 或安装 OpenTelemetry。trace 传播应由相应拦截器
+对接 tracing propagator，包含父 Span 信息、采样标志和可选的 tracestate，而不只是 traceId。
+当前客户端拦截器在代理调用时执行，延迟订阅场景需要由 tracing 集成显式处理订阅时上下文；
+跨进程元数据传递本身不等于 ThreadLocal、MDC 或 Reactor Context 的自动恢复。
+
+### 服务调用拦截器
+
+注册有序的 `ServiceInterceptor` Bean 即可拦截已解码的服务调用，第一个拦截器位于最外层。
+`RemoteRequest` 提供方法、参数、metadata 以及调用链内共享的本地属性。
+它继承 `DefaultAttributeAccessor`，可使用 `request.setAttribute(name, value)` 和
+`request.getAttribute(name)` 访问属性；`getAttributes()` 返回底层属性 Map。
+`InterceptorChain` 单独负责推进调用链，使用 `chain.proceed(request)` 委托下一层。
+不调用 `proceed()` 而直接返回结果，可以短路后续拦截器和服务方法。
+结果是已展开的业务值，而不是 Future 或 Mono 包装对象。
+执行器直接使用原始 `RemoteRequest`，不复制参数或本地属性。同一次调用链共享请求，
+各次入站 RPC 使用独立请求。每个结果句柄只执行一次，观察单值结果不会重复产生业务副作用。
+显式重试应创建新的请求与执行尝试；请求对象不应被并发或重复执行。
+
+```java
+ServiceInterceptor timing = (request, chain) -> {
+  long started = System.nanoTime();
+  InvocationResult result = chain.proceed(request);
+  result.completion().onCompleted(completed ->
+      recordDuration(System.nanoTime() - started, completed));
+  return result;
+};
+```
+
+接口使用统一结果句柄，异步成功、错误和取消通过 `completion()` 观察。
+包围 `proceed()` 的 `finally` 块只能观察结果句柄的构造过程，不能表示异步调用结束。
+多次调用 `proceed()` 会创建独立的后续执行结果，
+可能重复产生业务副作用，由拦截器自行负责；通常应只委托一次。请求解码和响应编码位于拦截链之外。
+拦截器必须线程安全，保持返回结果的单值/流式能力，并在包装后续调用时保留取消传播。
+
+手动构造执行器时，可传入 `List<ServiceInterceptor>` 和可选的调度器。
+默认实现参考 Spring `DefaultWebFilterChain`，初始化时反向构建不可变链节点，
+执行器持有并复用完整链，支持并发处理不同请求。共享节点不保存请求或推进状态；
+拦截器直接接收预构建的下一节点，不创建调用级 chain 包装；结果实现管理单次启动和流订阅。
+
+### 方法解析与执行策略
+
+- 提供 `ServiceMethodResolver` Bean 可替换方法解析逻辑。默认解析器按服务对象缓存不可变
+  方法签名，仅允许调用导出接口元数据中包含的方法。
+- 提供 `ServiceRequestExecutor` Bean 可替换调用执行和调度逻辑。
+- 提供有序的 `ReturnValueHandler` Bean 可适配应用返回值类型。自定义处理器优先于默认的
+  异步处理器和普通值处理器。处理器不依赖响应序列化或传输缓冲区。
+
+`ReturnValueHandlerComposite` 在构造 `InvocableMethod` 时选择处理器。
+缓存的方法只持有最终选中的处理器，执行时不再扫描策略列表。
+应在解析方法之前完成处理器配置，并保证处理器线程安全。
+修改处理器配置后，需要重新构建解析器及其方法缓存。
+手动构造解析器时，可以通过构造器传入已配置的组合处理器。
+执行器负责调度，处理器配置由方法解析阶段管理。
+
+基于 methodId 的请求编解码器可以跳过名称解析，直接构造相同的 `RemoteRequest`。
+当前请求报文格式保持不变。
+
+### Remoting 交互模型
+
+Remoting 适配器接通 request-response、request-stream、fire-and-forget 和 request-channel。
+request-response 只接受单值结果；request-stream 和 channel 只接受流式结果，逐项编码，
+保持发送顺序，空流直接结束。流中的错误通过传输错误信号传播，不伪装成数据元素。
+fire-and-forget 执行业务并消费 completion-only 或单值结果，不发送响应；客户端完成
+只表示本地发送完成，不确认远端业务成功。普通 void 方法仍默认使用 request-response，
+需要通过自定义客户端返回值策略或请求拦截器显式选择 FIRE_AND_FORGET。
+
+双向方法当前采用 `Flux<R> method(Flux<T> input)`，输入元素必须有具体泛型类型。
+首个 Payload 仅包含现有方法标识（接口名、方法名、参数类型名称），不包含参数值，
+跨进程 metadata 只放在首个 Payload。后续每个 Payload 是一个使用 ArgumentSerialization
+编码的 T 元素；编码器看到的是保留参数注解的元素类型视图。服务端按下游需求解码并释放
+每个 Payload，不缓存完整输入。首帧独立发送，因此空输入也能调用服务。
+输入完成表示输入 half-close；输出可继续发送。输出取消或结束会关闭剩余的输入订阅。
+流式输入只能订阅一次；不支持原始 Flux 类型、null 元素和额外的非流参数。
+`metadataPush` 是连接级交互，没有服务方法路由，仍采用 Channel 默认行为。
+
+双向结果的 completion 当前描述输出流终止，不承诺输入半关闭也已结束。
+取消调用不会回滚已发生的业务副作用。默认结果桥接实现仍使用 Reactor，本次未移除依赖。

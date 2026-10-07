@@ -1,9 +1,24 @@
 description = "Demo User API"
 
 dependencies {
-  implementation 'cn.taketoday:today-context'
+  implementation 'cn.taketoday:infra-context'
 
   compileOnly("org.projectlombok:lombok")
   annotationProcessor("org.projectlombok:lombok")
+
+}
+
+jar {
+  manifest.attributes["Specification-Title"] = project.name
+  manifest.attributes["Specification-Version"] = project.version
+  manifest.attributes["Specification-Vendor"] = 'TODAY Tech'
+  manifest.attributes["Specification-Vendor-Id"] = 'cn.taketoday'
+}
+
+serviceMetadata {
+
+  additional = [
+      "demo": "demo"
+  ]
 
 }

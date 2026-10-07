@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package infra.remoting.lb;
 
@@ -30,15 +29,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import infra.remoting.Payload;
 import infra.remoting.Channel;
+import infra.remoting.DecoratingChannel;
+import infra.remoting.Payload;
 import infra.remoting.RaceTestConstants;
 import infra.remoting.core.ChannelConnector;
 import infra.remoting.internal.subscriber.AssertSubscriber;
 import infra.remoting.test.util.TestClientTransport;
 import infra.remoting.transport.ClientTransport;
 import infra.remoting.util.EmptyPayload;
-import infra.remoting.util.ChannelDecorator;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
@@ -130,14 +129,14 @@ public class LoadbalanceTests {
     final LoadBalanceTarget target1 = LoadBalanceTarget.of("1", mockTransport1);
     final LoadBalanceTarget target2 = LoadBalanceTarget.of("2", mockTransport2);
 
-    final WeightedChannel weightedRSocket1 = new WeightedChannel(counter);
-    final WeightedChannel weightedRSocket2 = new WeightedChannel(counter);
+    final WeightedChannel weightedChannel1 = new WeightedChannel(counter);
+    final WeightedChannel weightedChannel2 = new WeightedChannel(counter);
 
     final ChannelConnector channelConnectorMock = Mockito.mock(ChannelConnector.class);
     Mockito.when(channelConnectorMock.connect(mockTransport1))
-            .then(im -> Mono.just(new TestChannel(weightedRSocket1)));
+            .then(im -> Mono.just(new TestChannel(weightedChannel1)));
     Mockito.when(channelConnectorMock.connect(mockTransport2))
-            .then(im -> Mono.just(new TestChannel(weightedRSocket2)));
+            .then(im -> Mono.just(new TestChannel(weightedChannel2)));
     final List<LoadBalanceTarget> collectionOfDestination1 = Collections.singletonList(target1);
     final List<LoadBalanceTarget> collectionOfDestination2 = Collections.singletonList(target2);
     final List<LoadBalanceTarget> collectionOfDestinations1And2 = Arrays.asList(target1, target2);
@@ -151,13 +150,13 @@ public class LoadbalanceTests {
                       source.asFlux(),
                       WeightedLoadBalanceStrategy.builder()
                               .weightedStatsResolver(
-                                      rsocket -> {
-                                        if (rsocket instanceof TestChannel) {
-                                          return (WeightedChannel) ((TestChannel) rsocket).source();
+                                      channel -> {
+                                        if (channel instanceof TestChannel) {
+                                          return (WeightedChannel) ((TestChannel) channel).source();
                                         }
-                                        return ((PooledChannel) rsocket).target() == target1
-                                                ? weightedRSocket1
-                                                : weightedRSocket2;
+                                        return ((PooledChannel) channel).target() == target1
+                                                ? weightedChannel1
+                                                : weightedChannel2;
                                       })
                               .build());
       final Mono<Void> fnfSource =
@@ -188,12 +187,12 @@ public class LoadbalanceTests {
   }
 
   @Test
-  public void ensureRSocketIsCleanedFromThePoolIfSourceRSocketIsDisposed() {
+  public void ensureChannelIsCleanedFromThePoolIfSourceChannelIsDisposed() {
     final AtomicInteger counter = new AtomicInteger();
     final ClientTransport mockTransport = Mockito.mock(ClientTransport.class);
     final ChannelConnector channelConnectorMock = Mockito.mock(ChannelConnector.class);
 
-    final TestChannel testRSocket =
+    final TestChannel testChannel =
             new TestChannel(
                     new Channel() {
                       @Override
@@ -204,7 +203,7 @@ public class LoadbalanceTests {
                     });
 
     Mockito.when(channelConnectorMock.connect(Mockito.any(ClientTransport.class)))
-            .then(im -> Mono.delay(Duration.ofMillis(200)).map(__ -> testRSocket));
+            .then(im -> Mono.delay(Duration.ofMillis(200)).map(__ -> testChannel));
 
     final TestPublisher<List<LoadBalanceTarget>> source = TestPublisher.create();
     final ChannelPool channelPool =
@@ -217,7 +216,7 @@ public class LoadbalanceTests {
             .expectComplete()
             .verify(Duration.ofSeconds(2));
 
-    testRSocket.dispose();
+    testChannel.dispose();
 
     Assertions.assertThatThrownBy(
                     () ->
@@ -256,7 +255,7 @@ public class LoadbalanceTests {
     final ChannelPool channelPool =
             new ChannelPool(channelConnectorMock, source, new RoundRobinLoadBalanceStrategy());
 
-    // check that context is propagated when there is no rsocket
+    // check that context is propagated when there is no channel
     StepVerifier.create(
                     channelPool
                             .select()
@@ -281,7 +280,7 @@ public class LoadbalanceTests {
             .verify(Duration.ofSeconds(2));
 
     source.next(Collections.singletonList(LoadBalanceTarget.of("2", mockTransport)));
-    // check that context is propagated when there is an RSocket but it is unresolved
+    // check that context is propagated when there is a Channel but it is unresolved
     StepVerifier.create(
                     channelPool
                             .select()
@@ -302,7 +301,7 @@ public class LoadbalanceTests {
             .expectComplete()
             .verify(Duration.ofSeconds(2));
 
-    // check that context is propagated when there is an RSocket and it is resolved
+    // check that context is propagated when there is a Channel and it is resolved
     StepVerifier.create(
                     channelPool
                             .select()
@@ -405,7 +404,7 @@ public class LoadbalanceTests {
     Assertions.assertThat(counter.get()).isOne();
   }
 
-  static class TestChannel extends ChannelDecorator {
+  static class TestChannel extends DecoratingChannel {
 
     final Sinks.Empty<Void> sink = Sinks.empty();
 

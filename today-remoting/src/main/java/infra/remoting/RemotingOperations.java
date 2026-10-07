@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting;
@@ -23,52 +22,42 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
+ * Operations for performing remoting interactions including Fire-and-Forget,
+ * Request-Response, Request-Stream, Request-Channel, and Metadata Push.
+ *
  * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
  * @since 1.0 2025/8/2 23:10
  */
 public interface RemotingOperations {
 
   /**
-   * Fire and Forget interaction model of protocol.
-   *
-   * @param payload Request payload.
-   * @return {@code Publisher} that completes when the passed {@code payload} is successfully
-   * handled, otherwise errors.
+   * Perform a Fire-and-Forget interaction via {@link Channel#fireAndForget(Payload)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
-  Mono<Void> fireAndForget(Payload payload);
+  Mono<Void> fireAndForget(Mono<Payload> payloadMono);
 
   /**
-   * Request-Response interaction model of protocol.
-   *
-   * @param payload Request payload.
-   * @return {@code Publisher} containing at most a single {@code Payload} representing the
-   * response.
+   * Perform a Request-Response interaction via {@link Channel#requestResponse(Payload)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
-  Mono<Payload> requestResponse(Payload payload);
+  Mono<Payload> requestResponse(Mono<Payload> payloadMono);
 
   /**
-   * Request-Stream interaction model of protocol.
-   *
-   * @param payload Request payload.
-   * @return {@code Publisher} containing the stream of {@code Payload}s representing the response.
+   * Perform a Request-Stream interaction via {@link Channel#requestStream(Payload)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
-  Flux<Payload> requestStream(Payload payload);
+  Flux<Payload> requestStream(Mono<Payload> payloadMono);
 
   /**
-   * Request-Channel interaction model of protocol.
-   *
-   * @param payloads Stream of request payloads.
-   * @return Stream of response payloads.
+   * Perform a Request-Channel interaction via {@link Channel#requestChannel(Publisher)}. Allows
+   * multiple subscriptions and performs a request per subscriber.
    */
   Flux<Payload> requestChannel(Publisher<Payload> payloads);
 
   /**
-   * Metadata-Push interaction model of protocol.
-   *
-   * @param payload Request payloads.
-   * @return {@code Publisher} that completes when the passed {@code payload} is successfully
-   * handled, otherwise errors.
+   * Perform a Metadata Push via {@link Channel#metadataPush(Payload)}. Allows multiple
+   * subscriptions and performs a request per subscriber.
    */
-  Mono<Void> metadataPush(Payload payload);
+  Mono<Void> metadataPush(Mono<Payload> payloadMono);
 
 }

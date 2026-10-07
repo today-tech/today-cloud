@@ -1,27 +1,26 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.lb;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
 import java.util.List;
 
-import infra.lang.Nullable;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.core.ChannelConnector;
@@ -31,8 +30,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * An implementation of {@link RemotingClient} backed by a pool of {@code RSocket} instances and
- * using a {@link LoadBalanceStrategy} to select the {@code RSocket} to use for a given request.
+ * An implementation of {@link RemotingClient} backed by a pool of {@code Channel} instances and
+ * using a {@link LoadBalanceStrategy} to select the {@code Channel} to use for a given request.
  */
 public class LoadBalanceRemotingClient implements RemotingClient {
 
@@ -52,7 +51,9 @@ public class LoadBalanceRemotingClient implements RemotingClient {
     return channelPool.connect();
   }
 
-  /** Return {@code Mono} that selects an RSocket from the underlying pool. */
+  /**
+   * Return {@code Mono} that selects a Channel from the underlying pool.
+   */
   @Override
   public Mono<Channel> source() {
     return Mono.fromSupplier(channelPool::select);
@@ -75,7 +76,7 @@ public class LoadBalanceRemotingClient implements RemotingClient {
 
   @Override
   public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-    return source().flatMapMany(rSocket -> rSocket.requestChannel(payloads));
+    return source().flatMapMany(channel -> channel.requestChannel(payloads));
   }
 
   @Override
@@ -86,24 +87,6 @@ public class LoadBalanceRemotingClient implements RemotingClient {
   @Override
   public void dispose() {
     channelPool.dispose();
-  }
-
-  /**
-   * Shortcut to create an {@link LoadBalanceRemotingClient} with round-robin load balancing.
-   * Effectively a shortcut for:
-   *
-   * <pre class="cdoe">
-   * LoadBalanceRemotingClient.builder(targetPublisher)
-   *    .connector(RSocketConnector.create())
-   *    .build();
-   * </pre>
-   *
-   * @param connector a "template" for connecting to load balance targets
-   * @param targetPublisher refreshes the list of load balance targets periodically
-   * @return the created client instance
-   */
-  public static LoadBalanceRemotingClient create(ChannelConnector connector, Publisher<List<LoadBalanceTarget>> targetPublisher) {
-    return builder(targetPublisher).connector(connector).build();
   }
 
   /**
@@ -179,13 +162,10 @@ public class LoadBalanceRemotingClient implements RemotingClient {
 
     /** Build the {@link LoadBalanceRemotingClient} instance. */
     public LoadBalanceRemotingClient build() {
-      final ChannelConnector connector =
-              (this.connector != null ? this.connector : ChannelConnector.create());
-
-      final LoadBalanceStrategy strategy =
-              (this.loadbalanceStrategy != null
-                      ? this.loadbalanceStrategy
-                      : new RoundRobinLoadBalanceStrategy());
+      final ChannelConnector connector = this.connector != null ? this.connector : ChannelConnector.create();
+      final LoadBalanceStrategy strategy = loadbalanceStrategy != null
+              ? loadbalanceStrategy
+              : new RoundRobinLoadBalanceStrategy();
 
       if (strategy instanceof ClientLoadBalanceStrategy) {
         ((ClientLoadBalanceStrategy) strategy).initialize(connector);

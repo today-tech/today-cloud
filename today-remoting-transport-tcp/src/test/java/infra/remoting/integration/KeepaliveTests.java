@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.remoting.integration;
@@ -65,13 +64,13 @@ public class KeepaliveTests {
 
   @Test
   void keepAliveTest() {
-    RemotingClient rsocketClient = createClient();
+    RemotingClient client = createClient();
 
     int expectedCount = 4;
     AtomicBoolean sleepOnce = new AtomicBoolean(true);
     StepVerifier.create(Flux.range(0, expectedCount)
                     .delayElements(Duration.ofMillis(2000))
-                    .concatMap(i -> rsocketClient
+                    .concatMap(i -> client
                             .requestResponse(Mono.just(DefaultPayload.create("")))
                             .doOnNext(__ -> {
                               if (sleepOnce.getAndSet(false)) {
@@ -94,13 +93,13 @@ public class KeepaliveTests {
 
   @Test
   void keepAliveTestLazy() {
-    Mono<Channel> rsocketMono = createClientLazy();
+    Mono<Channel> channelMono = createClientLazy();
 
     int expectedCount = 4;
     AtomicBoolean sleepOnce = new AtomicBoolean(true);
     StepVerifier.create(Flux.range(0, expectedCount)
                     .delayElements(Duration.ofMillis(2000))
-                    .concatMap(i -> rsocketMono.flatMap(rsocket -> rsocket
+                    .concatMap(i -> channelMono.flatMap(channel -> channel
                             .requestResponse(DefaultPayload.create(""))
                             .doOnNext(__ -> {
                               if (sleepOnce.getAndSet(false)) {
@@ -126,18 +125,18 @@ public class KeepaliveTests {
 
     TcpServer tcpServer = TcpServer.create().host("localhost").port(PORT);
 
-    return RemotingServer.create((setupPayload, rSocket) -> {
-              rSocket
+    return RemotingServer.create((setupPayload, channel) -> {
+              channel
                       .onClose()
                       .doFirst(() -> LOG.info("Connected on server side."))
                       .doOnTerminate(() -> LOG.info("Connection closed on server side."))
                       .subscribe();
 
-              return Mono.just(new MyServerRsocket());
+              return Mono.just(new MyServerChannel());
             })
             .payloadDecoder(PayloadDecoder.ZERO_COPY)
             .bind(TcpServerTransport.create(tcpServer))
-            .doOnNext(closeableChannel -> LOG.info("RSocket server started."));
+            .doOnNext(closeableChannel -> LOG.info("server started."));
   }
 
   private static RemotingClient createClient() {
@@ -147,14 +146,14 @@ public class KeepaliveTests {
             Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(10L))
                     .doBeforeRetry(retrySignal -> LOG.info("Reconnecting. Reason: {}", reason));
 
-    Mono<Channel> rsocketMono =
+    Mono<Channel> channelMono =
             ChannelConnector.create()
                     .fragment(16384)
                     .reconnect(reconnectSpec.apply("connector-close"))
                     .keepAlive(Duration.ofMillis(100L), Duration.ofMillis(900L))
                     .connect(TcpClientTransport.create(TcpClient.create().host("localhost").port(PORT)));
 
-    RemotingClient client = RemotingClient.from(rsocketMono);
+    RemotingClient client = RemotingClient.from(channelMono);
 
     client.source()
             .doOnNext(r -> LOG.info("Got"))
@@ -184,7 +183,7 @@ public class KeepaliveTests {
             .connect(TcpClientTransport.create(TcpClient.create().host("localhost").port(PORT)));
   }
 
-  public static class MyServerRsocket implements Channel {
+  public static class MyServerChannel implements Channel {
 
     @Override
     public Mono<Payload> requestResponse(Payload payload) {

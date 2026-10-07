@@ -1,18 +1,17 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.cloud;
@@ -50,6 +49,17 @@ public class JavaConventions {
 
   private static final List<String> TEST_COMPILER_ARGS;
 
+  /**
+   * The Java version we should use as the JVM baseline for building the project
+   */
+  private static final JavaLanguageVersion DEFAULT_LANGUAGE_VERSION = JavaLanguageVersion.of(25);
+
+  /**
+   * The Java version we should use as the baseline for the compiled bytecode
+   * (the "-release" compiler argument).
+   */
+  private static final JavaLanguageVersion DEFAULT_RELEASE_VERSION = JavaLanguageVersion.of(17);
+
   static {
     List<String> commonCompilerArgs = Arrays.asList(
             /*"-Xlint:serial",*/ "-Xlint:cast", "-Xlint:classfile",/* "-Xlint:dep-ann",*/
@@ -71,33 +81,65 @@ public class JavaConventions {
 
   public void apply(Project project) {
     project.getPlugins().withType(JavaBasePlugin.class, javaPlugin -> {
+      applyToolchainConventions(project);
       applyJavaCompileConventions(project);
       configureDependencyManagement(project);
     });
   }
 
   /**
-   * Applies the common Java compiler options for main sources, test fixture sources, and
+   * Configure the Toolchain support for the project.
+   *
+   * @param project the current project
+   */
+  private static void applyToolchainConventions(Project project) {
+    project.getExtensions().getByType(JavaPluginExtension.class).toolchain(toolchain -> {
+      toolchain.getLanguageVersion().set(DEFAULT_LANGUAGE_VERSION);
+    });
+  }
+
+  /**
+   * Apply the common Java compiler options for main sources, test fixture sources, and
    * test sources.
    *
    * @param project the current project
    */
   private void applyJavaCompileConventions(Project project) {
-    project.getExtensions().getByType(JavaPluginExtension.class)
-            .getToolchain().getLanguageVersion().set(JavaLanguageVersion.of(17));
-    project.getTasks().withType(JavaCompile.class)
-            .matching(compileTask -> compileTask.getName().equals(JavaPlugin.COMPILE_JAVA_TASK_NAME))
-            .forEach(compileTask -> {
-              compileTask.getOptions().setCompilerArgs(COMPILER_ARGS);
-              compileTask.getOptions().setEncoding("UTF-8");
-            });
-    project.getTasks().withType(JavaCompile.class)
-            .matching(compileTask -> compileTask.getName().equals(JavaPlugin.COMPILE_TEST_JAVA_TASK_NAME)
-                    || compileTask.getName().equals("compileTestFixturesJava"))
-            .forEach(compileTask -> {
-              compileTask.getOptions().setCompilerArgs(TEST_COMPILER_ARGS);
-              compileTask.getOptions().setEncoding("UTF-8");
-            });
+    project.afterEvaluate(p -> {
+      p.getTasks().withType(JavaCompile.class)
+              .matching(compileTask -> compileTask.getName().startsWith(JavaPlugin.COMPILE_JAVA_TASK_NAME))
+              .forEach(compileTask -> {
+                compileTask.getOptions().setCompilerArgs(COMPILER_ARGS);
+                compileTask.getOptions().setEncoding("UTF-8");
+                setJavaRelease(compileTask);
+              });
+      p.getTasks().withType(JavaCompile.class)
+              .matching(compileTask -> compileTask.getName().startsWith(JavaPlugin.COMPILE_TEST_JAVA_TASK_NAME)
+                      || compileTask.getName().equals("compileTestFixturesJava"))
+              .forEach(compileTask -> {
+                compileTask.getOptions().setCompilerArgs(TEST_COMPILER_ARGS);
+                compileTask.getOptions().setEncoding("UTF-8");
+                setJavaRelease(compileTask);
+              });
+
+    });
+  }
+
+  /**
+   * We should pick the {@link #DEFAULT_RELEASE_VERSION} for all compiled classes,
+   * unless the current task is compiling multi-release JAR code with a higher version.
+   */
+  private void setJavaRelease(JavaCompile task) {
+    int defaultVersion = DEFAULT_RELEASE_VERSION.asInt();
+    int releaseVersion = defaultVersion;
+    int compilerVersion = task.getJavaCompiler().get().getMetadata().getLanguageVersion().asInt();
+    for (int version = defaultVersion; version <= compilerVersion; version++) {
+      if (task.getName().contains("Java" + version)) {
+        releaseVersion = version;
+        break;
+      }
+    }
+    task.getOptions().getRelease().set(releaseVersion);
   }
 
   private void configureDependencyManagement(Project project) {

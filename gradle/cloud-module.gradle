@@ -1,22 +1,5 @@
-/*
- * Copyright 2021 - 2024 the original author or authors.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
- */
-
 //file:noinspection ConfigurationAvoidance
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 apply plugin: 'java-library'
 apply plugin: 'infra.cloud.conventions'
@@ -30,12 +13,19 @@ String[] javadocLinks = [
 jar {
   manifest.attributes["Implementation-Title"] = project.name
   manifest.attributes["Implementation-Version"] = project.version
-  manifest.attributes["Implementation-Build"] = LocalDateTime.now()
+  manifest.attributes["Implementation-Build"] = OffsetDateTime.now()
   manifest.attributes["Implementation-Vendor"] = 'TODAY Tech'
   manifest.attributes["Implementation-Vendor-Id"] = 'cn.taketoday'
   manifest.attributes["Automatic-Module-Name"] = project.name.replace('-', '.')  // for Jigsaw
   manifest.attributes["Created-By"] =
       "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+
+  from("${rootDir}") {
+    include "LICENSE"
+    include "NOTICE"
+    into "META-INF"
+    expand(copyright: new Date().format("yyyy"), version: project.version)
+  }
 }
 
 normalization {
@@ -86,6 +76,8 @@ publishing {
     }
   }
 }
+
+apply from: "$rootDir/gradle/signing.gradle"
 
 // Disable publication of test fixture artifacts.
 if (configurations.findByName("testFixturesApiElements") != null) {

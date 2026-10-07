@@ -1,0 +1,5 @@
+
+infra.cloud.serialize.ArgumentSerialization=\
+  infra.cloud.serialize.support.SimpleValueArgumentSerialization
+
+

@@ -1,51 +1,47 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package infra.remoting.core;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscription;
 
-import infra.lang.Nullable;
 import infra.logging.Logger;
 import infra.logging.LoggerFactory;
 import infra.remoting.Channel;
 import infra.remoting.Payload;
 import infra.remoting.frame.FrameType;
-import infra.remoting.frame.decoder.PayloadDecoder;
 import infra.remoting.plugins.RequestInterceptor;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Mono;
 
-final class FireAndForgetResponderSubscriber
-        implements CoreSubscriber<Void>, ResponderFrameHandler {
+final class FireAndForgetResponderSubscriber implements CoreSubscriber<Void>, ResponderFrameHandler {
 
   static final Logger logger = LoggerFactory.getLogger(FireAndForgetResponderSubscriber.class);
 
   static final FireAndForgetResponderSubscriber INSTANCE = new FireAndForgetResponderSubscriber();
 
   final int streamId;
-  final ByteBufAllocator allocator;
-  final PayloadDecoder payloadDecoder;
-  final RequesterResponderSupport requesterResponderSupport;
+
+  final ChannelSupport channel;
+
   final Channel handler;
-  final int maxInboundPayloadSize;
 
   @Nullable
   final RequestInterceptor requestInterceptor;
@@ -54,43 +50,28 @@ final class FireAndForgetResponderSubscriber
 
   private FireAndForgetResponderSubscriber() {
     this.streamId = 0;
-    this.allocator = null;
-    this.payloadDecoder = null;
-    this.maxInboundPayloadSize = 0;
-    this.requesterResponderSupport = null;
+    this.channel = null;
     this.handler = null;
     this.requestInterceptor = null;
     this.frames = null;
   }
 
-  FireAndForgetResponderSubscriber(
-          int streamId, RequesterResponderSupport requesterResponderSupport) {
+  FireAndForgetResponderSubscriber(int streamId, ChannelSupport channel) {
     this.streamId = streamId;
-    this.allocator = null;
-    this.payloadDecoder = null;
-    this.maxInboundPayloadSize = 0;
-    this.requesterResponderSupport = null;
+    this.channel = null;
     this.handler = null;
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.requestInterceptor = channel.getRequestInterceptor();
     this.frames = null;
   }
 
-  FireAndForgetResponderSubscriber(
-          int streamId,
-          ByteBuf firstFrame,
-          RequesterResponderSupport requesterResponderSupport,
-          Channel handler) {
+  FireAndForgetResponderSubscriber(int streamId, ByteBuf firstFrame, ChannelSupport channel, Channel handler) {
     this.streamId = streamId;
-    this.allocator = requesterResponderSupport.getAllocator();
-    this.payloadDecoder = requesterResponderSupport.getPayloadDecoder();
-    this.maxInboundPayloadSize = requesterResponderSupport.getMaxInboundPayloadSize();
-    this.requesterResponderSupport = requesterResponderSupport;
+    this.channel = channel;
     this.handler = handler;
-    this.requestInterceptor = requesterResponderSupport.getRequestInterceptor();
+    this.requestInterceptor = channel.getRequestInterceptor();
 
-    this.frames =
-            ReassemblyUtils.addFollowingFrame(
-                    allocator.compositeBuffer(), firstFrame, true, maxInboundPayloadSize);
+    this.frames = ReassemblyUtils.addFollowingFrame(
+            channel.allocator.compositeBuffer(), firstFrame, true, channel.maxInboundPayloadSize);
   }
 
   @Override
@@ -122,14 +103,14 @@ final class FireAndForgetResponderSubscriber
   @Override
   public void handleNext(ByteBuf followingFrame, boolean hasFollows, boolean isLastPayload) {
     final CompositeByteBuf frames = this.frames;
-
+    final ChannelSupport channel = this.channel;
     try {
       ReassemblyUtils.addFollowingFrame(
-              frames, followingFrame, hasFollows, this.maxInboundPayloadSize);
+              frames, followingFrame, hasFollows, channel.maxInboundPayloadSize);
     }
     catch (IllegalStateException t) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      channel.remove(streamId, this);
 
       this.frames = null;
       frames.release();
@@ -144,12 +125,12 @@ final class FireAndForgetResponderSubscriber
     }
 
     if (!hasFollows) {
-      this.requesterResponderSupport.remove(this.streamId, this);
+      channel.remove(this.streamId, this);
       this.frames = null;
 
       Payload payload;
       try {
-        payload = this.payloadDecoder.apply(frames);
+        payload = channel.payloadDecoder.decode(frames);
         frames.release();
       }
       catch (Throwable t) {
@@ -174,7 +155,7 @@ final class FireAndForgetResponderSubscriber
     final CompositeByteBuf frames = this.frames;
     if (frames != null) {
       final int streamId = this.streamId;
-      this.requesterResponderSupport.remove(streamId, this);
+      this.channel.remove(streamId, this);
 
       this.frames = null;
       frames.release();

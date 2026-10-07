@@ -1,107 +1,104 @@
 /*
- * Copyright 2021 - 2024 the original author or authors.
+ * Copyright 2021 - 2026 the TODAY authors
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see [http://www.gnu.org/licenses/]
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package infra.cloud.provider;
 
-import java.net.InetAddress;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import infra.beans.factory.SmartInitializingSingleton;
-import infra.cloud.registry.ServiceDefinition;
-import infra.context.ApplicationContext;
+import infra.cloud.service.ServiceMetadata;
+import infra.cloud.service.ServiceMetadataProvider;
 import infra.context.support.ApplicationObjectSupport;
-import infra.lang.Nullable;
+import infra.util.Assert;
 import infra.stereotype.Service;
 import infra.util.ClassUtils;
-import infra.util.ExceptionUtils;
-import infra.util.ObjectUtils;
+import infra.util.MultiValueMap;
 
 /**
+ * Holder for local service instances, managing the mapping between service interfaces
+ * and their corresponding implementations. It collects beans annotated with {@link Service}
+ * during the application context initialization and registers them for retrieval.
+ *
+ * <p>This class implements {@link SmartInitializingSingleton} to ensure all services are
+ * registered after all singleton beans have been instantiated.
+ *
  * @author <a href="https://github.com/TAKETODAY">Harry Yang</a>
  * @since 1.0 2022/10/19 21:40
  */
-public class LocalServiceHolder extends ApplicationObjectSupport implements SmartInitializingSingleton {
+public class LocalServiceHolder extends ApplicationObjectSupport implements SmartInitializingSingleton, ServicesProvider {
 
-  private final InetAddress localHost = ExceptionUtils.sneakyThrow(InetAddress::getLocalHost);
+  private final HashMap<Class<?>, Object> localServices = new HashMap<>();
 
-  private String localHostName;
+  private final HashMap<String, ServiceObject> classNameMap = new HashMap<>();
 
-  private final int port;
+  private final MultiValueMap<ServiceMetadata, Class<?>> serviceMap = MultiValueMap.forLinkedHashMap();
 
-  private final HashMap<String, Object> localServices = new HashMap<>();
+  private final ServiceMetadataProvider serviceMetadataProvider;
 
-  private final ArrayList<ServiceDefinition> definitions = new ArrayList<>();
-
-  public LocalServiceHolder(int port) {
-    this.port = port;
+  public LocalServiceHolder(ServiceMetadataProvider serviceMetadataProvider) {
+    Assert.notNull(serviceMetadataProvider, "serviceMetadataProvider is required");
+    this.serviceMetadataProvider = serviceMetadataProvider;
   }
 
-  public void setLocalHostName(String localHostName) {
-    this.localHostName = localHostName;
-  }
-
-  public ArrayList<ServiceDefinition> getServices() {
-    return definitions;
-  }
-
-  public int getPort() {
-    return port;
+  @SuppressWarnings("unchecked")
+  public <T> @Nullable T getService(Class<T> serviceInterface) {
+    return (T) localServices.get(serviceInterface);
   }
 
   @Nullable
-  public Object getService(String serviceName) {
-    return localServices.get(serviceName);
+  public ServiceObject getServiceObject(String serviceClass) {
+    return classNameMap.get(serviceClass);
+  }
+
+  @Override
+  public List<ServiceMetadata> getServices() {
+    return new ArrayList<>(serviceMap.keySet());
   }
 
   @Override
   public void afterSingletonsInstantiated() {
-    ApplicationContext context = obtainApplicationContext();
-    List<Object> services = context.getAnnotatedBeans(Service.class);
+    List<Object> services = applicationContext().getAnnotatedBeans(Service.class);
+
     for (Object service : services) {
       Class<Object> serviceImpl = ClassUtils.getUserClass(service);
-      Class<?>[] interfaces = serviceImpl.getInterfaces();
-      if (ObjectUtils.isEmpty(interfaces)) {
+      Set<Class<?>> interfaces = ClassUtils.getAllInterfacesForClassAsSet(serviceImpl);
+      if (interfaces.isEmpty()) {
         continue;
       }
 
-      Class<?> interfaceToUse = interfaces[0];
-      if (interfaces.length > 1) {
-        for (final Class<?> anInterface : interfaces) {
-          if (anInterface.isAnnotationPresent(Service.class)) {
-            interfaceToUse = anInterface;
-            break;
+      for (final Class<?> anInterface : interfaces) {
+        if (anInterface.isAnnotationPresent(Service.class)) {
+          Object object = localServices.put(anInterface, service);
+          String interfaceName = anInterface.getName();
+          if (object != null) {
+            throw new IllegalStateException("Service '%s' is already registered: [%s]".formatted(interfaceName, object));
           }
+
+          ServiceMetadata serviceMetadata = serviceMetadataProvider.getMetadata(anInterface);
+          serviceMap.add(serviceMetadata, anInterface);
+          classNameMap.put(interfaceName, new ServiceObject(anInterface, service));
+          logger.info("Adding service: [{}] to interface: [{}]", service, interfaceName);
         }
       }
-
-      ServiceDefinition definition = new ServiceDefinition();
-
-      definition.setHost(localHostName == null ? localHost.getHostAddress() : localHostName);
-
-      definition.setPort(port);
-      definition.setName(interfaceToUse.getName());
-
-      logger.info("add service: [{}] to interface: [{}]", service, definition.getName());
-      definitions.add(definition);
-      localServices.put(interfaceToUse.getName(), service); // register object
     }
-
   }
 
 }

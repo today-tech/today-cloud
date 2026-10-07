@@ -1,0 +1,88 @@
+/*
+ * Copyright 2021 - 2026 the TODAY authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package infra.cloud.client;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+
+import infra.util.Assert;
+import infra.util.CollectionUtils;
+
+/**
+ * A {@link DiscoveryClient} that is composed of other discovery clients and delegates
+ * calls to each of them in order.
+ *
+ * @author <a href="https://github.com/TAKETODAY">海子 Yang</a>
+ * @since 1.0 2025/8/8 14:21
+ */
+public class CompositeDiscoveryClient implements DiscoveryClient {
+
+  private final List<DiscoveryClient> discoveryClients;
+
+  public CompositeDiscoveryClient(List<DiscoveryClient> discoveryClients) {
+    Assert.notEmpty(discoveryClients, "discoveryClients must not be empty");
+    this.discoveryClients = discoveryClients;
+  }
+
+  @Override
+  public String getDescription() {
+    return "Composite Discovery Client";
+  }
+
+  @Override
+  public List<ServiceInstance> getInstances(String serviceId) {
+    if (this.discoveryClients != null) {
+      for (DiscoveryClient discoveryClient : this.discoveryClients) {
+        List<ServiceInstance> instances = discoveryClient.getInstances(serviceId);
+        if (CollectionUtils.isNotEmpty(instances)) {
+          return instances;
+        }
+      }
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<String> getServices() {
+    LinkedHashSet<String> services = new LinkedHashSet<>();
+    if (this.discoveryClients != null) {
+      for (DiscoveryClient discoveryClient : this.discoveryClients) {
+        List<String> serviceForClient = discoveryClient.getServices();
+        if (serviceForClient != null) {
+          services.addAll(serviceForClient);
+        }
+      }
+    }
+    return new ArrayList<>(services);
+  }
+
+  @Override
+  public void probe() {
+    if (this.discoveryClients != null) {
+      for (DiscoveryClient discoveryClient : this.discoveryClients) {
+        discoveryClient.probe();
+      }
+    }
+  }
+
+  public List<DiscoveryClient> getDiscoveryClients() {
+    return discoveryClients;
+  }
+
+}
